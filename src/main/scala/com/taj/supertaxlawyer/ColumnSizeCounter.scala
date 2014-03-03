@@ -29,11 +29,28 @@
 
 package com.taj.supertaxlawyer
 
+import java.io.FileInputStream
+
 /**
  * Operation related to the count of columns in a text file.
  */
 class ColumnSizeCounter {
 
+  /**
+   * Give the position of the last char of the line after moving to the tartPosition.
+   * @param path path to the file to work on.
+   * @param startPosition position where to begin the search.
+   * @return the position of the last char of the line.
+   */
+  def lastCharOnLine(path:String, startPosition:Long):Long = {
+    val is = new FileInputStream(path)
+    is.skip(startPosition)
+
+    val position = Iterator.continually(is.read()).map(_.toChar).indexWhere(c => c == '\n' || c == '\r')
+
+    is.close()
+    startPosition + position
+  }
 
 
 }
