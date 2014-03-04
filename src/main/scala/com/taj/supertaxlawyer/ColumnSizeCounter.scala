@@ -29,7 +29,7 @@
 
 package com.taj.supertaxlawyer
 
-import scala.io.Source
+import scala.io.{Codec, Source}
 import akka.actor._
 import com.taj.supertaxlawyer.CommonTools._
 import scala.collection.mutable.ArrayBuffer
@@ -45,9 +45,11 @@ import com.taj.supertaxlawyer.CommonTools.Result
 import akka.actor.Terminated
 import com.taj.supertaxlawyer.CommonTools.Start
 import scala.concurrent.Await
+import com.ibm.icu.text.CharsetDetector
+import java.io.FileInputStream
 
 private object CommonTools {
-  val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (theOld, theNew) => theOld.zip(theNew).map(t => t._1 max t._2)
+  val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map(tuple => tuple._1 max tuple._2)
 
   case class Lines(blockToAnalyze: Seq[String])
 
@@ -66,21 +68,58 @@ private object CommonTools {
  */
 object ColumnSizeCounter {
 
-  def compute(path: String, splitter: String, expectedColumnQuantity: Int, verbose: Boolean): List[Int] = {
+  /**
+   * Compute the size of each column in the file.
+   * @param path path to the text file.
+   * @param splitter Char or String used to limit the columns.
+   * @param expectedColumnQuantity number of columns expected per line. Any line with a different number of column won't be tested.
+   * @param codec Encoding of the text file.
+   * @param verbose display more information during the process.
+   * @return A list of column sizes.
+   */
+  def compute(path: String, splitter: String, expectedColumnQuantity: Int, codec: String,verbose: Boolean): List[Int] = {
     import akka.pattern.ask
     implicit val timeout = Timeout(2, TimeUnit.MINUTES)
-    val numberOfLinesPerMessage = 300
+    val numberOfLinesPerMessage = 200
 
     val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
-    val computer = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, numberOfLinesPerMessage, verbose)), name = "DistributorWorker")
+    val computer = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, numberOfLinesPerMessage, codec, verbose)), name = "DistributorWorker")
     val result = Await.result(computer ? Start(), timeout.duration) match {
       case Result(columnSizes) =>
         system.shutdown()
         columnSizes
       case t => throw new IllegalArgumentException("Failed to retrieve result from Actor during the check. " + t.toString)
     }
-
     result
+  }
+
+  /**
+   * Count the number of column in the first line of a text file.
+   * @param path path to the file to study.
+   * @param splitter String used to limit the columns.
+   * @param codec encoding of the file
+   * @return the number of columns in the text file.
+   */
+  def columnCount(path:String, splitter:String, codec:String):Int = {
+    val buffer = Source.fromFile(path, codec)
+    val count = buffer.getLines().next().split(splitter).size
+    buffer.close()
+    count
+  }
+
+  def detectEncoding(path:String):String = {
+    val detector = new CharsetDetector()
+
+    val byteData = new Array[Byte](1024)
+
+    val is = new FileInputStream(path)
+    is.read(byteData)
+    is.close()
+
+    detector.setText(byteData)
+    val matcher = detector.detect()
+
+    matcher.getName
   }
 }
 
@@ -90,8 +129,8 @@ object ColumnSizeCounter {
  * @param sizeMessage number of lines to send to each worker.
  * @param columnNumber expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage: Int, verbose: Boolean) extends Actor {
-  val mBuffer = Source.fromFile(path)
+class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage: Int, codec:Codec, verbose: Boolean) extends Actor {
+  val mBuffer = Source.fromFile(path)(codec)
   val mSource = mBuffer.getLines().grouped(sizeMessage)
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var bestSizes = List.fill(columnNumber)(0)

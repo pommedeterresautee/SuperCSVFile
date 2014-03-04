@@ -30,16 +30,20 @@
 package com.taj.supertaxlawyer
 
 import java.io.File
+import scala.io.{Codec, Source}
 
 
 object Main extends App {
   val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
 
-  val file = encodedFileFolder + File.separator + "semicolon.csv"
+  val file = "C:\\Users\\MBenesty\\Private\\GIT\\Super Tax Lawyer\\FEC_EXAMPLE\\FEC.txt"
 
-  val result2 = ColumnSizeCounter.compute(file, ";", 10, false)
+  println(Source.fromFile(file)(Codec.ISO8859).getLines().next().getBytes.size)
+
+  val result2 = ColumnSizeCounter.compute(file, "\t", 22, ColumnSizeCounter.detectEncoding(file), false)
 
   println(result2)
+
 
 }
