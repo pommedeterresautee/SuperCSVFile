@@ -31,12 +31,12 @@ package com.taj.supertaxlawyer.test
 
 import org.scalatest._
 import akka.testkit.{ImplicitSender, TestKit}
-import java.io.{FileInputStream, RandomAccessFile, File}
+import java.io.File
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.{ColumnSizeCounter, ParamAkka}
+import com.taj.supertaxlawyer.ColumnSizeCounter
 
 
-case class testContainer(path: String, columnCount: Int, splitter:String)
+case class testContainer(path: String, columnCount: Int, splitter: String)
 
 /**
  * These tests are related to the count of columns in a text file.

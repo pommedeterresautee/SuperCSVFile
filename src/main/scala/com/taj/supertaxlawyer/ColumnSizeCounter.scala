@@ -29,7 +29,6 @@
 
 package com.taj.supertaxlawyer
 
-import java.io.FileInputStream
 import scala.io.Source
 import akka.actor._
 import com.taj.supertaxlawyer.CommonTools._
@@ -49,10 +48,15 @@ import scala.concurrent.Await
 
 private object CommonTools {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (theOld, theNew) => theOld.zip(theNew).map(t => t._1 max t._2)
+
   case class Lines(blockToAnalyze: Seq[String])
+
   case class Result(columnSizes: List[Int])
+
   case class Start()
+
   case class Register()
+
   case class RegisterYourself()
 
 }
@@ -62,7 +66,7 @@ private object CommonTools {
  */
 object ColumnSizeCounter {
 
-  def compute(path: String, splitter: String, expectedColumnQuantity: Int, verbose:Boolean):List[Int] = {
+  def compute(path: String, splitter: String, expectedColumnQuantity: Int, verbose: Boolean): List[Int] = {
     import akka.pattern.ask
     implicit val timeout = Timeout(2, TimeUnit.MINUTES)
     val numberOfLinesPerMessage = 300
@@ -86,7 +90,7 @@ object ColumnSizeCounter {
  * @param sizeMessage number of lines to send to each worker.
  * @param columnNumber expected number of columns.
  */
-class Distributor(path: String, splitter:String, columnNumber: Int, sizeMessage: Int, verbose:Boolean) extends Actor {
+class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage: Int, verbose: Boolean) extends Actor {
   val mBuffer = Source.fromFile(path)
   val mSource = mBuffer.getLines().grouped(sizeMessage)
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
@@ -97,33 +101,33 @@ class Distributor(path: String, splitter:String, columnNumber: Int, sizeMessage:
 
   override def receive: Actor.Receive = {
     case Start() =>
-      if(verbose) println("*** Start treatment ***")
+      if (verbose) println("*** Start treatment ***")
       mOriginalSender = Some(sender)
       mWorkerMaster = Some(context.actorOf(Props(new BlockAnalyzer(columnNumber, splitter)).withRouter(RoundRobinRouter(Runtime.getRuntime.availableProcessors)), name = "MasterBlockAnalyzer"))
-      if(verbose) println(s"*** Watching ${sender.path} ***")
+      if (verbose) println(s"*** Watching ${sender.path} ***")
       context.watch(mWorkerMaster.get) // Watch the router
       mListWatchedRoutees += mWorkerMaster.get
       mWorkerMaster.get ! Broadcast(RegisterYourself()) // Will watch the rootees
     case Register() =>
-      if(verbose) println(s"*** Register rootee ${sender.path} ***")
+      if (verbose) println(s"*** Register rootee ${sender.path} ***")
       mListWatchedRoutees += sender
       context.watch(sender)
     case Result(columnSizes) if columnSizes.size != columnNumber =>
       throw new IllegalStateException(s"Incorrect number of column: ${columnSizes.size} instead of $columnNumber")
     case Result(columnSizes) => bestSizes = mBiggerColumn(bestSizes, columnSizes)
-      if(verbose) println(s"*** get result from ${sender.path} ***")
+      if (verbose) println(s"*** get result from ${sender.path} ***")
       if (mSource.hasNext) sender ! Lines(mSource.next())
       else {
-        if(!operationFinished){
-          if(verbose) println(s"*** Send poison pill to ${mWorkerMaster.get.path} ***")
+        if (!operationFinished) {
+          if (verbose) println(s"*** Send poison pill to ${mWorkerMaster.get.path} ***")
           operationFinished = true
           mWorkerMaster.get ! Broadcast(PoisonPill)
         }
       }
     case Terminated(ref) =>
-      if(verbose) println(s"*** Rootee ${sender.path} is dead ***")
+      if (verbose) println(s"*** Rootee ${sender.path} is dead ***")
       mListWatchedRoutees -= ref
-      if(verbose) println(s"*** There are still ${mListWatchedRoutees.size} rootees alive ***")
+      if (verbose) println(s"*** There are still ${mListWatchedRoutees.size} rootees alive ***")
       if (mListWatchedRoutees.isEmpty) {
         mOriginalSender.get ! Result(bestSizes)
       }
