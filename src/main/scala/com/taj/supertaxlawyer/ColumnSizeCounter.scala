@@ -31,22 +31,28 @@ package com.taj.supertaxlawyer
 
 import java.io.FileInputStream
 import scala.io.Source
-import akka.actor.{Terminated, PoisonPill, Actor, ActorRef}
+import akka.actor._
 import com.taj.supertaxlawyer.CommonTools._
 import scala.collection.mutable.ArrayBuffer
+import akka.routing.RoundRobinRouter
+import akka.util.Timeout
+import java.util.concurrent.TimeUnit
+import com.taj.supertaxlawyer.CommonTools.Register
+import com.taj.supertaxlawyer.CommonTools.Lines
+import com.taj.supertaxlawyer.CommonTools.RegisterYourself
+import scala.Some
 import akka.routing.Broadcast
+import com.taj.supertaxlawyer.CommonTools.Result
+import akka.actor.Terminated
+import com.taj.supertaxlawyer.CommonTools.Start
+import scala.concurrent.Await
 
 private object CommonTools {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (theOld, theNew) => theOld.zip(theNew).map(t => t._1 max t._2)
-
   case class Lines(blockToAnalyze: Seq[String])
-
   case class Result(columnSizes: List[Int])
-
-  case class Start(worker: ActorRef)
-
-  case class Register(worker: ActorRef)
-
+  case class Start()
+  case class Register()
   case class RegisterYourself()
 
 }
@@ -54,31 +60,24 @@ private object CommonTools {
 /**
  * Operation related to the count of columns in a text file.
  */
-class ColumnSizeCounter {
+object ColumnSizeCounter {
 
+  def compute(path: String, splitter: String, expectedColumnQuantity: Int, verbose:Boolean):List[Int] = {
+    import akka.pattern.ask
+    implicit val timeout = Timeout(2, TimeUnit.MINUTES)
+    val numberOfLinesPerMessage = 300
 
-  private def distributor(path: String, sizeMessage: Int, actor: ActorRef) = {
-    Source.fromFile(path).getLines().grouped(sizeMessage).next()
+    val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
+    val computer = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, numberOfLinesPerMessage, verbose)), name = "DistributorWorker")
+    val result = Await.result(computer ? Start(), timeout.duration) match {
+      case Result(columnSizes) =>
+        system.shutdown()
+        columnSizes
+      case t => throw new IllegalArgumentException("Failed to retrieve result from Actor during the check. " + t.toString)
+    }
+
+    result
   }
-
-
-  /**
-   * Give the position of the last char of the line after moving to the tartPosition.
-   * @param path path to the file to work on.
-   * @param startPosition position where to begin the search.
-   * @return the position of the last char of the line.
-   */
-  def lastCharOnLine(path:String, startPosition:Long):Long = {
-    val is = new FileInputStream(path)
-    is.skip(startPosition)
-
-    val position = Iterator.continually(is.read()).map(_.toChar).indexWhere(c => c == '\n' || c == '\r')
-
-    is.close()
-    startPosition + position
-  }
-
-
 }
 
 /**
@@ -87,34 +86,55 @@ class ColumnSizeCounter {
  * @param sizeMessage number of lines to send to each worker.
  * @param columnNumber expected number of columns.
  */
-class Distributor(path: String, sizeMessage: Int, columnNumber: Int) extends Actor {
-
-  val mSource = Source.fromFile(path).getLines().grouped(sizeMessage)
+class Distributor(path: String, splitter:String, columnNumber: Int, sizeMessage: Int, verbose:Boolean) extends Actor {
+  val mBuffer = Source.fromFile(path)
+  val mSource = mBuffer.getLines().grouped(sizeMessage)
+  val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var bestSizes = List.fill(columnNumber)(0)
-  var master: Option[ActorRef] = None
-  val listOfRoutee = ArrayBuffer.empty[ActorRef]
+  var mWorkerMaster: Option[ActorRef] = None
+  var mOriginalSender: Option[ActorRef] = None
+  var operationFinished = false
 
   override def receive: Actor.Receive = {
-    case Start(actor) =>
-      actor ! Broadcast(RegisterYourself())
-      master = Some(sender)
+    case Start() =>
+      if(verbose) println("*** Start treatment ***")
+      mOriginalSender = Some(sender)
+      mWorkerMaster = Some(context.actorOf(Props(new BlockAnalyzer(columnNumber, splitter)).withRouter(RoundRobinRouter(Runtime.getRuntime.availableProcessors)), name = "MasterBlockAnalyzer"))
+      if(verbose) println(s"*** Watching ${sender.path} ***")
+      context.watch(mWorkerMaster.get) // Watch the router
+      mListWatchedRoutees += mWorkerMaster.get
+      mWorkerMaster.get ! Broadcast(RegisterYourself()) // Will watch the rootees
+    case Register() =>
+      if(verbose) println(s"*** Register rootee ${sender.path} ***")
+      mListWatchedRoutees += sender
+      context.watch(sender)
     case Result(columnSizes) if columnSizes.size != columnNumber =>
       throw new IllegalStateException(s"Incorrect number of column: ${columnSizes.size} instead of $columnNumber")
     case Result(columnSizes) => bestSizes = mBiggerColumn(bestSizes, columnSizes)
+      if(verbose) println(s"*** get result from ${sender.path} ***")
       if (mSource.hasNext) sender ! Lines(mSource.next())
-      else sender ! Broadcast(PoisonPill)
-    case Register(routee) =>
-      listOfRoutee += routee
-      context.watch(routee)
+      else {
+        if(!operationFinished){
+          if(verbose) println(s"*** Send poison pill to ${mWorkerMaster.get.path} ***")
+          operationFinished = true
+          mWorkerMaster.get ! Broadcast(PoisonPill)
+        }
+      }
     case Terminated(ref) =>
-      println(s"*** has been removed ${ref.path} ***")
-      listOfRoutee -= ref
-      if (listOfRoutee.isEmpty) {
-        master.get ! listOfRoutee
-        context.stop(self)
+      if(verbose) println(s"*** Rootee ${sender.path} is dead ***")
+      mListWatchedRoutees -= ref
+      if(verbose) println(s"*** There are still ${mListWatchedRoutees.size} rootees alive ***")
+      if (mListWatchedRoutees.isEmpty) {
+        mOriginalSender.get ! Result(bestSizes)
       }
     case t =>
       throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
+  }
+
+
+  override def postStop(): Unit = {
+    mBuffer.close()
+    super.postStop()
   }
 }
 
@@ -129,14 +149,14 @@ class BlockAnalyzer(columnNumber: Int, splitter: String) extends Actor {
   override def receive: Actor.Receive = {
     case Lines(listToAnalyze) =>
       val blockResult = listToAnalyze
-        .map(_.split(splitter))
+        .map(_.split(splitter)) // transform the line in Array of columns
         .filter(_.size == columnNumber) // Remove not expected lines
         .map(_.map(_.size).toList) // Change to a list of size of columns
         .foldLeft(emptyList)(mBiggerColumn) // Mix the best results
       sender ! Result(blockResult)
-    case RegisterYourself() => sender ! Register(self)
+    case RegisterYourself() => sender ! Register()
       sender ! Result(emptyList) // to start the process: send a fake empty result 
-    case t => throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
+    //case _ => throw new IllegalStateException(s"Bad parameter sent to ${self.path}")
   }
 }
 

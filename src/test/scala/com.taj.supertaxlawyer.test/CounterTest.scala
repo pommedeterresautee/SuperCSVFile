@@ -33,10 +33,10 @@ import org.scalatest._
 import akka.testkit.{ImplicitSender, TestKit}
 import java.io.{FileInputStream, RandomAccessFile, File}
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.ParamAkka
+import com.taj.supertaxlawyer.{ColumnSizeCounter, ParamAkka}
 
 
-case class testContainer(path: String, workingActorsNeeded: Int)
+case class testContainer(path: String, columnCount: Int, splitter:String)
 
 /**
  * These tests are related to the count of columns in a text file.
@@ -47,8 +47,8 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
-  val semicolon = testContainer(encodedFileFolder + File.separator + "semicolon.csv", 1)
-  val tab = testContainer(encodedFileFolder + File.separator + "tab.csv", 1)
+  val semicolon = testContainer("semicolon.csv", 10, ";")
+  val tab = testContainer("tab.csv", 10, ";")
 
   /**
    * Clean all temp files before starting
@@ -61,15 +61,10 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
     .foreach {
     fileToTest =>
       val file = new File(encodedFileFolder, fileToTest.path)
-      var fileSize = 0l
-      var workerCount = 0
 
-      s"${fileToTest.path} file" must {
-        s"Workers quantity should be evaluated equals to ${fileToTest.workingActorsNeeded}" in {
-          fileSize = file.length()
-          workerCount = ParamAkka.numberOfWorkerRequired(fileSize)
-          workerCount should equal(fileToTest.workingActorsNeeded)
-        }
+      s"" must {
+        val result = ColumnSizeCounter.compute(file.getAbsolutePath, fileToTest.splitter, fileToTest.columnCount, verbose = false)
+        println("result=" + result.toString())
       }
   }
 

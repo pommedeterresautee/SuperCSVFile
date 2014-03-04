@@ -29,7 +29,18 @@
 
 package com.taj.supertaxlawyer
 
+import java.io.File
+import scala.io.Source
+
 
 object Main extends App {
-  println("Hello world")
+  val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
+  val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
+
+  val file =  encodedFileFolder + File.separator + "semicolon.csv"
+
+  val result2 = ColumnSizeCounter.compute(file, ";", 10, false)
+
+  println(result2)
+
 }
