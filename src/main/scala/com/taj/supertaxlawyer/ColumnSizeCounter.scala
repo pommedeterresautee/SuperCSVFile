@@ -77,7 +77,7 @@ object ColumnSizeCounter {
    * @param verbose display more information during the process.
    * @return A list of column sizes.
    */
-  def compute(path: String, splitter: String, expectedColumnQuantity: Int, codec: String,verbose: Boolean): List[Int] = {
+  def computeSize(path: String, splitter: String, expectedColumnQuantity: Int, codec: String, verbose: Boolean): List[Int] = {
     import akka.pattern.ask
     implicit val timeout = Timeout(2, TimeUnit.MINUTES)
     val numberOfLinesPerMessage = 200

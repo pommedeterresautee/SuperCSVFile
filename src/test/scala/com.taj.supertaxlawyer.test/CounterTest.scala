@@ -63,7 +63,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
       val file = new File(encodedFileFolder, fileToTest.path)
 
       s"" must {
-        val result = ColumnSizeCounter.compute(file.getAbsolutePath, fileToTest.splitter, fileToTest.columnCount, verbose = false)
+        val result = ColumnSizeCounter.computeSize(file.getAbsolutePath, fileToTest.splitter, fileToTest.columnCount, verbose = false)
         println("result=" + result.toString())
       }
   }

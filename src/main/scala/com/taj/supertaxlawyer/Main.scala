@@ -30,20 +30,73 @@
 package com.taj.supertaxlawyer
 
 import java.io.File
-import scala.io.{Codec, Source}
+import scala.io.Codec
+import org.rogach.scallop.ScallopConf
 
 
 object Main extends App {
   val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
 
-  val file = "C:\\Users\\MBenesty\\Private\\GIT\\Super Tax Lawyer\\FEC_EXAMPLE\\FEC.txt"
+  val file = encodedFileFolder + File.separator + "tab.txt"
 
-  println(Source.fromFile(file)(Codec.ISO8859).getLines().next().getBytes.size)
 
-  val result2 = ColumnSizeCounter.compute(file, "\t", 22, ColumnSizeCounter.detectEncoding(file), false)
+  val opts = new ScallopConf(List("--columnSize", file, "--splitter", "TAB")) {
+    banner( """
+              | ____                          _____            _
+              |/ ___| _   _ _ __   ___ _ __  |_   _|_ ___  __ | |    __ ___      ___   _  ___ _ __
+              |\___ \| | | | '_ \ / _ \ '__|   | |/ _` \ \/ / | |   / _` \ \ /\ / / | | |/ _ \ '__|
+              | ___) | |_| | |_) |  __/ |      | | (_| |>  <  | |__| (_| |\ V  V /| |_| |  __/ |
+              ||____/ \__,_| .__/ \___|_|      |_|\__,_/_/\_\ |_____\__,_| \_/\_/  \__, |\___|_|
+              |            |_|                                                     |___/
+              |		""".stripMargin + s"""
 
-  println(result2)
+Super Tax Lawyer is a program to play with accounting exported as text files.
+ """)
+    val fileExist: String => Boolean = new File(_).exists()
+    val fileListExist: List[String] => Boolean = _.forall(fileExist)
 
+    val columnSize = opt[String]("columnSize", descr = "Print the detected encoding of each file provided.", validate = fileExist)
+    val encoding = opt[String]("encoding", descr = "Print the detected encoding of each file provided.", validate = fileExist)
+    val splitter = opt[String]("splitter", descr = "Character used to split a line in columns. Use TAB for tabulation and SPACE for space separators.")
+    val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
+
+
+    //val output = opt[String]("output", descr = "Path to the file where to save the result.", validate = !new File(_).exists())
+    val debug = toggle("debug", descrYes = "Display lots of debug information during the process.", descrNo = "Display minimum during the process (same as not using this argument).", default = Some(false), prefix = "no-")
+    val help = opt[Boolean]("help", descr = "Show this message.")
+    // val version = opt[Boolean]("version", noshort = true, descr = "Print program version.")
+    codependent(columnSize, splitter)
+
+    conflicts(columnSize, List(encoding, help /*, version*/))
+    conflicts(encoding, List(columnSize, splitter, columnCount, help /*, version*/))
+  }
+
+  val debug = opts.debug.get.getOrElse(false)
+  val optionEncoding = opts.encoding.get
+
+  optionEncoding match {
+    case Some(path) => println(ColumnSizeCounter.detectEncoding(path))
+    case None =>
+  }
+
+  val optionColumnCount = opts.columnCount.get
+  val optionSplitter = opts.splitter.get
+
+  val optionColumnSize = opts.columnSize.get
+  optionColumnSize match {
+    case Some(path) =>
+      val splitter: String = optionSplitter match {
+        case Some("TAB") => "\t"
+        case Some("SPACE") => " "
+        case Some(s: String) => s
+        case None => throw new IllegalArgumentException("No splitter provided.")
+      }
+
+      val encoding = ColumnSizeCounter.detectEncoding(path)
+      val columnCount = optionColumnCount.getOrElse(ColumnSizeCounter.columnCount(path, splitter, encoding))
+      println(ColumnSizeCounter.computeSize(path, splitter, columnCount, encoding, debug))
+    case _ =>
+  }
 
 }
