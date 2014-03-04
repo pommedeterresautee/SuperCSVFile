@@ -48,7 +48,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
   val semicolon = testContainer("semicolon.csv", 10, ";")
-  val tab = testContainer("tab.csv", 10, ";")
+  val tab = testContainer("tab.txt", 10, ";")
 
   /**
    * Clean all temp files before starting
