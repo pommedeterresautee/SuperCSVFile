@@ -29,9 +29,8 @@
 
 package com.taj.supertaxlawyer
 
-import java.io.File
-import scala.io.Codec
 import org.rogach.scallop.ScallopConf
+import java.io.File
 
 
 object Main extends App {
@@ -41,7 +40,7 @@ object Main extends App {
   val file = encodedFileFolder + File.separator + "tab.txt"
 
 
-  val opts = new ScallopConf(List("--columnSize", file, "--splitter", "TAB")) {
+  val opts = new ScallopConf(List("--columnSize", file, "--splitter", "TAB", "--output", testResourcesFolder+s"temp${File.separator}result")) {
     banner( """
               | ____                          _____            _
               |/ ___| _   _ _ __   ___ _ __  |_   _|_ ___  __ | |    __ ___      ___   _  ___ _ __
@@ -62,7 +61,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
     val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
 
 
-    //val output = opt[String]("output", descr = "Path to the file where to save the result.", validate = !new File(_).exists())
+    val output = opt[String]("output", descr = "Path to the file where to save the result.", validate = !new File(_).exists())
     val debug = toggle("debug", descrYes = "Display lots of debug information during the process.", descrNo = "Display minimum during the process (same as not using this argument).", default = Some(false), prefix = "no-")
     val help = opt[Boolean]("help", descr = "Show this message.")
     // val version = opt[Boolean]("version", noshort = true, descr = "Print program version.")
@@ -82,6 +81,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
 
   val optionColumnCount = opts.columnCount.get
   val optionSplitter = opts.splitter.get
+  val optionOutput = opts.output.get
 
   val optionColumnSize = opts.columnSize.get
   optionColumnSize match {
@@ -95,8 +95,13 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
 
       val encoding = ColumnSizeCounter.detectEncoding(path)
       val columnCount = optionColumnCount.getOrElse(ColumnSizeCounter.columnCount(path, splitter, encoding))
-      val result = ColumnSizeCounter.computeSize(path, splitter, columnCount, encoding, debug)
-      println(result.mkString(";"))
+      val result = ColumnSizeCounter.computeSize(path, splitter, columnCount, encoding, debug).mkString(";")
+      optionOutput match {
+        case Some(outputPath) =>
+          import scala.reflect.io.File
+          File(outputPath).writeAll(result)
+        case None => println(result)
+      }
     case _ =>
   }
 

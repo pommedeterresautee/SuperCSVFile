@@ -94,7 +94,7 @@ object ColumnSizeCounter {
   }
 
   /**
-   * Count the number of column in the first line of a text file.
+   * Count the number of columns in a text file.
    * @param path path to the file to study.
    * @param splitter String used to limit the columns.
    * @param codec encoding of the file
@@ -102,7 +102,7 @@ object ColumnSizeCounter {
    */
   def columnCount(path:String, splitter:String, codec:String):Int = {
     val buffer = Source.fromFile(path, codec)
-    val (numberOfColumns, numberOfLines) = buffer
+    val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)
       .toList
@@ -113,18 +113,19 @@ object ColumnSizeCounter {
     numberOfColumns
   }
 
+  /**
+   * Detects the encoding of a text file based on Heuristic analyze.
+   * @param path path to the file to analyze.
+   * @return the name of the encoding as a String.
+   */
   def detectEncoding(path:String):String = {
     val detector = new CharsetDetector()
-
     val byteData = new Array[Byte](1024 * 30)
-
     val is = new FileInputStream(path)
     is.read(byteData)
     is.close()
-
     detector.setText(byteData)
     val matcher = detector.detect()
-
     matcher.getName
   }
 }
@@ -208,5 +209,3 @@ class BlockAnalyzer(columnNumber: Int, splitter: String) extends Actor {
     //case _ => throw new IllegalStateException(s"Bad parameter sent to ${self.path}")
   }
 }
-
-
