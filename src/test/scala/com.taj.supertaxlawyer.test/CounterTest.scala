@@ -36,7 +36,7 @@ import akka.actor.ActorSystem
 import com.taj.supertaxlawyer.ColumnSizeCounter
 
 
-case class testContainer(path: String, columnCount: Int, splitter: String)
+case class testContainer(name: String, numberOfColumns: Int, columnCount:List[Int], splitter: String, encoding:String)
 
 /**
  * These tests are related to the count of columns in a text file.
@@ -47,8 +47,8 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
-  val semicolon = testContainer("semicolon.csv", 10, ";")
-  val tab = testContainer("tab.txt", 10, "\t")
+  val semicolon = testContainer("semicolon.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2")
+  val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), "\t", "ISO-8859-2")
 
   /**
    * Clean all temp files before starting
@@ -60,11 +60,18 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   Seq(semicolon, tab)
     .foreach {
     fileToTest =>
-      val file = new File(encodedFileFolder, fileToTest.path)
+      s"${fileToTest.name} related to the column size count" must {
+        val file = new File(encodedFileFolder, fileToTest.name)
 
-      s"" must {
-        val result = ColumnSizeCounter.computeSize(file.getAbsolutePath, fileToTest.splitter, fileToTest.columnCount, verbose = false)
-        println("result=" + result.toString())
+        "The encoding will be detected" in {
+          ColumnSizeCounter.detectEncoding(file.getAbsolutePath) should equal(fileToTest.encoding)
+        }
+
+        "The best size of columns will be determined" in {
+          val count = ColumnSizeCounter.computeSize(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, verbose = false)
+
+          count should equal(fileToTest.columnCount)
+        }
       }
   }
 

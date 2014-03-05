@@ -110,7 +110,7 @@ object ColumnSizeCounter {
   def detectEncoding(path:String):String = {
     val detector = new CharsetDetector()
 
-    val byteData = new Array[Byte](1024)
+    val byteData = new Array[Byte](1024 * 30)
 
     val is = new FileInputStream(path)
     is.read(byteData)

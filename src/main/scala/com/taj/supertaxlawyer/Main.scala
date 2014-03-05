@@ -95,7 +95,8 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
 
       val encoding = ColumnSizeCounter.detectEncoding(path)
       val columnCount = optionColumnCount.getOrElse(ColumnSizeCounter.columnCount(path, splitter, encoding))
-      println(ColumnSizeCounter.computeSize(path, splitter, columnCount, encoding, debug))
+      val result = ColumnSizeCounter.computeSize(path, splitter, columnCount, encoding, debug)
+      println(result.mkString(";"))
     case _ =>
   }
 
