@@ -48,6 +48,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
   val semicolon = testContainer("semicolon.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2")
+  val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2")
   val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), "\t", "ISO-8859-2")
 
   /**
@@ -57,14 +58,19 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
     super.beforeAll()
   }
 
-  Seq(semicolon, tab)
+  Seq(semicolon, semicolon_with_title, tab)
     .foreach {
     fileToTest =>
       s"${fileToTest.name} related to the column size count" must {
         val file = new File(encodedFileFolder, fileToTest.name)
 
         "The encoding will be detected" in {
-          ColumnSizeCounter.detectEncoding(file.getAbsolutePath) should equal(fileToTest.encoding)
+          val encoding = ColumnSizeCounter.detectEncoding(file.getAbsolutePath)
+          encoding should equal(fileToTest.encoding)
+        }
+
+        "The number of columns is computed" in {
+          ColumnSizeCounter.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
         }
 
         "The best size of columns will be determined" in {

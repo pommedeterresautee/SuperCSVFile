@@ -102,9 +102,15 @@ object ColumnSizeCounter {
    */
   def columnCount(path:String, splitter:String, codec:String):Int = {
     val buffer = Source.fromFile(path, codec)
-    val count = buffer.getLines().next().split(splitter).size
+    val (numberOfColumns, numberOfLines) = buffer
+      .getLines()
+      .take(1000)
+      .toList
+      .groupBy(line => line.split(splitter).size)
+      .map{case (numberOfTimes, listOfColumns) => (numberOfTimes, listOfColumns.size)}
+      .maxBy{case (numberOfTimes, numberOfColumnsPerLine) => numberOfTimes}
     buffer.close()
-    count
+    numberOfColumns
   }
 
   def detectEncoding(path:String):String = {
