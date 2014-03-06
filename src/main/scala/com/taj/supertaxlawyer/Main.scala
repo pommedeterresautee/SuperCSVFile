@@ -31,6 +31,7 @@ package com.taj.supertaxlawyer
 
 import org.rogach.scallop.ScallopConf
 import java.io.File
+import com.taj.supertaxlawyer.Column.SizeMain
 
 
 object Main extends App {
@@ -74,7 +75,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
   val optionEncoding = opts.encoding.get
 
   optionEncoding match {
-    case Some(path) => println(ColumnSizeCounter.detectEncoding(path))
+    case Some(path) => println(SizeMain.detectEncoding(path))
     case None =>
   }
 
@@ -92,9 +93,9 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
         case None => throw new IllegalArgumentException("No splitter provided.")
       }
 
-      val encoding = ColumnSizeCounter.detectEncoding(path)
-      val columnCount = optionColumnCount.getOrElse(ColumnSizeCounter.columnCount(path, splitter, encoding))
-      val result = ColumnSizeCounter.computeSize(path, splitter, columnCount, encoding, debug).mkString(";")
+      val encoding = SizeMain.detectEncoding(path)
+      val columnCount = optionColumnCount.getOrElse(SizeMain.columnCount(path, splitter, encoding))
+      val result = SizeMain.computeSize(path, splitter, columnCount, encoding, debug).mkString(";")
       optionOutput match {
         case Some(outputPath) =>
           import scala.reflect.io.File
