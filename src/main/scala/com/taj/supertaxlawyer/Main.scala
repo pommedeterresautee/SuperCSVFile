@@ -34,13 +34,13 @@ import java.io.File
 
 
 object Main extends App {
-  val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
-  val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
+//  val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
+//  val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
+//
+//  val file = "E:\\ABERCROMBIE_2011.bis"
 
-  val file = encodedFileFolder + File.separator + "tab.txt"
 
-
-  val opts = new ScallopConf(List("--columnSize", file, "--splitter", "TAB", "--output", testResourcesFolder+s"temp${File.separator}result")) {
+  val opts = new ScallopConf(args) {
     banner( """
               | ____                          _____            _
               |/ ___| _   _ _ __   ___ _ __  |_   _|_ ___  __ | |    __ ___      ___   _  ___ _ __
@@ -59,7 +59,6 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
     val encoding = opt[String]("encoding", descr = "Print the detected encoding of each file provided.", validate = fileExist)
     val splitter = opt[String]("splitter", descr = "Character used to split a line in columns. Use TAB for tabulation and SPACE for space separators.")
     val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
-
 
     val output = opt[String]("output", descr = "Path to the file where to save the result.", validate = !new File(_).exists())
     val debug = toggle("debug", descrYes = "Display lots of debug information during the process.", descrNo = "Display minimum during the process (same as not using this argument).", default = Some(false), prefix = "no-")
@@ -104,5 +103,4 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
       }
     case _ =>
   }
-
 }
