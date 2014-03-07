@@ -30,10 +30,12 @@
 package com.taj.supertaxlawyer.test
 
 import org.scalatest._
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.testkit.{TestProbe, ImplicitSender, TestKit}
 import java.io.File
-import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.ColumnSize.SizeMain
+import akka.actor.{Props, ActorSystem}
+import com.taj.supertaxlawyer.ColumnSize.{SizeActor, SizeMain}
+import com.taj.supertaxlawyer.{Distributor, ActorContainer}
+import com.taj.supertaxlawyer.ActorMessages.Start
 
 
 case class testContainer(name: String, numberOfColumns: Int, columnCount: List[Int], splitter: String, encoding: String)
@@ -74,9 +76,17 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
         }
 
         "The best size of columns will be determined" in {
-          val count = SizeMain.computeSize(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, verbose = false)
+          //val actorRef = TestActorRef[SimpleActor]
 
-          count should equal(fileToTest.columnCount)
+          //val count = SizeMain.computeSize(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, None, verbose = false)
+
+          val myTestActor = TestProbe()
+
+          val listOfWorkers = List(ActorContainer(SizeActor.actorFactory(system, None, fileToTest.numberOfColumns, fileToTest.splitter, Some(myTestActor, file.getName)), isRooter = true))
+          val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, false)), name = "DistributorWorker_" + file.getName)
+          distributor ! Start()
+
+          myTestActor.expectMsg(fileToTest.columnCount)
         }
       }
   }
@@ -86,6 +96,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
    * Delete all temp files.
    */
   override def afterAll(): Unit = {
+    TestKit.shutdownActorSystem(system)
     system.shutdown()
     super.afterAll()
   }

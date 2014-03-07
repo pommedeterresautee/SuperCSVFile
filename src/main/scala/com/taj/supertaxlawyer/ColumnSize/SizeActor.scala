@@ -37,6 +37,7 @@ import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import com.taj.supertaxlawyer.ActorMessages.NextBlock
 import com.taj.supertaxlawyer.ColumnSize.SizeActor.Finished
 import akka.routing.RoundRobinRouter
+import akka.testkit.TestProbe
 
 
 object SizeActor {
@@ -46,9 +47,11 @@ object SizeActor {
 
   case class FinalResult(result: List[Int])
 
-  def actorFactory(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String) = {
+  def actorFactory(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None) = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
-    val resultAggregator = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output)), name = "ResultAgregator")
+    val name = "ResultAgregator" + testActor.map(_._2).getOrElse("")
+    println(name)
+    val resultAggregator = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output, testActor)), name)
     system.actorOf(Props(new SizeActor(resultAggregator, output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "MasterBlockAnalyzer")
   }
 }
@@ -78,7 +81,7 @@ class SizeActor(resultAggregator: ActorRef, output: Option[String], columnQuanti
   }
 }
 
-class ResultSizeColumnActor(workerQuantity: Int, output: Option[String]) extends Actor {
+class ResultSizeColumnActor(workerQuantity: Int, output: Option[String], testActor: Option[(TestProbe, String)]) extends Actor {
   var bestSizes: Option[List[Int]] = None
   var workerFinished = 0
 
@@ -93,11 +96,17 @@ class ResultSizeColumnActor(workerQuantity: Int, output: Option[String]) extends
       workerFinished += 1
       if (workerFinished == workerQuantity) {
         val stringResult = bestSizes.get.mkString(";")
-        output match {
-          case Some(outputPath) =>
-            import scala.reflect.io.File
-            File(outputPath).writeAll(stringResult)
-          case None => println(stringResult)
+        testActor match {
+          case Some(actorFortTest) =>
+            println("send result to test actor")
+            actorFortTest._1.ref ! bestSizes.get
+          case None =>
+            output match {
+              case Some(outputPath) =>
+                import scala.reflect.io.File
+                File(outputPath).writeAll(stringResult)
+              case None => println(stringResult)
+            }
         }
       }
   }

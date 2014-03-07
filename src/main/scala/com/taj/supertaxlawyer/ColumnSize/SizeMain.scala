@@ -42,7 +42,7 @@ import com.taj.supertaxlawyer.{ActorContainer, Distributor}
 object SizeMain {
 
   /**
-   * Compute the size of each column in the file.
+   * Compute the size of each column in the text file.
    * @param path path to the text file.
    * @param splitter Char or String used to limit the columns.
    * @param expectedColumnQuantity number of columns expected per line. Any line with a different number of column won't be tested.
@@ -51,12 +51,9 @@ object SizeMain {
    * @return A list of column sizes.
    */
   def computeSize(path: String, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean) {
-    val numberOfLinesPerMessage = 200
-
     val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
-    //val resultManager = system.actorOf(Props(new ActorResult(output)), name = "ResultManager")
     val listOfWorkers = List(ActorContainer(SizeActor.actorFactory(system, output, expectedColumnQuantity, splitter), isRooter = true))
-    val distributor = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, numberOfLinesPerMessage, codec, listOfWorkers, verbose)), name = "DistributorWorker")
+    val distributor = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)), name = "DistributorWorker")
     distributor ! Start()
   }
 

@@ -41,14 +41,14 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 /**
  * Read the file and send the work.
  * @param path path to the file to analyze.
- * @param sizeMessage number of lines to send to each worker.
- * @param columnNumber expected number of columns.
+ * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean) extends Actor {
+class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean) extends Actor {
+  val numberOfLinesPerMessage = 200
   val mBuffer = Source.fromFile(path)(codec)
-  val mSource = mBuffer.getLines().grouped(sizeMessage)
+  val mSource = mBuffer.getLines().grouped(numberOfLinesPerMessage)
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
-  var bestSizes = List.fill(columnNumber)(0)
+  var bestSizes = List.fill(columnNumberExpected)(0)
   var operationFinished = false
 
   override def receive: Actor.Receive = {
@@ -84,7 +84,7 @@ class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage
       mListWatchedRoutees -= ref
       if (mListWatchedRoutees.isEmpty) {
         if (verbose) println("*** Everybody is gone  ***")
-        context.system.shutdown()
+        //context.system.shutdown()
       }
     case t =>
       throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
