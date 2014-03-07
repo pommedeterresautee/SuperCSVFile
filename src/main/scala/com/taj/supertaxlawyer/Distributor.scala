@@ -32,11 +32,11 @@ package com.taj.supertaxlawyer
 import scala.io.{Source, Codec}
 import akka.actor._
 import scala.collection.mutable.ArrayBuffer
-import akka.routing.{Broadcast, RoundRobinRouter}
-import scala.Some
 import akka.routing.Broadcast
-import com.taj.supertaxlawyer.CommonTools._
-import com.taj.supertaxlawyer.Column.SizeActor
+import com.taj.supertaxlawyer.ActorMessages._
+
+
+case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 /**
  * Read the file and send the work.
@@ -44,51 +44,51 @@ import com.taj.supertaxlawyer.Column.SizeActor
  * @param sizeMessage number of lines to send to each worker.
  * @param columnNumber expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage: Int, codec: Codec, verbose: Boolean) extends Actor {
+class Distributor(path: String, splitter: String, columnNumber: Int, sizeMessage: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean) extends Actor {
   val mBuffer = Source.fromFile(path)(codec)
   val mSource = mBuffer.getLines().grouped(sizeMessage)
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var bestSizes = List.fill(columnNumber)(0)
-  var mWorkerMaster: Option[ActorRef] = None
-  var mOriginalSender: Option[ActorRef] = None
   var operationFinished = false
 
   override def receive: Actor.Receive = {
     case Start() =>
-      if (verbose) println("*** Start treatment ***")
-      mOriginalSender = Some(sender)
-      mWorkerMaster = Some(context.actorOf(Props(new SizeActor(columnNumber, splitter)).withRouter(RoundRobinRouter(Runtime.getRuntime.availableProcessors)), name = "MasterBlockAnalyzer"))
       if (verbose) println(s"*** Watching ${sender.path} ***")
-      context.watch(mWorkerMaster.get) // Watch the router
-      mListWatchedRoutees += mWorkerMaster.get
-      mWorkerMaster.get ! Broadcast(RegisterYourself()) // Will watch the rootees
-    case Register() =>
-      if (verbose) println(s"*** Register rootee ${sender.path} ***")
+      workers.foreach {
+        actor =>
+          context.watch(actor.actor)
+          mListWatchedRoutees += actor.actor
+          if (actor.isRooter) actor.actor ! Broadcast(RegisterYourself()) // Will watch the rootees
+      }
+      self ! NextBlock()
+    case RegisterMe() =>
+    if (verbose) println(s"*** Register rootee ${sender.path} ***")
       mListWatchedRoutees += sender
       context.watch(sender)
-    case Result(columnSizes) if columnSizes.size != columnNumber =>
-      throw new IllegalStateException(s"Incorrect number of column: ${columnSizes.size} instead of $columnNumber")
-    case Result(columnSizes) => bestSizes = mBiggerColumn(bestSizes, columnSizes)
-      if (verbose) println(s"*** get result from ${sender.path} ***")
-      if (mSource.hasNext) sender ! Lines(mSource.next())
+    case NextBlock() =>
+      if (verbose) println(s"*** Send lines ***")
+      if (mSource.hasNext) {
+        workers.filter(!_.isRooter).foreach(_.actor ! Lines(mSource.next()))
+        workers.filter(_.isRooter).foreach(_.actor ! Broadcast(Lines(mSource.next())))
+      }
       else {
         if (!operationFinished) {
-          if (verbose) println(s"*** Send poison pill to ${mWorkerMaster.get.path} ***")
+          if (verbose) println(s"*** Send poison pill to all workers ***")
           operationFinished = true
-          mWorkerMaster.get ! Broadcast(PoisonPill)
+          workers.filter(_.isRooter).map(_.actor).foreach(_ ! Broadcast(PoisonPill))
+          workers.filter(!_.isRooter).map(_.actor).foreach(_ ! PoisonPill)
         }
       }
     case Terminated(ref) =>
       if (verbose) println(s"*** Rootee ${sender.path} is dead ***")
       mListWatchedRoutees -= ref
-      if (verbose) println(s"*** There are still ${mListWatchedRoutees.size} rootees alive ***")
       if (mListWatchedRoutees.isEmpty) {
-        mOriginalSender.get ! Result(bestSizes)
+        if (verbose) println("*** Everybody is gone  ***")
+        context.system.shutdown()
       }
     case t =>
       throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
   }
-
 
   override def postStop(): Unit = {
     mBuffer.close()

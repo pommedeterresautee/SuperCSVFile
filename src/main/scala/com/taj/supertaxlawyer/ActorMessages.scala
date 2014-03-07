@@ -31,8 +31,7 @@ package com.taj.supertaxlawyer
 
 import akka.actor.ActorRef
 
-object CommonTools {
-  val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map(tuple => tuple._1 max tuple._2)
+object ActorMessages {
 
   case class Lines(blockToAnalyze: Seq[String])
 
@@ -40,9 +39,13 @@ object CommonTools {
 
   case class Start()
 
-  case class Register()
+  case class RegisterMe()
 
   case class RegisterYourself()
+
+  case class NextBlock()
+
+  case class Entry(accountNr: Int, label: String, debit: Long, credit: Long)
 
   case class TestToApply(actor:ActorRef, rooter:Boolean)
 

@@ -33,10 +33,10 @@ import org.scalatest._
 import akka.testkit.{ImplicitSender, TestKit}
 import java.io.File
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.Column.SizeMain
+import com.taj.supertaxlawyer.ColumnSize.SizeMain
 
 
-case class testContainer(name: String, numberOfColumns: Int, columnCount:List[Int], splitter: String, encoding:String)
+case class testContainer(name: String, numberOfColumns: Int, columnCount: List[Int], splitter: String, encoding: String)
 
 /**
  * These tests are related to the count of columns in a text file.

@@ -27,18 +27,14 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer.Column
+package com.taj.supertaxlawyer.ColumnSize
 
 import scala.io.Source
 import akka.actor._
-import akka.util.Timeout
-import java.util.concurrent.TimeUnit
-import scala.concurrent.Await
 import com.ibm.icu.text.CharsetDetector
 import java.io.FileInputStream
-import com.taj.supertaxlawyer.CommonTools.Result
-import com.taj.supertaxlawyer.CommonTools.Start
-import com.taj.supertaxlawyer.Distributor
+import com.taj.supertaxlawyer.ActorMessages.Start
+import com.taj.supertaxlawyer.{ActorContainer, Distributor}
 
 /**
  * Operation related to the count of columns in a text file.
@@ -54,20 +50,14 @@ object SizeMain {
    * @param verbose display more information during the process.
    * @return A list of column sizes.
    */
-  def computeSize(path: String, splitter: String, expectedColumnQuantity: Int, codec: String, verbose: Boolean): List[Int] = {
-    import akka.pattern.ask
-    implicit val timeout = Timeout(2, TimeUnit.MINUTES)
+  def computeSize(path: String, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean) {
     val numberOfLinesPerMessage = 200
 
     val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
-    val computer = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, numberOfLinesPerMessage, codec, verbose)), name = "DistributorWorker")
-    val result = Await.result(computer ? Start(), timeout.duration) match {
-      case Result(columnSizes) =>
-        system.shutdown()
-        columnSizes
-      case t => throw new IllegalArgumentException("Failed to retrieve result from Actor during the check. " + t.toString)
-    }
-    result
+    //val resultManager = system.actorOf(Props(new ActorResult(output)), name = "ResultManager")
+    val listOfWorkers = List(ActorContainer(SizeActor.actorFactory(system, output, expectedColumnQuantity, splitter), isRooter = true))
+    val distributor = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, numberOfLinesPerMessage, codec, listOfWorkers, verbose)), name = "DistributorWorker")
+    distributor ! Start()
   }
 
   /**

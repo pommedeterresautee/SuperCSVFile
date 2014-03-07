@@ -31,17 +31,17 @@ package com.taj.supertaxlawyer
 
 import org.rogach.scallop.ScallopConf
 import java.io.File
-import com.taj.supertaxlawyer.Column.SizeMain
+import com.taj.supertaxlawyer.ColumnSize.SizeMain
 
 
 object Main extends App {
-//  val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
-//  val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
-//
-//  val file = "E:\\ABERCROMBIE_2011.bis"
+  val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
+  val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
+
+  val file: String = encodedFileFolder + "semicolon.csv"
 
 
-  val opts = new ScallopConf(args) {
+  val opts = new ScallopConf(List("--columnSize", file, "--splitter", ";")) {
     banner( """
               | ____                          _____            _
               |/ ___| _   _ _ __   ___ _ __  |_   _|_ ___  __ | |    __ ___      ___   _  ___ _ __
@@ -90,18 +90,12 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
         case Some("TAB") => "\t"
         case Some("SPACE") => " "
         case Some(s: String) => s
-        case None => throw new IllegalArgumentException("No splitter provided.")
+        case None => throw new IllegalArgumentException("No splitter provided.") // impossible in theory because blocked by ScalaOp
       }
 
       val encoding = SizeMain.detectEncoding(path)
       val columnCount = optionColumnCount.getOrElse(SizeMain.columnCount(path, splitter, encoding))
-      val result = SizeMain.computeSize(path, splitter, columnCount, encoding, debug).mkString(";")
-      optionOutput match {
-        case Some(outputPath) =>
-          import scala.reflect.io.File
-          File(outputPath).writeAll(result)
-        case None => println(result)
-      }
+      SizeMain.computeSize(path, splitter, columnCount, encoding, optionOutput, debug)
     case _ =>
   }
 }
