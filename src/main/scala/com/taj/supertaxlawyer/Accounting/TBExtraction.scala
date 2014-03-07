@@ -27,24 +27,11 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer
+package com.taj.supertaxlawyer.Accounting
 
-import akka.actor.ActorRef
-
-object ActorMessages {
-
-  case class Lines(blockToAnalyze: Seq[String])
-
-  case class Start()
-
-  case class RegisterMe()
-
-  case class RegisterYourself()
-
-  case class ReadNextBlock()
-
-  case class AccountEntry(accountNr: Int, label: String, debit: Long, credit: Long)
-
-  case class TestToApply(actor:ActorRef, rooter:Boolean)
+/**
+ * Extract a TB from an electronic accounting text file.
+ */
+class TBExtraction {
 
 }

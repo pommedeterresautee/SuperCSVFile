@@ -27,25 +27,20 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer.ColumnSize
+package com.taj.supertaxlawyer.FileStructure
 
 import akka.actor._
-import com.taj.supertaxlawyer.ActorMessages.Result
 import com.taj.supertaxlawyer.ActorMessages.RegisterMe
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
-import com.taj.supertaxlawyer.ActorMessages.NextBlock
-import com.taj.supertaxlawyer.ColumnSize.SizeActor.Finished
+import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import akka.routing.RoundRobinRouter
 import akka.testkit.TestProbe
+import com.taj.supertaxlawyer.FileStructure.SizeActorMessages._
 
 
 object SizeActor {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
-
-  case class Finished()
-
-  case class FinalResult(result: List[Int])
 
   def actorFactory(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None) = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
@@ -53,6 +48,17 @@ object SizeActor {
     val resultAggregator = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output, testActor)), name)
     system.actorOf(Props(new SizeActor(resultAggregator, output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "MasterBlockAnalyzer")
   }
+}
+
+/**
+ * Specific actor messages to the column size computer.
+ */
+private object SizeActorMessages {
+
+  case class Result(columnSizes: List[Int])
+
+  case class Finished()
+
 }
 
 /**
@@ -72,7 +78,7 @@ class SizeActor(resultAggregator: ActorRef, output: Option[String], columnQuanti
         .map(_.map(_.size).toList) // Change to a list of size of columns
         .foldLeft(emptyList)(SizeActor.mBiggerColumn) // Mix the best results
       resultAggregator ! Result(blockResult)
-      sender ! NextBlock() // Ask for the next line
+      sender ! ReadNextBlock() // Ask for the next line
   }
 
   override def postStop(): Unit = {
@@ -80,6 +86,12 @@ class SizeActor(resultAggregator: ActorRef, output: Option[String], columnQuanti
   }
 }
 
+/**
+ * Receive the result of each analyze, choose the best result and at the end of the process, display the result, or save it to a file.
+ * @param workerQuantity Number of workers.
+ * @param output path to a file where to save the result.
+ * @param testActor optional test actor to test the actor ! (marvellous explanation)
+ */
 class ResultSizeColumnActor(workerQuantity: Int, output: Option[String], testActor: Option[(TestProbe, String)]) extends Actor {
   var bestSizes: Option[List[Int]] = None
   var workerFinished = 0
@@ -96,15 +108,15 @@ class ResultSizeColumnActor(workerQuantity: Int, output: Option[String], testAct
       if (workerFinished == workerQuantity) {
         val stringResult = bestSizes.get.mkString(";")
         testActor match {
-          case Some(actorFortTest) =>
-            println("send result to test actor")
+          case Some(actorFortTest) => // a test actor is provided
+          println("send result to test actor")
             actorFortTest._1.ref ! bestSizes.get
           case None =>
             output match {
-              case Some(outputPath) =>
-                import scala.reflect.io.File
+              case Some(outputPath) => // a path to save the result in a file is provided
+              import scala.reflect.io.File
                 File(outputPath).writeAll(stringResult)
-              case None => println(stringResult)
+              case None => println(stringResult) // no path provided => display the result
             }
         }
       }

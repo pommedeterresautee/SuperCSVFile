@@ -33,7 +33,7 @@ import org.scalatest._
 import akka.testkit.{TestProbe, ImplicitSender, TestKit}
 import java.io.File
 import akka.actor.{Props, ActorSystem}
-import com.taj.supertaxlawyer.ColumnSize.{SizeActor, SizeMain}
+import com.taj.supertaxlawyer.FileStructure.{SizeActor, SizeMain}
 import com.taj.supertaxlawyer.{Distributor, ActorContainer}
 import com.taj.supertaxlawyer.ActorMessages.Start
 

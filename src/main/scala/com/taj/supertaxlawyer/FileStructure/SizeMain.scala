@@ -27,7 +27,7 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer.ColumnSize
+package com.taj.supertaxlawyer.FileStructure
 
 import scala.io.Source
 import akka.actor._

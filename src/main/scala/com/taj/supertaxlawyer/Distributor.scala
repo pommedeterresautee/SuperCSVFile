@@ -32,8 +32,13 @@ package com.taj.supertaxlawyer
 import scala.io.{Source, Codec}
 import akka.actor._
 import scala.collection.mutable.ArrayBuffer
+import com.taj.supertaxlawyer.ActorMessages.RegisterMe
+import akka.actor.Terminated
+import com.taj.supertaxlawyer.ActorMessages.Lines
+import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
+import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.routing.Broadcast
-import com.taj.supertaxlawyer.ActorMessages._
+import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
@@ -55,29 +60,34 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
     case Start() =>
       if (verbose) println(s"*** Watching ${sender.path} ***")
       workers.foreach {
-        //TODO can be improved in one command
         actor =>
           context.watch(actor.actor)
           mListWatchedRoutees += actor.actor
           if (actor.isRooter) actor.actor ! Broadcast(RegisterYourself()) // Will watch the rootees
       }
-      self ! NextBlock()
+      self ! ReadNextBlock() // Start the process of reading the file
     case RegisterMe() =>
     if (verbose) println(s"*** Register rootee ${sender.path} ***")
       mListWatchedRoutees += sender
       context.watch(sender)
-    case NextBlock() =>
+    case ReadNextBlock() =>
       if (verbose) println(s"*** Send lines ***")
       if (mSource.hasNext) {
-        workers.filter(!_.isRooter).foreach(_.actor ! Lines(mSource.next())) //TODO can be improved in one command
-        workers.filter(_.isRooter).foreach(_.actor ! Broadcast(Lines(mSource.next())))
+        workers.partition(_.isRooter) match {
+          case (withRooter, withoutRooter) =>
+            withRooter.foreach(_.actor ! Lines(mSource.next()))
+            withoutRooter.foreach(_.actor ! Broadcast(Lines(mSource.next())))
+        }
       }
       else {
         if (!operationFinished) {
           if (verbose) println(s"*** Send poison pill to all workers ***")
           operationFinished = true
-          workers.filter(_.isRooter).map(_.actor).foreach(_ ! Broadcast(PoisonPill)) //TODO can be improved in one command
-          workers.filter(!_.isRooter).map(_.actor).foreach(_ ! PoisonPill)
+          workers.partition(_.isRooter) match {
+            case (withRooter, withoutRooter) =>
+              withRooter.foreach(_.actor ! PoisonPill)
+              withoutRooter.foreach(_.actor ! Broadcast(PoisonPill))
+          }
         }
       }
     case Terminated(ref) =>

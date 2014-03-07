@@ -31,7 +31,7 @@ package com.taj.supertaxlawyer
 
 import org.rogach.scallop.ScallopConf
 import java.io.File
-import com.taj.supertaxlawyer.ColumnSize.SizeMain
+import com.taj.supertaxlawyer.FileStructure.SizeMain
 
 
 object Main extends App {
