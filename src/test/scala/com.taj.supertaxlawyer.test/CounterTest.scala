@@ -76,14 +76,10 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
         }
 
         "The best size of columns will be determined" in {
-          //val actorRef = TestActorRef[SimpleActor]
-
-          //val count = SizeMain.computeSize(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, None, verbose = false)
-
           val myTestActor = TestProbe()
 
           val listOfWorkers = List(ActorContainer(SizeActor.actorFactory(system, None, fileToTest.numberOfColumns, fileToTest.splitter, Some(myTestActor, file.getName)), isRooter = true))
-          val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, false)), name = "DistributorWorker_" + file.getName)
+          val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, verbose = false, stopSystemAtTheEnd = false)), name = "DistributorWorker_" + file.getName)
           distributor ! Start()
 
           myTestActor.expectMsg(fileToTest.columnCount)

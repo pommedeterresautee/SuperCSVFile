@@ -50,7 +50,6 @@ object SizeActor {
   def actorFactory(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None) = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
     val name = "ResultAgregator" + testActor.map(_._2).getOrElse("")
-    println(name)
     val resultAggregator = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output, testActor)), name)
     system.actorOf(Props(new SizeActor(resultAggregator, output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "MasterBlockAnalyzer")
   }

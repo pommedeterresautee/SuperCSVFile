@@ -43,7 +43,7 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
  * @param path path to the file to analyze.
  * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean) extends Actor {
+class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean = true) extends Actor {
   val numberOfLinesPerMessage = 200
   val mBuffer = Source.fromFile(path)(codec)
   val mSource = mBuffer.getLines().grouped(numberOfLinesPerMessage)
@@ -55,6 +55,7 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
     case Start() =>
       if (verbose) println(s"*** Watching ${sender.path} ***")
       workers.foreach {
+        //TODO can be improved in one command
         actor =>
           context.watch(actor.actor)
           mListWatchedRoutees += actor.actor
@@ -68,14 +69,14 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
     case NextBlock() =>
       if (verbose) println(s"*** Send lines ***")
       if (mSource.hasNext) {
-        workers.filter(!_.isRooter).foreach(_.actor ! Lines(mSource.next()))
+        workers.filter(!_.isRooter).foreach(_.actor ! Lines(mSource.next())) //TODO can be improved in one command
         workers.filter(_.isRooter).foreach(_.actor ! Broadcast(Lines(mSource.next())))
       }
       else {
         if (!operationFinished) {
           if (verbose) println(s"*** Send poison pill to all workers ***")
           operationFinished = true
-          workers.filter(_.isRooter).map(_.actor).foreach(_ ! Broadcast(PoisonPill))
+          workers.filter(_.isRooter).map(_.actor).foreach(_ ! Broadcast(PoisonPill)) //TODO can be improved in one command
           workers.filter(!_.isRooter).map(_.actor).foreach(_ ! PoisonPill)
         }
       }
@@ -84,7 +85,7 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
       mListWatchedRoutees -= ref
       if (mListWatchedRoutees.isEmpty) {
         if (verbose) println("*** Everybody is gone  ***")
-        //context.system.shutdown()
+        if (stopSystemAtTheEnd) context.system.shutdown()
       }
     case t =>
       throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
