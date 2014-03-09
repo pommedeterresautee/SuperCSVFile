@@ -43,7 +43,7 @@ import com.taj.supertaxlawyer.ActorContainer
 object SizeActor {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
-  def apply(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None): ActorContainer = {
+  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None)(implicit system: ActorSystem): ActorContainer = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
     val name = "ResultAggregator" + testActor.map(_._2).getOrElse("")
     val resultAggregator = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output, testActor)), name)

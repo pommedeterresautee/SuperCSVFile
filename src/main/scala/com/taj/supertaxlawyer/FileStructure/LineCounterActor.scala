@@ -9,7 +9,7 @@ import com.taj.supertaxlawyer.ActorContainer
  */
 object LineCounterActor {
 
-  def apply(system: ActorSystem, output: Option[String]): ActorContainer = ActorContainer(system.actorOf(Props(new LineCounterActor(output)), name = "LineCounter"), isRooter = false)
+  def apply(output: Option[String])(implicit system: ActorSystem): ActorContainer = ActorContainer(system.actorOf(Props(new LineCounterActor(output)), name = "LineCounter"), isRooter = false)
 }
 
 /**

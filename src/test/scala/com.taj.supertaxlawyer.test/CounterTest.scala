@@ -32,7 +32,7 @@ package com.taj.supertaxlawyer.test
 import org.scalatest._
 import akka.testkit.{TestProbe, ImplicitSender, TestKit}
 import java.io.File
-import akka.actor.{Props, ActorSystem}
+import akka.actor.ActorSystem
 import com.taj.supertaxlawyer.FileStructure.{LineCounterActor, SizeActor, SizeMain}
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
@@ -78,10 +78,10 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
         "The best size of columns will be determined" in {
           val myTestActor: TestProbe = TestProbe()
 
-          val listOfWorkers = List(SizeActor(system, None, fileToTest.numberOfColumns,
+          val listOfWorkers = List(SizeActor(None, fileToTest.numberOfColumns,
             fileToTest.splitter, Some(myTestActor, file.getName)),
-            LineCounterActor(system, None))
-          val distributor = system.actorOf(Props(Distributor(file.getAbsolutePath, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, verbose = false, stopSystemAtTheEnd = false)), name = "DistributorWorker_" + file.getName)
+            LineCounterActor(None))
+          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, verbose = false, stopSystemAtTheEnd = false)
           distributor ! Start()
 
           myTestActor.expectMsg(fileToTest.columnCount)

@@ -32,9 +32,9 @@ package com.taj.supertaxlawyer.FileStructure
 import scala.io.Source
 import akka.actor._
 import com.ibm.icu.text.CharsetDetector
-import java.io.FileInputStream
+import java.io.{File, FileInputStream}
 import com.taj.supertaxlawyer.ActorMessages.Start
-import com.taj.supertaxlawyer.Distributor
+import com.taj.supertaxlawyer.{ActorContainer, Distributor}
 
 /**
  * Operation related to the count of columns in a text file.
@@ -50,10 +50,10 @@ object SizeMain {
    * @param verbose display more information during the process.
    * @return A list of column sizes.
    */
-  def computeSize(path: String, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean) {
-    val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
-    val listOfWorkers = List(SizeActor(system, output, expectedColumnQuantity, splitter), LineCounterActor(system, output))
-    val distributor = system.actorOf(Props(Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)), name = "DistributorWorker")
+  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean) {
+    implicit val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
+    val listOfWorkers: List[ActorContainer] = List(SizeActor(output, expectedColumnQuantity, splitter), LineCounterActor(output))
+    val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)
     distributor ! Start()
   }
 

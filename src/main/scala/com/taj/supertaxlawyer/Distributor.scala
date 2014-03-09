@@ -39,12 +39,14 @@ import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import akka.routing.Broadcast
+import java.io.File
 
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
-  def apply(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean = true) = new Distributor(path, splitter, columnNumberExpected, codec, workers, verbose, stopSystemAtTheEnd)
+
+  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean = true)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, verbose, stopSystemAtTheEnd)), name = s"Distributor_${file.getName}")
 }
 
 

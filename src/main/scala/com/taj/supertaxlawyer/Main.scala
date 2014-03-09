@@ -93,9 +93,11 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
         case None => throw new IllegalArgumentException("No splitter provided.") // impossible in theory because blocked by ScalaOp
       }
 
+      val file = new File(path)
+
       val encoding = SizeMain.detectEncoding(path)
       val columnCount = optionColumnCount.getOrElse(SizeMain.columnCount(path, splitter, encoding))
-      SizeMain.computeSize(path, splitter, columnCount, encoding, optionOutput, debug)
+      SizeMain.computeSize(file, splitter, columnCount, encoding, optionOutput, debug)
     case _ =>
   }
 }
