@@ -39,7 +39,7 @@ import com.taj.supertaxlawyer.{ActorContainer, Distributor}
 /**
  * Operation related to the count of columns in a text file.
  */
-object SizeMain {
+object FileSizeTools {
 
   /**
    * Compute the size of each column in the text file.
@@ -50,9 +50,13 @@ object SizeMain {
    * @param verbose display more information during the process.
    * @return A list of column sizes.
    */
-  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean) {
-    implicit val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
-    val listOfWorkers: List[ActorContainer] = List(SizeActor(output, expectedColumnQuantity, splitter), LineCounterActor(output))
+  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean = false) {
+    implicit val system: ActorSystem = ActorSystem("ActorSystemComputation")
+    val listOfWorkers: List[ActorContainer] = List(
+      SizeActor(output, expectedColumnQuantity, splitter),
+      LineCounterActor(output) /*,
+      ExtractEntry(expectedColumnQuantity, splitter)*/
+    )
     val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)
     distributor ! Start()
   }

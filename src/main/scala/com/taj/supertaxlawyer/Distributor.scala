@@ -74,14 +74,14 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
       }
       self ! ReadNextBlock() // Start the process of reading the file
     case RegisterMe() =>
-    if (verbose) println(s"*** Register rootee ${sender.path} ***")
+      if (verbose) println(s"*** Register rootee ${sender.path} ***")
       mListWatchedRoutees += sender
       context.watch(sender)
     case ReadNextBlock() =>
       if (verbose) println(s"*** Send lines ***")
       if (mSource.hasNext) {
-        val lines = mSource.next()
-        workers.foreach(_.actor ! Lines(lines))
+        val nextLinesBlock = mSource.next()
+        workers.foreach(_.actor ! Lines(nextLinesBlock))
       }
       else {
         if (!operationFinished) {

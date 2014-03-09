@@ -31,7 +31,7 @@ package com.taj.supertaxlawyer
 
 import org.rogach.scallop.ScallopConf
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.SizeMain
+import com.taj.supertaxlawyer.FileStructure.FileSizeTools
 
 
 object Main extends App {
@@ -75,7 +75,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
   val optionEncoding = opts.encoding.get
 
   optionEncoding match {
-    case Some(path) => println(SizeMain.detectEncoding(path))
+    case Some(path) => println(FileSizeTools.detectEncoding(path))
     case None =>
   }
 
@@ -95,9 +95,9 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
 
       val file = new File(path)
 
-      val encoding = SizeMain.detectEncoding(path)
-      val columnCount = optionColumnCount.getOrElse(SizeMain.columnCount(path, splitter, encoding))
-      SizeMain.computeSize(file, splitter, columnCount, encoding, optionOutput, debug)
+      val encoding = FileSizeTools.detectEncoding(path)
+      val columnCount = optionColumnCount.getOrElse(FileSizeTools.columnCount(path, splitter, encoding))
+      FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput, debug)
     case _ =>
   }
 }

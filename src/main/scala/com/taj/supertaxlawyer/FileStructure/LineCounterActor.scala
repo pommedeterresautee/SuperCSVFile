@@ -20,7 +20,6 @@ class LineCounterActor(output: Option[String]) extends Actor {
 
   override def receive: Actor.Receive = {
     case Lines(lines) =>
-      println("received")
       mTotalSize += lines.size
   }
 

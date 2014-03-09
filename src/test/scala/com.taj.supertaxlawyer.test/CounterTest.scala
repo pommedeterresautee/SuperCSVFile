@@ -33,7 +33,7 @@ import org.scalatest._
 import akka.testkit.{TestProbe, ImplicitSender, TestKit}
 import java.io.File
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.FileStructure.{LineCounterActor, SizeActor, SizeMain}
+import com.taj.supertaxlawyer.FileStructure.{LineCounterActor, SizeActor, FileSizeTools}
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
 
@@ -67,12 +67,12 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
         val file = new File(encodedFileFolder, fileToTest.name)
 
         "The encoding will be detected" in {
-          val encoding = SizeMain.detectEncoding(file.getAbsolutePath)
+          val encoding = FileSizeTools.detectEncoding(file.getAbsolutePath)
           encoding should equal(fileToTest.encoding)
         }
 
         "The number of columns is computed" in {
-          SizeMain.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
+          FileSizeTools.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
         }
 
         "The best size of columns will be determined" in {

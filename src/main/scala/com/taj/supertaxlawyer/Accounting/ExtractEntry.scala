@@ -29,18 +29,19 @@
 
 package com.taj.supertaxlawyer.Accounting
 
-import akka.actor.Actor
+import akka.actor.{Props, ActorSystem, Actor}
 import com.taj.supertaxlawyer.ActorMessages._
 import com.taj.supertaxlawyer.ActorMessages.RegisterMe
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
+import com.taj.supertaxlawyer.ActorContainer
 
 /**
  * Messages between Actors.
  */
-private object ExtractEntryMessages {
-
+object ExtractEntry {
+  def apply(positions: EntryFieldPositions, splitter: String)(implicit system: ActorSystem): ActorContainer = ActorContainer(system.actorOf(Props(new ExtractEntry(positions, splitter)), name = "ExtractEntry"), isRooter = false)
 }
 
 /**
@@ -51,6 +52,7 @@ class ExtractEntry(positions: EntryFieldPositions, splitter: String) extends Act
     case RegisterYourself() => sender ! RegisterMe()
     case Lines(lines) =>
       val entry: Seq[AccountEntry] = lines.map(_.split(splitter)).map(new AccountEntry(_, positions))
+      println(s"received ${entry.size}")
       sender ! ReadNextBlock() // Ask for the next line
   }
 }
