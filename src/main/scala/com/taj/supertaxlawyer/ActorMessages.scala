@@ -43,8 +43,36 @@ object ActorMessages {
 
   case class ReadNextBlock()
 
-  case class AccountEntry(accountNr: Int, label: String, debit: Long, credit: Long)
+  /**
+   * Contains positions of fields listed in the Article A 47 A-1 of the Book of tax procedures.
+   * @param journalCode Journal ID.
+   * @param journalName Journal name.
+   * @param entryNbr Entry line ID.
+   * @param entryDate Entry date.
+   * @param accountNbr Account number used.
+   * @param accountLabel Account name.
+   * @param auxAccountNbr Auxiliary account number.
+   * @param auxAccountLabel Auxiliary account name.
+   * @param label Label of the entry.
+   * @param debit debit amount.
+   * @param credit credit amount.
+   * @param clearanceCode Code used for clearance.
+   * @param clearanceDate Date of the clearance.
+   * @param validDate Date of validation.
+   * @param currencyValue Currency value of the entry.
+   * @param currencyName Currency name of the entry.
+   */
+  case class EntryFieldPositions(journalCode: Option[Int], journalName: Option[Int], entryNbr: Option[Int], entryDate: Option[Int], accountNbr: Option[Int], accountLabel: Option[Int], auxAccountNbr: Option[Int], auxAccountLabel: Option[Int], label: Option[Int], debit: Option[Int], credit: Option[Int], clearanceCode: Option[Int], clearanceDate: Option[Int], validDate: Option[Int], currencyValue: Option[Int], currencyName: Option[Int])
 
-  case class TestToApply(actor:ActorRef, rooter:Boolean)
+  case class AccountEntry(accountNbr: Int, accountLabel: String, debit: Long, credit: Long) {
+    def this(line: Seq[String], positions: EntryFieldPositions) = this(
+      line(positions.accountNbr.get).toInt,
+      line(positions.accountLabel.get),
+      line(positions.debit.get).toLong,
+      line(positions.credit.get).toLong
+    )
+  }
+
+  case class TestToApply(actor: ActorRef, rooter: Boolean)
 
 }

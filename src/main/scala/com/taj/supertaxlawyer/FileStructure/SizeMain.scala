@@ -34,7 +34,7 @@ import akka.actor._
 import com.ibm.icu.text.CharsetDetector
 import java.io.FileInputStream
 import com.taj.supertaxlawyer.ActorMessages.Start
-import com.taj.supertaxlawyer.{ActorContainer, Distributor}
+import com.taj.supertaxlawyer.Distributor
 
 /**
  * Operation related to the count of columns in a text file.
@@ -52,8 +52,8 @@ object SizeMain {
    */
   def computeSize(path: String, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean) {
     val system: ActorSystem = ActorSystem("ActorSystemColumnSizeComputation")
-    val listOfWorkers = List(ActorContainer(SizeActor.actorFactory(system, output, expectedColumnQuantity, splitter), isRooter = true))
-    val distributor = system.actorOf(Props(new Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)), name = "DistributorWorker")
+    val listOfWorkers = List(SizeActor(system, output, expectedColumnQuantity, splitter), LineCounterActor(system, output))
+    val distributor = system.actorOf(Props(Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)), name = "DistributorWorker")
     distributor ! Start()
   }
 

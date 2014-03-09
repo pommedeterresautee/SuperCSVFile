@@ -36,6 +36,9 @@ import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 
+/**
+ * Messages between Actors.
+ */
 private object ExtractEntryMessages {
 
 }
@@ -43,11 +46,11 @@ private object ExtractEntryMessages {
 /**
  * Extract entry from a provided String.
  */
-class ExtractEntry extends Actor {
+class ExtractEntry(positions: EntryFieldPositions, splitter: String) extends Actor {
   override def receive: Actor.Receive = {
     case RegisterYourself() => sender ! RegisterMe()
-    case Lines(listToAnalyze) =>
-      val entry: AccountEntry = ???
+    case Lines(lines) =>
+      val entry: Seq[AccountEntry] = lines.map(_.split(splitter)).map(new AccountEntry(_, positions))
       sender ! ReadNextBlock() // Ask for the next line
   }
 }

@@ -33,22 +33,27 @@ import scala.io.{Source, Codec}
 import akka.actor._
 import scala.collection.mutable.ArrayBuffer
 import com.taj.supertaxlawyer.ActorMessages.RegisterMe
+import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
-import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import com.taj.supertaxlawyer.ActorMessages.Start
+import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import akka.routing.Broadcast
-import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
+
+object Distributor {
+  def apply(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean = true) = new Distributor(path, splitter, columnNumberExpected, codec, workers, verbose, stopSystemAtTheEnd)
+}
+
 
 /**
  * Read the file and send the work.
  * @param path path to the file to analyze.
  * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean = true) extends Actor {
+class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean) extends Actor {
   val numberOfLinesPerMessage = 200
   val mBuffer = Source.fromFile(path)(codec)
   val mSource = mBuffer.getLines().grouped(numberOfLinesPerMessage)
@@ -73,11 +78,8 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
     case ReadNextBlock() =>
       if (verbose) println(s"*** Send lines ***")
       if (mSource.hasNext) {
-        workers.partition(_.isRooter) match {
-          case (withRooter, withoutRooter) =>
-            withRooter.foreach(_.actor ! Lines(mSource.next()))
-            withoutRooter.foreach(_.actor ! Broadcast(Lines(mSource.next())))
-        }
+        val lines = mSource.next()
+        workers.foreach(_.actor ! Lines(lines))
       }
       else {
         if (!operationFinished) {
@@ -85,8 +87,8 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
           operationFinished = true
           workers.partition(_.isRooter) match {
             case (withRooter, withoutRooter) =>
-              withRooter.foreach(_.actor ! PoisonPill)
-              withoutRooter.foreach(_.actor ! Broadcast(PoisonPill))
+              withRooter.foreach(_.actor ! Broadcast(PoisonPill))
+              withoutRooter.foreach(_.actor ! PoisonPill)
           }
         }
       }

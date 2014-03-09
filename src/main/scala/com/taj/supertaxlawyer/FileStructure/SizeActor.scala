@@ -37,16 +37,18 @@ import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import akka.routing.RoundRobinRouter
 import akka.testkit.TestProbe
 import com.taj.supertaxlawyer.FileStructure.SizeActorMessages._
+import com.taj.supertaxlawyer.ActorContainer
 
 
 object SizeActor {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
-  def actorFactory(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None) = {
+  def apply(system: ActorSystem, output: Option[String], expectedColumnQuantity: Int, splitter: String, testActor: Option[(TestProbe, String)] = None): ActorContainer = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
-    val name = "ResultAgregator" + testActor.map(_._2).getOrElse("")
+    val name = "ResultAggregator" + testActor.map(_._2).getOrElse("")
     val resultAggregator = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output, testActor)), name)
-    system.actorOf(Props(new SizeActor(resultAggregator, output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "MasterBlockAnalyzer")
+    val actor = system.actorOf(Props(new SizeActor(resultAggregator, output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "MasterBlockAnalyzer")
+    ActorContainer(actor, isRooter = true)
   }
 }
 
