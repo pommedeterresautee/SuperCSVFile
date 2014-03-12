@@ -57,8 +57,8 @@ trait ResultActorTrait {
       case columnSizes: List[Int] =>
       bestSizes match {
           case None => bestSizes = Some(columnSizes)
-          case Some(listReceived) => bestSizes = Some(SizeActor.mBiggerColumn(listReceived, columnSizes))
-        }
+          case Some(listReceived) => bestSizes = Some(SizeActorMessages.mBiggerColumn(listReceived, columnSizes))
+      }
 
       case JobFinished() =>
       workerFinished += 1
@@ -78,10 +78,54 @@ trait ResultActorTrait {
 
 }
 
+trait SizeActorTrait {
+  // specify dependencies by self-type annotation
+  self: ResultActorTrait =>
+  val sizeActor: ActorRef
 
-object SizeActor {
+  /**
+   * Analyze each block of lines received and send back the best match of size of columns.
+   * @param columnQuantity expected number of columns.
+   * @param splitter char used to separate each column.
+   */
+  class SizeActor(output: Option[String], columnQuantity: Int, splitter: String) extends Actor {
+    val emptyList = List.fill(columnQuantity)(0)
+
+    override def receive: Actor.Receive = {
+      case RegisterYourself() => sender ! RegisterMe()
+      case Lines(listToAnalyze) =>
+        val blockResult = listToAnalyze
+          .map(_.split(splitter)) // transform the line in Array of columns
+          .filter(_.size == columnQuantity) // Remove not expected lines
+          .map(_.map(_.size).toList) // Change to a list of size of columns
+          .foldLeft(emptyList)(SizeActorMessages.mBiggerColumn) // Mix the best results
+        resultActor ! blockResult
+        sender ! ReadNextBlock() // Ask for the next line
+    }
+
+    override def postStop(): Unit = {
+      resultActor ! JobFinished()
+    }
+  }
+
+
+}
+
+
+/**
+ * Specific actor messages to the column size computer.
+ */
+private object SizeActorMessages {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
+  case class JobFinished()
+
+}
+
+/**
+ * Init a real size actor.
+ */
+object SizeActor {
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
@@ -109,50 +153,3 @@ object SizeActorTest {
     ActorContainer(actor.sizeActor, isRooter = true)
   }
 }
-
-
-trait SizeActorTrait {
-  // specify dependencies by self-type annotation
-  self: ResultActorTrait =>
-  val sizeActor: ActorRef
-
-  /**
-   * Analyze each block of lines received and send back the best match of size of columns.
-   * @param columnQuantity expected number of columns.
-   * @param splitter char used to separate each column.
-   */
-  class SizeActor(output: Option[String], columnQuantity: Int, splitter: String) extends Actor {
-    val emptyList = List.fill(columnQuantity)(0)
-
-    override def receive: Actor.Receive = {
-      case RegisterYourself() => sender ! RegisterMe()
-      case Lines(listToAnalyze) =>
-        val blockResult = listToAnalyze
-          .map(_.split(splitter)) // transform the line in Array of columns
-          .filter(_.size == columnQuantity) // Remove not expected lines
-          .map(_.map(_.size).toList) // Change to a list of size of columns
-          .foldLeft(emptyList)(SizeActor.mBiggerColumn) // Mix the best results
-        resultActor ! blockResult
-        sender ! ReadNextBlock() // Ask for the next line
-    }
-
-    override def postStop(): Unit = {
-      resultActor ! JobFinished()
-    }
-  }
-
-
-}
-
-
-/**
- * Specific actor messages to the column size computer.
- */
-private object SizeActorMessages {
-
-  case class JobFinished()
-
-}
-
-
-

@@ -25,6 +25,7 @@ class LineCounterActor(output: Option[String]) extends Actor {
 
   override def postStop(): Unit = {
     output match {
+      // TODO replace the code by adding a result actor like for SizeActor (needed for testing purpose)
       case None => println(s"The text file contains $mTotalSize lines")
       case Some(path) => //TODO add save to folder
     }
