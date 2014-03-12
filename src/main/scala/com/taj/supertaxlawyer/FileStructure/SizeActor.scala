@@ -39,6 +39,7 @@ import com.taj.supertaxlawyer.FileStructure.SizeActorMessages.Result
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import com.taj.supertaxlawyer.FileStructure.SizeActorMessages.Finished
+import akka.testkit.TestProbe
 
 trait ResultActorTrait {
   val resultActor: ActorRef
@@ -85,14 +86,32 @@ object SizeActor {
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
-    class RealSizeActor
-      extends SizeActorTrait
-      with ResultActorTrait {
+    class RealSizeActor extends SizeActorTrait with ResultActorTrait {
       val resultActor = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output)), "ResultSizeColumnActor")
       val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "SizeActor")
     }
 
     ActorContainer(new RealSizeActor().sizeActor, isRooter = true)
+  }
+}
+
+
+object SizeActorTest {
+  val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
+
+  var testActor: TestProbe = _
+
+  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
+    val rooteesQuantity = Runtime.getRuntime.availableProcessors
+    testActor = TestProbe()
+    class TestSizeActor
+      extends SizeActorTrait
+      with ResultActorTrait {
+      val resultActor = testActor.ref
+      val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "SizeActor")
+    }
+
+    ActorContainer(new TestSizeActor().sizeActor, isRooter = true)
   }
 }
 
@@ -134,7 +153,7 @@ trait SizeActorTrait {
 /**
  * Specific actor messages to the column size computer.
  */
-private object SizeActorMessages {
+object SizeActorMessages {
 
   case class Result(columnSizes: List[Int])
 

@@ -33,12 +33,13 @@ import org.scalatest._
 import akka.testkit.{TestProbe, ImplicitSender, TestKit}
 import java.io.File
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.FileStructure.{LineCounterActor, SizeActor, FileSizeTools}
+import com.taj.supertaxlawyer.FileStructure._
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
+import com.taj.supertaxlawyer.FileStructure.SizeActorMessages.Result
 
 
-case class testContainer(name: String, numberOfColumns: Int, columnCount: List[Int], splitter: String, encoding: String)
+case class testContainer(name: String, numberOfColumns: Int, columnCount: SizeActorMessages.Result, splitter: String, encoding: String)
 
 /**
  * These tests are related to the count of columns in a text file.
@@ -49,9 +50,9 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
-  val semicolon = testContainer("semicolon.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2")
-  val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2")
-  val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), "\t", "ISO-8859-2")
+  val semicolon = testContainer("semicolon.csv", 10, Result(List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8)), ";", "ISO-8859-2")
+  val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, Result(List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8)), ";", "ISO-8859-2")
+  val tab = testContainer("tab.txt", 10, Result(List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20)), "\t", "ISO-8859-2")
 
   /**
    * Clean all temp files before starting
@@ -76,10 +77,14 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
         }
 
         "The best size of columns will be determined" in {
-          val myTestActor: TestProbe = TestProbe()
 
-          val listOfWorkers = List(SizeActor(None, fileToTest.numberOfColumns,
-            fileToTest.splitter, Some(myTestActor, file.getName)),
+          val testSizeActor = SizeActorTest(None, fileToTest.numberOfColumns,
+            fileToTest.splitter)
+
+
+          val myTestActor: TestProbe = SizeActorTest.testActor
+
+          val listOfWorkers = List(testSizeActor,
             LineCounterActor(None))
           val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, verbose = false, stopSystemAtTheEnd = false)
           distributor ! Start()
