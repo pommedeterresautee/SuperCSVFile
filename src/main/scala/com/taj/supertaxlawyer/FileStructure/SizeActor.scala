@@ -35,16 +35,15 @@ import com.taj.supertaxlawyer.ActorMessages.RegisterMe
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import scala.Some
-import com.taj.supertaxlawyer.FileStructure.SizeActorMessages.Result
+
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
-import com.taj.supertaxlawyer.FileStructure.SizeActorMessages.Finished
+import com.taj.supertaxlawyer.FileStructure.SizeActorMessages.JobFinished
 import akka.testkit.TestProbe
 
 trait ResultActorTrait {
   val resultActor: ActorRef
 
-  // ordinal class
   /**
    * Receive the result of each analyze, choose the best result and at the end of the process, display the result, or save it to a file.
    * @param workerQuantity Number of workers.
@@ -55,14 +54,14 @@ trait ResultActorTrait {
     var workerFinished = 0
 
     override def receive: Actor.Receive = {
-      case Result(columnSizes) =>
-        bestSizes match {
+      case columnSizes: List[Int] =>
+      bestSizes match {
           case None => bestSizes = Some(columnSizes)
           case Some(listReceived) => bestSizes = Some(SizeActor.mBiggerColumn(listReceived, columnSizes))
         }
 
-      case Finished() =>
-        workerFinished += 1
+      case JobFinished() =>
+      workerFinished += 1
         if (workerFinished == workerQuantity) {
           val stringResult = bestSizes.get.mkString(";")
 
@@ -86,32 +85,28 @@ object SizeActor {
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
-    class RealSizeActor extends SizeActorTrait with ResultActorTrait {
+    val actor = new SizeActorTrait with ResultActorTrait {
       val resultActor = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output)), "ResultSizeColumnActor")
       val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "SizeActor")
     }
 
-    ActorContainer(new RealSizeActor().sizeActor, isRooter = true)
+    ActorContainer(actor.sizeActor, isRooter = true)
   }
 }
 
-
+/**
+ * Init an actor to test the column size computation.
+ */
 object SizeActorTest {
-  val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
-  var testActor: TestProbe = _
+  def apply(testActor: TestProbe, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
 
-  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
-    val rooteesQuantity = Runtime.getRuntime.availableProcessors
-    testActor = TestProbe()
-    class TestSizeActor
-      extends SizeActorTrait
-      with ResultActorTrait {
+    val actor = new SizeActorTrait with ResultActorTrait {
       val resultActor = testActor.ref
-      val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "SizeActor")
+      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
     }
 
-    ActorContainer(new TestSizeActor().sizeActor, isRooter = true)
+    ActorContainer(actor.sizeActor, isRooter = true)
   }
 }
 
@@ -137,12 +132,12 @@ trait SizeActorTrait {
           .filter(_.size == columnQuantity) // Remove not expected lines
           .map(_.map(_.size).toList) // Change to a list of size of columns
           .foldLeft(emptyList)(SizeActor.mBiggerColumn) // Mix the best results
-        resultActor ! Result(blockResult)
+        resultActor ! blockResult
         sender ! ReadNextBlock() // Ask for the next line
     }
 
     override def postStop(): Unit = {
-      resultActor ! Finished()
+      resultActor ! JobFinished()
     }
   }
 
@@ -153,11 +148,9 @@ trait SizeActorTrait {
 /**
  * Specific actor messages to the column size computer.
  */
-object SizeActorMessages {
+private object SizeActorMessages {
 
-  case class Result(columnSizes: List[Int])
-
-  case class Finished()
+  case class JobFinished()
 
 }
 
