@@ -40,13 +40,14 @@ import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import akka.routing.Broadcast
 import java.io.File
+import com.typesafe.scalalogging.slf4j.Logging
 
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean = true)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, verbose, stopSystemAtTheEnd)), name = s"Distributor_${file.getName}")
+  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], stopSystemAtTheEnd: Boolean = true)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, stopSystemAtTheEnd)), name = s"Distributor_${file.getName}")
 }
 
 
@@ -55,7 +56,7 @@ object Distributor {
  * @param path path to the file to analyze.
  * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], verbose: Boolean, stopSystemAtTheEnd: Boolean) extends Actor {
+class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], stopSystemAtTheEnd: Boolean) extends Actor with Logging {
   val numberOfLinesPerMessage = 200
   val mBuffer = Source.fromFile(path)(codec)
   val mSource = mBuffer.getLines().grouped(numberOfLinesPerMessage)
@@ -65,7 +66,7 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
 
   override def receive: Actor.Receive = {
     case Start() =>
-      if (verbose) println(s"*** Watching ${sender.path} ***")
+      logger.debug(s"*** Watching ${sender.path} ***")
       workers.foreach {
         actor =>
           context.watch(actor.actor)
@@ -74,18 +75,18 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
       }
       self ! ReadNextBlock() // Start the process of reading the file
     case RegisterMe() =>
-      if (verbose) println(s"*** Register rootee ${sender.path} ***")
+      logger.debug(s"*** Register rootee ${sender.path} ***")
       mListWatchedRoutees += sender
       context.watch(sender)
     case ReadNextBlock() =>
-      if (verbose) println(s"*** Send lines ***")
+      logger.debug(s"*** Send lines ***")
       if (mSource.hasNext) {
         val nextLinesBlock = mSource.next()
         workers.foreach(_.actor ! Lines(nextLinesBlock))
       }
       else {
         if (!operationFinished) {
-          if (verbose) println(s"*** Send poison pill to all workers ***")
+          logger.debug(s"*** Send poison pill to all workers ***")
           operationFinished = true
           workers.partition(_.isRooter) match {
             case (withRooter, withoutRooter) =>
@@ -95,10 +96,10 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
         }
       }
     case Terminated(ref) =>
-      if (verbose) println(s"*** Rootee ${sender.path} is dead ***")
+      logger.debug(s"*** Rootee ${sender.path} is dead ***")
       mListWatchedRoutees -= ref
       if (mListWatchedRoutees.isEmpty) {
-        if (verbose) println("*** Everybody is gone  ***")
+        logger.debug("*** Everybody is gone  ***")
         if (stopSystemAtTheEnd) context.system.shutdown()
       }
     case t =>

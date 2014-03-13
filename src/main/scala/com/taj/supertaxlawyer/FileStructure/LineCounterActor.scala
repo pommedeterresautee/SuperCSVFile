@@ -39,19 +39,19 @@ trait LineCounterActorComponent {
   val linesActor: ActorRef
 
   /**
- * Count lines in the analyzed text file.
- */
+   * Count lines in the analyzed text file.
+   */
   class LineCounterActor() extends Actor {
     var mTotalSize = 0l
 
     override def receive: Actor.Receive = {
-    case Lines(lines) =>
-      mTotalSize += lines.size
-  }
+      case Lines(lines) =>
+        mTotalSize += lines.size
+    }
 
-  override def postStop(): Unit = {
-    resultActor ! mTotalSize
-  }
+    override def postStop(): Unit = {
+      resultActor ! mTotalSize
+    }
   }
 
 }
@@ -69,7 +69,7 @@ trait ResultLineCounterActorComponent {
             if (Path(outputPath).isDirectory) File(outputPath + File.pathSeparator + self.path.name).writeAll(mTotalSize.toString)
             else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
         }
-
     }
   }
+
 }

@@ -47,17 +47,16 @@ object FileSizeTools {
    * @param splitter Char or String used to limit the columns.
    * @param expectedColumnQuantity number of columns expected per line. Any line with a different number of column won't be tested.
    * @param codec Encoding of the text file.
-   * @param verbose display more information during the process.
    * @return A list of column sizes.
    */
-  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], verbose: Boolean = false) {
+  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String]) {
     implicit val system: ActorSystem = ActorSystem("ActorSystemComputation")
     val listOfWorkers: List[ActorContainer] = List(
       SizeActor(output, expectedColumnQuantity, splitter),
       LineCounterActor(output) /*,
       ExtractEntry(expectedColumnQuantity, splitter)*/
     )
-    val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, verbose)
+    val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers)
     distributor ! Start()
   }
 
@@ -68,15 +67,19 @@ object FileSizeTools {
    * @param codec encoding of the file
    * @return the number of columns in the text file.
    */
-  def columnCount(path:String, splitter:String, codec:String):Int = {
+  def columnCount(path: String, splitter: String, codec: String): Int = {
     val buffer = Source.fromFile(path, codec)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)
       .toList
       .groupBy(line => line.split(splitter).size)
-      .map{case (numberOfTimes, listOfColumns) => (numberOfTimes, listOfColumns.size)}
-      .maxBy{case (numberOfTimes, numberOfColumnsPerLine) => numberOfTimes}
+      .map {
+      case (numberOfTimes, listOfColumns) => (numberOfTimes, listOfColumns.size)
+    }
+      .maxBy {
+      case (numberOfTimes, numberOfColumnsPerLine) => numberOfTimes
+    }
     buffer.close()
     numberOfColumns
   }
@@ -86,7 +89,7 @@ object FileSizeTools {
    * @param path path to the file to analyze.
    * @return the name of the encoding as a String.
    */
-  def detectEncoding(path:String):String = {
+  def detectEncoding(path: String): String = {
     val detector = new CharsetDetector()
     val byteData = new Array[Byte](1024 * 30)
     val is = new FileInputStream(path)

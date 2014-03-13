@@ -32,6 +32,7 @@ package com.taj.supertaxlawyer
 import org.rogach.scallop.ScallopConf
 import java.io.File
 import com.taj.supertaxlawyer.FileStructure.FileSizeTools
+import org.slf4j.impl.SimpleLogger
 
 
 object Main extends App {
@@ -71,7 +72,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
     conflicts(encoding, List(columnSize, splitter, columnCount, help /*, version*/))
   }
 
-  val debug = opts.debug.get.getOrElse(false)
+  System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, if (opts.debug.get.getOrElse(false)) "debug" else "info");
   val optionEncoding = opts.encoding.get
 
   optionEncoding match {
@@ -97,7 +98,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
 
       val encoding = FileSizeTools.detectEncoding(path)
       val columnCount = optionColumnCount.getOrElse(FileSizeTools.columnCount(path, splitter, encoding))
-      FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput, debug)
+      FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput)
     case _ =>
   }
 }

@@ -87,13 +87,13 @@ trait ResultSizeActorTrait {
 
     override def receive: Actor.Receive = {
       case columnSizes: List[Int] =>
-      bestSizes match {
+        bestSizes match {
           case None => bestSizes = Some(columnSizes)
           case Some(listReceived) => bestSizes = Some(CommonTools.mBiggerColumn(listReceived, columnSizes))
-      }
+        }
 
       case JobFinished() =>
-      workerFinished += 1
+        workerFinished += 1
         if (workerFinished == workerQuantity) {
           val stringResult = bestSizes.get.mkString(";")
 
@@ -107,6 +107,7 @@ trait ResultSizeActorTrait {
         }
     }
   }
+
 }
 
 /**
