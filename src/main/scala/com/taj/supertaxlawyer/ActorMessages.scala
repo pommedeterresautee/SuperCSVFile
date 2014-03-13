@@ -75,4 +75,6 @@ object ActorMessages {
 
   case class TestToApply(actor: ActorRef, rooter: Boolean)
 
+  case class JobFinished()
+
 }
