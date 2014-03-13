@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, Props, Actor}
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorContainer
 import akka.testkit.TestProbe
+import scala.reflect.io.{File, Path}
 
 /**
  * Constructor for the line counter
@@ -11,7 +12,7 @@ import akka.testkit.TestProbe
 object LineCounterActor {
 
   def apply(output: Option[String])(implicit system: ActorSystem): ActorContainer = {
-    val actorTrait = new LineActorTrait with ResultLineActorTrait {
+    val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
       val resultActor = system.actorOf(Props(new ResultLinesActor(output)), "ResultLinesActor")
       val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
     }
@@ -23,7 +24,7 @@ object LineCounterActor {
 object LineCounterActorTest {
 
   def apply(testActor: TestProbe, output: Option[String])(implicit system: ActorSystem): ActorContainer = {
-    val actorTrait = new LineActorTrait with ResultLineActorTrait {
+    val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
       val resultActor = testActor.ref
       val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
     }
@@ -33,8 +34,8 @@ object LineCounterActorTest {
 }
 
 
-trait LineActorTrait {
-  self: ResultLineActorTrait =>
+trait LineCounterActorComponent {
+  self: ResultLineCounterActorComponent =>
   val linesActor: ActorRef
 
   /**
@@ -55,7 +56,7 @@ trait LineActorTrait {
 
 }
 
-trait ResultLineActorTrait {
+trait ResultLineCounterActorComponent {
   val resultActor: ActorRef
 
   class ResultLinesActor(output: Option[String]) extends Actor {
@@ -64,7 +65,9 @@ trait ResultLineActorTrait {
       case mTotalSize: Long =>
         output match {
           case None => println(s"The text file contains $mTotalSize lines")
-          case Some(path) => //TODO add save to folder
+          case Some(outputPath) =>
+            if (Path(outputPath).isDirectory) File(outputPath + File.pathSeparator + self.path.name).writeAll(mTotalSize.toString)
+            else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
         }
 
     }

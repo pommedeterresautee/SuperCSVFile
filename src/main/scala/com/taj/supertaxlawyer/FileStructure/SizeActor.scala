@@ -79,9 +79,9 @@ trait ResultSizeActorTrait {
   /**
    * Receive the result of each analyze, choose the best result and at the end of the process, display the result, or save it to a file.
    * @param workerQuantity Number of workers.
-   * @param output path to a file where to save the result.
+   * @param outputFolder path to a file where to save the result.
    */
-  class ResultSizeColumnActor(workerQuantity: Int, output: Option[String]) extends Actor {
+  class ResultSizeColumnActor(workerQuantity: Int, outputFolder: Option[String]) extends Actor {
     var bestSizes: Option[List[Int]] = None
     var workerFinished = 0
 
@@ -97,13 +97,13 @@ trait ResultSizeActorTrait {
         if (workerFinished == workerQuantity) {
           val stringResult = bestSizes.get.mkString(";")
 
-          output match {
+          outputFolder match {
             case Some(outputPath) => // a path to save the result in a file is provided
-              import scala.reflect.io.File
-              File(outputPath).writeAll(stringResult)
+              import scala.reflect.io._
+              if (Path(outputPath).isDirectory) File(outputPath + File.pathSeparator + self.path.name).writeAll(stringResult)
+              else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
             case None => println(stringResult) // no path provided => display the result
           }
-
         }
     }
   }
