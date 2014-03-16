@@ -14,3 +14,10 @@ libraryDependencies ++= Seq(
   "commons-codec" % "commons-codec" % "1.7" % "test",
   "org.rogach" %% "scallop" % "0.9.5"
 )
+
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-unchecked",
+  "-feature",
+  "-language:reflectiveCalls"
+)

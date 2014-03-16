@@ -30,7 +30,7 @@
 package com.taj.supertaxlawyer.FileStructure
 
 import akka.actor._
-import akka.routing.RoundRobinRouter
+import akka.routing.RoundRobinPool
 import com.taj.supertaxlawyer.ActorMessages._
 
 import akka.testkit.TestProbe
@@ -127,7 +127,7 @@ object SizeActor {
 
     val actorTrait = new SizeActorTrait with ResultSizeActorTrait {
       val resultActor = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output)), "ResultSizeColumnActor")
-      val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(rooteesQuantity)), name = "SizeActor")
+      val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(rooteesQuantity)), name = "SizeActor")
     }
     ActorContainer(actorTrait.sizeActor, isRooter = true)
   }
@@ -142,7 +142,7 @@ object SizeActorTest {
 
     val actorTestTrait = new SizeActorTrait with ResultSizeActorTrait {
       val resultActor = testActor.ref
-      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinRouter(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
+      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
     }
     ActorContainer(actorTestTrait.sizeActor, isRooter = true)
   }
