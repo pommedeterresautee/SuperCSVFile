@@ -49,7 +49,6 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
-  //TODO add number of lines property
   val semicolon = testContainer("semicolon.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2", 25l)
   val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2", 26l)
   val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), "\t", "ISO-8859-2", 24l)
@@ -67,26 +66,22 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
       s"${fileToTest.name} related to the column size count" must {
         val file = new File(encodedFileFolder, fileToTest.name)
 
-        "The encoding will be detected" in {
+        s"The encoding will be detected as ${fileToTest.encoding}" in {
           val encoding = FileSizeTools.detectEncoding(file.getAbsolutePath)
           encoding should equal(fileToTest.encoding)
         }
 
-        "The number of columns is computed" in {
+        s"The number of columns should be ${fileToTest.numberOfColumns}" in {
           FileSizeTools.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
         }
 
         "The best size of columns will be determined" in {
-
-
           val columnSizeTestActor: TestProbe = TestProbe()
           val linesTestActor: TestProbe = TestProbe()
 
-          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.numberOfColumns,
-            fileToTest.splitter)
+          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.numberOfColumns, fileToTest.splitter)
 
-          val listOfWorkers = List(testSizeActor,
-            LineCounterActorTest(linesTestActor, None))
+          val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
           val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, stopSystemAtTheEnd = false)
           distributor ! Start()
 

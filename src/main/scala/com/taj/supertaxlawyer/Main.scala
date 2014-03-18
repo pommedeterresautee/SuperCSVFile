@@ -33,6 +33,7 @@ import org.rogach.scallop.ScallopConf
 import java.io.File
 import com.taj.supertaxlawyer.FileStructure.FileSizeTools
 import org.slf4j.impl.SimpleLogger
+import scala.io.Source
 
 
 object Main extends App {
@@ -41,8 +42,9 @@ object Main extends App {
 
   val file: String = encodedFileFolder + "semicolon.csv"
 
+  val arg = List("--columnSize", file, "--splitter", ";", "--includeTitles", "--output", testResourcesFolder)
 
-  val opts = new ScallopConf(List("--columnSize", file, "--splitter", ";")) {
+  val opts = new ScallopConf(arg) {
     banner( """
               | ____                          _____            _
               |/ ___| _   _ _ __   ___ _ __  |_   _|_ ___  __ | |    __ ___      ___   _  ___ _ __
@@ -58,31 +60,24 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
     val fileListExist: List[String] => Boolean = _.forall(fileExist)
 
     val columnSize = opt[String]("columnSize", descr = "Print the detected encoding of each file provided.", validate = fileExist)
-    val encoding = opt[String]("encoding", descr = "Print the detected encoding of each file provided.", validate = fileExist)
     val splitter = opt[String]("splitter", descr = "Character used to split a line in columns. Use TAB for tabulation and SPACE for space separators.")
     val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
-
-    val output = opt[String]("output", descr = "Path to the file where to save the result.", validate = !new File(_).exists())
+    val includeTitles = toggle("includeTitles", descrYes = "Include titles of columns in column size result.", default = Some(false), prefix = "no-")
+    val output = opt[String]("output", descr = "Path to the folder where to save the results.", validate = new File(_).isDirectory)
     val debug = toggle("debug", descrYes = "Display lots of debug information during the process.", descrNo = "Display minimum during the process (same as not using this argument).", default = Some(false), prefix = "no-")
     val help = opt[Boolean]("help", descr = "Show this message.")
     // val version = opt[Boolean]("version", noshort = true, descr = "Print program version.")
     codependent(columnSize, splitter)
 
-    conflicts(columnSize, List(encoding, help /*, version*/))
-    conflicts(encoding, List(columnSize, splitter, columnCount, help /*, version*/))
+    conflicts(columnSize, List(help /*, version*/))
   }
 
-  System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, if (opts.debug.get.getOrElse(false)) "debug" else "info");
-  val optionEncoding = opts.encoding.get
-
-  optionEncoding match {
-    case Some(path) => println(FileSizeTools.detectEncoding(path))
-    case None =>
-  }
+  System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, if (opts.debug.get.getOrElse(false)) "debug" else "info")
 
   val optionColumnCount = opts.columnCount.get
   val optionSplitter = opts.splitter.get
   val optionOutput = opts.output.get
+  val optionIncludeTitles = opts.includeTitles.get
 
   val optionColumnSize = opts.columnSize.get
   optionColumnSize match {
@@ -94,11 +89,15 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
         case None => throw new IllegalArgumentException("No splitter provided.") // impossible in theory because blocked by ScalaOp
       }
 
-      val file = new File(path)
-
+      val includeTitles = optionIncludeTitles.getOrElse(false)
       val encoding = FileSizeTools.detectEncoding(path)
       val columnCount = optionColumnCount.getOrElse(FileSizeTools.columnCount(path, splitter, encoding))
-      FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput)
+
+
+      val file = new File(path)
+      val lines = Source.fromFile(path, encoding).getLines()
+      val titles = if (includeTitles && lines.hasNext) Some(lines.next().split(splitter).toList) else None
+      FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput, titles)
     case _ =>
   }
 }

@@ -42,7 +42,6 @@ import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 
 trait SizeActorTrait {
-  // specify dependencies by self-type annotation
   self: ResultSizeActorTrait =>
   val sizeActor: ActorRef
 
@@ -70,7 +69,6 @@ trait SizeActorTrait {
       resultActor ! JobFinished()
     }
   }
-
 }
 
 trait ResultSizeActorTrait {
@@ -81,7 +79,7 @@ trait ResultSizeActorTrait {
    * @param workerQuantity Number of workers.
    * @param outputFolder path to a file where to save the result.
    */
-  class ResultSizeColumnActor(workerQuantity: Int, outputFolder: Option[String]) extends Actor {
+  class ResultSizeColumnActor(workerQuantity: Int, outputFolder: Option[String], titles: Option[List[String]]) extends Actor {
     var bestSizes: Option[List[Int]] = None
     var workerFinished = 0
 
@@ -95,19 +93,28 @@ trait ResultSizeActorTrait {
       case JobFinished() =>
         workerFinished += 1
         if (workerFinished == workerQuantity) {
-          val stringResult = bestSizes.get.mkString(";")
+          val stringResult: String = (bestSizes, titles) match {
+            case (Some(sizes), Some(titleList)) if sizes.size == titleList.size =>
+              titleList
+                .zip(sizes)
+                .map {
+                case (title, size) => s"$title;$size"
+              }
+                .mkString("\n")
+            case (Some(sizes), None) => sizes.mkString(";")
+            case _ => throw new IllegalArgumentException(s"The actor ${self.path.name} is not correctly configured.")
+          }
 
           outputFolder match {
             case Some(outputPath) => // a path to save the result in a file is provided
               import scala.reflect.io._
-              if (Path(outputPath).isDirectory) File(outputPath + File.pathSeparator + self.path.name).writeAll(stringResult)
+              if (Path(outputPath).isDirectory) File(outputPath + self.path.name).writeAll(stringResult)
               else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
-            case None => println(stringResult) // no path provided => display the result
+            case None => println(stringResult)
           }
         }
     }
   }
-
 }
 
 /**
@@ -122,11 +129,11 @@ private object CommonTools {
  * Init a real size actor.
  */
 object SizeActor {
-  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
+  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, titles: Option[List[String]])(implicit system: ActorSystem): ActorContainer = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
     val actorTrait = new SizeActorTrait with ResultSizeActorTrait {
-      val resultActor = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output)), "ResultSizeColumnActor")
+      val resultActor = system.actorOf(Props(new ResultSizeColumnActor(rooteesQuantity, output, titles)), "ResultSizeColumnActor")
       val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(rooteesQuantity)), name = "SizeActor")
     }
     ActorContainer(actorTrait.sizeActor, isRooter = true)

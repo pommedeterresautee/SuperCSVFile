@@ -16,7 +16,6 @@ object LineCounterActor {
       val resultActor = system.actorOf(Props(new ResultLinesActor(output)), "ResultLinesActor")
       val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
     }
-
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
 }
@@ -28,7 +27,6 @@ object LineCounterActorTest {
       val resultActor = testActor.ref
       val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
     }
-
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
 }
@@ -53,7 +51,6 @@ trait LineCounterActorComponent {
       resultActor ! mTotalSize
     }
   }
-
 }
 
 trait ResultLineCounterActorComponent {
@@ -66,10 +63,9 @@ trait ResultLineCounterActorComponent {
         output match {
           case None => println(s"The text file contains $mTotalSize lines")
           case Some(outputPath) =>
-            if (Path(outputPath).isDirectory) File(outputPath + File.pathSeparator + self.path.name).writeAll(mTotalSize.toString)
+            if (Path(outputPath).isDirectory) File(outputPath + self.path.name).writeAll(mTotalSize.toString)
             else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
         }
     }
   }
-
 }

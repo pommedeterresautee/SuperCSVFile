@@ -32,7 +32,7 @@ package com.taj.supertaxlawyer.FileStructure
 import scala.io.Source
 import akka.actor._
 import com.ibm.icu.text.CharsetDetector
-import java.io.{File, FileInputStream}
+import java.io.{BufferedInputStream, File, FileInputStream}
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.{ActorContainer, Distributor}
 
@@ -49,10 +49,10 @@ object FileSizeTools {
    * @param codec Encoding of the text file.
    * @return A list of column sizes.
    */
-  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String]) {
+  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], titles: Option[List[String]]) {
     implicit val system: ActorSystem = ActorSystem("ActorSystemComputation")
     val listOfWorkers: List[ActorContainer] = List(
-      SizeActor(output, expectedColumnQuantity, splitter),
+      SizeActor(output, expectedColumnQuantity, splitter, titles),
       LineCounterActor(output) /*,
       ExtractEntry(expectedColumnQuantity, splitter)*/
     )
@@ -91,11 +91,9 @@ object FileSizeTools {
    */
   def detectEncoding(path: String): String = {
     val detector = new CharsetDetector()
-    val byteData = new Array[Byte](1024 * 30)
-    val is = new FileInputStream(path)
-    is.read(byteData)
-    is.close()
-    detector.setText(byteData)
+    val is = new BufferedInputStream(new FileInputStream(path))
+    try detector.setText(is)
+    finally is.close()
     val matcher = detector.detect()
     matcher.getName
   }
