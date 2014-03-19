@@ -56,7 +56,8 @@ object FileSizeTools {
       LineCounterActor(output) /*,
       ExtractEntry(expectedColumnQuantity, splitter)*/
     )
-    val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers)
+    val dropLines = if (titles.isDefined) 1 else 0
+    val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, dropLines)
     distributor ! Start()
   }
 

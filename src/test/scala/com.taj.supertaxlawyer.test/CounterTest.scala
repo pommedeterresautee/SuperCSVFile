@@ -82,7 +82,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
           val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.numberOfColumns, fileToTest.splitter)
 
           val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, stopSystemAtTheEnd = false)
+          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false)
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(fileToTest.columnCount)
