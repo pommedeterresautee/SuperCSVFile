@@ -57,7 +57,7 @@ object Distributor {
  * @param columnNumberExpected expected number of columns.
  */
 class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean) extends Actor with Logging {
-  val numberOfLinesPerMessage = 1
+  val numberOfLinesPerMessage = 200
   val mBuffer = Source.fromFile(path)(codec)
   val mIterator = mBuffer.getLines()
   //.drop(dropFirsLines)
