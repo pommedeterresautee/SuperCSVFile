@@ -79,7 +79,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
           val columnSizeTestActor: TestProbe = TestProbe()
           val linesTestActor: TestProbe = TestProbe()
 
-          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.numberOfColumns, fileToTest.splitter)
+          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, fileToTest.numberOfColumns, fileToTest.splitter)
 
           val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
           val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false)
@@ -88,7 +88,21 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
           columnSizeTestActor.expectMsg(fileToTest.columnCount)
           linesTestActor.expectMsg(fileToTest.numberOfLines)
         }
+
       }
+  }
+
+  "We will compare 2 lists to find the best size." must {
+    Seq((List(1, 2, 3, 1), List(4, 5, 3, 2), List(4, 5, 3, 2)), (List(1, 8, 3, 7), List(8, 9, 0, 5), List(8, 9, 3, 7)), (List(1, 2, -3, -1), List(-4, -5, 3, 2), List(1, 2, 3, 2)))
+      .foreach {
+      case (list1, list2, goodResult) =>
+
+
+        s"Get the biggest list between $list1 and $list2." in {
+          val result = CommonTools.mBiggerColumn(list1, list2)
+          result should be(goodResult)
+        }
+    }
   }
 
   /**

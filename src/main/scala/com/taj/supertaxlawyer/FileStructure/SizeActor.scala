@@ -40,6 +40,7 @@ import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
+import com.typesafe.scalalogging.slf4j.Logging
 
 trait SizeActorTrait {
   self: ResultSizeActorTrait =>
@@ -56,11 +57,8 @@ trait SizeActorTrait {
     override def receive: Actor.Receive = {
       case RegisterYourself() => sender ! RegisterMe()
       case Lines(listToAnalyze) =>
-        val blockResult = listToAnalyze
-          .map(_.split(splitter)) // transform the line in Array of columns
-          .filter(_.size == columnQuantity) // Remove not expected lines
-          .map(_.map(_.size).toList) // Change to a list of size of columns
-          .foldLeft(emptyList)(CommonTools.mBiggerColumn) // Mix the best results
+        val blockResult: List[Int] =
+          CommonTools.mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
         resultActor ! blockResult
         sender ! ReadNextBlock() // Ask for the next line
     }
@@ -79,7 +77,7 @@ trait ResultSizeActorTrait {
    * @param workerQuantity Number of workers.
    * @param outputFolder path to a file where to save the result.
    */
-  class ResultSizeColumnActor(workerQuantity: Int, outputFolder: Option[String], titles: Option[List[String]]) extends Actor {
+  class ResultSizeColumnActor(workerQuantity: Int, outputFolder: Option[String], titles: Option[List[String]]) extends Actor with Logging {
     var bestSizes: Option[List[Int]] = None
     var workerFinished = 0
 
@@ -87,7 +85,9 @@ trait ResultSizeActorTrait {
       case columnSizes: List[Int] =>
         bestSizes match {
           case None => bestSizes = Some(columnSizes)
-          case Some(listReceived) => bestSizes = Some(CommonTools.mBiggerColumn(listReceived, columnSizes))
+          case Some(currentBestSize) => {
+            bestSizes = Some(CommonTools.mBiggerColumn(currentBestSize, columnSizes))
+          }
         }
 
       case JobFinished() =>
@@ -120,9 +120,18 @@ trait ResultSizeActorTrait {
 /**
  * Specific actor messages to the column size computer.
  */
-private object CommonTools {
+object CommonTools {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
+  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: List[Int]): List[Int] = {
+    if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
+
+    listToAnalyze
+      .map(_.split(splitter)) // transform the line in Array of columns
+      .filter(_.size == columnQuantity) // Remove not expected lines
+      .map(_.map(_.size).toList) // Change to a list of size of columns
+      .foldLeft(emptyList)(CommonTools.mBiggerColumn) // Mix the best results
+  }
 }
 
 /**
@@ -145,11 +154,11 @@ object SizeActor {
  */
 object SizeActorTest {
 
-  def apply(testActor: TestProbe, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
+  def apply(testActor: TestProbe, fileName: String, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
 
     val actorTestTrait = new SizeActorTrait with ResultSizeActorTrait {
       val resultActor = testActor.ref
-      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
+      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = s"TestSizeActor_$fileName")
     }
     ActorContainer(actorTestTrait.sizeActor, isRooter = true)
   }
