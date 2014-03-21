@@ -41,7 +41,6 @@ import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import com.typesafe.scalalogging.slf4j.Logging
-import org.apache.commons.lang3.StringEscapeUtils
 
 
 /**
@@ -133,6 +132,12 @@ trait ResultSizeActorTrait {
               case (title, size) => s"$title;$size"
             }
               .mkString("\n")
+          case (sizes, Some(titleList)) if sizes.size != titleList.size =>
+            s"""The program has found a result equal to:
+            ${sizes.mkString(";")}
+            However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns ${titleList.size}.
+            You should audit the result.
+            """"
           case (sizes, None) => sizes.mkString(";")
         }
 

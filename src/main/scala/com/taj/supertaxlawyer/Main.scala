@@ -62,7 +62,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
     val columnSize = opt[String]("columnSize", descr = "Print the detected encoding of each file provided.", validate = fileExist)
     val splitter = opt[String]("splitter", descr = "Character used to split a line in columns. Use TAB for tabulation and SPACE for space separators.")
     val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
-    val includeTitles = toggle("includeTitles", descrYes = "Include titles of columns in column size result.", default = Some(false), prefix = "no-")
+    val excludeTitles = toggle("excludeTitles", descrYes = "Exclude titles of columns in column size result.", default = Some(false), prefix = "no-")
     val output = opt[String]("outputFolder", descr = "Path to the folder where to save the results.", validate = new File(_).isDirectory)
     val debug = toggle("debug", descrYes = "Display lots of debug information during the process.", descrNo = "Display minimum during the process (same as not using this argument).", default = Some(false), prefix = "no-")
     val help = opt[Boolean]("help", descr = "Show this message.")
@@ -76,7 +76,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
   val optionSplitter = opts.splitter.get
   val optionOutput = opts.output.get
 
-  val optionIncludeTitles = opts.includeTitles.get
+  val optionIncludeTitles = opts.excludeTitles.get
 
   val optionColumnSize = opts.columnSize.get
   optionColumnSize match {
@@ -94,7 +94,7 @@ Super Tax Lawyer is a program to play with accounting exported as text files.
 
       val file = new File(path)
       val lines = Source.fromFile(path, encoding).getLines()
-      val titles = if (includeTitles && lines.hasNext) Some(lines.next().split(splitter).toList) else None
+      val titles = if (includeTitles && lines.hasNext) Some(lines.next().split(s"\\Q$splitter\\E").toList) else None
       FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput, titles)
     case _ =>
   }
