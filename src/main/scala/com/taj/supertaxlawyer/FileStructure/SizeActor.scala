@@ -170,12 +170,12 @@ object SizeActor {
  */
 object SizeActorTest {
 
-  def apply(testActor: TestProbe, fileName: String, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
+  def apply(testActor: TestProbe, fileName: String, suffixToActorName:String, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
 
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
     val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
-      override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(rooteesQuantity)), s"AccumulatorActor_$fileName")
+      override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(rooteesQuantity)), s"AccumulatorActor_${fileName}_$suffixToActorName")
 
       override val resultActor = testActor.ref
 

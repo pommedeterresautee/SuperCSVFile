@@ -37,23 +37,22 @@ import com.taj.supertaxlawyer.FileStructure._
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.typesafe.scalalogging.slf4j.Logging
-import java.util.regex.Pattern
 
 
-case class testContainer(name: String, numberOfColumns: Int, columnCount: List[Int], splitter: String, encoding: String, numberOfLines: Long)
+case class testContainer(name: String, numberOfColumns: Int, columnCountWithTitles: List[Int], columnCountWithoutTitles: List[Int], splitter: String, encoding: String, numberOfLines: Long)
 
 /**
  * These tests are related to the count of columns in a text file.
  */
-class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll with Logging {
+class CounterTest extends TestKit(ActorSystem("AkkaTestSystem")) with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll with Logging {
 
   val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
   val tempFilesFolder = testResourcesFolder + s"temp${File.separator}"
 
-  val semicolon = testContainer("semicolon.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2", 25l)
-  val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2", 26l)
-  val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), "\t", "ISO-8859-2", 24l)
+  val semicolon = testContainer("semicolon.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), List(4, 7, 29, 5, 32, 4, 5, 4, 4, 4), ";", "ISO-8859-2", 25l)
+  val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2", 26l)
+  val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), List(4, 7, 9, 5, 4, 4, 15, 4, 4, 20), "\t", "ISO-8859-2", 24l)
 
   /**
    * Clean all temp files before starting
@@ -77,20 +76,33 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
           FileSizeTools.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
         }
 
-        "The best size of columns will be computed." in {
+        "The best size of columns including titles will be computed." in {
           val columnSizeTestActor: TestProbe = TestProbe()
           val linesTestActor: TestProbe = TestProbe()
 
-          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, fileToTest.numberOfColumns, fileToTest.splitter)
+          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, "first", fileToTest.numberOfColumns, fileToTest.splitter)
 
           val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2)
+          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
           distributor ! Start()
 
-          columnSizeTestActor.expectMsg(fileToTest.columnCount)
+          columnSizeTestActor.expectMsg(fileToTest.columnCountWithTitles)
           linesTestActor.expectMsg(fileToTest.numberOfLines)
         }
 
+        "The best size of columns without titles will be computed." in {
+          val columnSizeTestActor: TestProbe = TestProbe()
+          val linesTestActor: TestProbe = TestProbe()
+
+          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, "bis", fileToTest.numberOfColumns, fileToTest.splitter)
+
+          val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
+          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "bis")
+          distributor ! Start()
+
+          columnSizeTestActor.expectMsg(fileToTest.columnCountWithoutTitles)
+          linesTestActor.expectMsg(fileToTest.numberOfLines - 1) // -1 because we remove one line for the tittles
+        }
       }
   }
 
@@ -98,8 +110,6 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
     Seq((List(1, 2, 3, 1), List(4, 5, 3, 2), List(4, 5, 3, 2)), (List(1, 8, 3, 7), List(8, 9, 0, 5), List(8, 9, 3, 7)), (List(1, 2, -3, -1), List(-4, -5, 3, 2), List(1, 2, 3, 2)))
       .foreach {
       case (list1, list2, goodResult) =>
-
-
         s"Get the biggest list between $list1 and $list2." in {
           val result = CommonTools.mBiggerColumn(list1, list2)
           result should be(goodResult)

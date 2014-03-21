@@ -47,7 +47,7 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage:Int = 500)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage)), name = s"Distributor_${file.getName}")
+  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage:Int = 500, suffixNameForTest:String ="")(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage)), name = s"Distributor_${file.getName}_$suffixNameForTest")
 }
 
 //TODO inject dependencies: stopSystemAtTheEnd
@@ -59,7 +59,7 @@ object Distributor {
 class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage:Int) extends Actor with Logging {
   val mBuffer = Source.fromFile(path)(codec)
   val mIterator = mBuffer.getLines()
-  //.drop(dropFirsLines)
+  .drop(dropFirsLines)
   val mSource = mIterator.grouped(numberOfLinesPerMessage)
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var bestSizes = List.fill(columnNumberExpected)(0)
