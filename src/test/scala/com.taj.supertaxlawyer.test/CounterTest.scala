@@ -67,6 +67,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaTestSystem")) with ImplicitSe
     fileToTest =>
       s"We will evaluate the column sizes of the file ${fileToTest.name}." must {
         val file = new File(encodedFileFolder, fileToTest.name)
+        val numberOfColumns = FileSizeTools.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding)
 
         s"The encoding should be detected as ${fileToTest.encoding}" in {
           val encoding = FileSizeTools.detectEncoding(file.getAbsolutePath)
@@ -74,17 +75,17 @@ class CounterTest extends TestKit(ActorSystem("AkkaTestSystem")) with ImplicitSe
         }
 
         s"The number of columns should be ${fileToTest.numberOfColumns}" in {
-          FileSizeTools.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
+          numberOfColumns should equal(fileToTest.numberOfColumns)
         }
 
         "The best size of columns including titles will be computed." in {
           val columnSizeTestActor: TestProbe = TestProbe()
           val linesTestActor: TestProbe = TestProbe()
 
-          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, "first", fileToTest.numberOfColumns, fileToTest.splitter)
+          val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, "first", numberOfColumns, fileToTest.splitter)
 
           val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
+          val distributor = Distributor(file, fileToTest.splitter, numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(fileToTest.columnCountWithTitles)
