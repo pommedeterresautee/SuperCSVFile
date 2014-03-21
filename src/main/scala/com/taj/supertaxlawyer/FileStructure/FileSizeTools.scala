@@ -69,12 +69,13 @@ object FileSizeTools {
    * @return the number of columns in the text file.
    */
   def columnCount(path: String, splitter: String, codec: String): Int = {
+    val splitterWithEscapedChar = s"\\Q$splitter\\E"
     val buffer = Source.fromFile(path, codec)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)
       .toList
-      .groupBy(line => line.split(splitter).size)
+      .groupBy(line => line.split(splitterWithEscapedChar).size)
       .map {
       case (numberOfTimes, listOfColumns) => (numberOfTimes, listOfColumns.size)
     }
