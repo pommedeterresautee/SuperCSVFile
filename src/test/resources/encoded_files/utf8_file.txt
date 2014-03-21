@@ -1,0 +1,2 @@
+premier champ avec un é;second champ avec un à;dernier champ sans rien bis
+premier champ avec un é;second champ avec un à;dernier champ sans rien
