@@ -41,19 +41,20 @@ import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import com.typesafe.scalalogging.slf4j.Logging
+import org.apache.commons.lang3.StringEscapeUtils
 
 
 /**
  * Specific actor messages to the column size computer.
  */
-object CommonTools {
+object CommonTools extends Logging {
   val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
   def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: List[Int]): List[Int] = {
     if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
-
+    val escapeRegexSplitter = s"\\Q$splitter\\E"
     listToAnalyze
-      .map(_.split(splitter)) // transform the line in Array of columns
+      .map(_.split(escapeRegexSplitter)) // transform the line in Array of columns
       .filter(_.size == columnQuantity) // Remove not expected lines
       .map(_.map(_.size).toList) // Change to a list of size of columns
       .foldLeft(emptyList)(CommonTools.mBiggerColumn) // Mix the best results

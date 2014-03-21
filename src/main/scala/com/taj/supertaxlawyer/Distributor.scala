@@ -47,7 +47,7 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean = true)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, dropFirsLines, stopSystemAtTheEnd)), name = s"Distributor_${file.getName}")
+  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage:Int = 500)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage)), name = s"Distributor_${file.getName}")
 }
 
 //TODO inject dependencies: stopSystemAtTheEnd
@@ -56,8 +56,7 @@ object Distributor {
  * @param path path to the file to analyze.
  * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean) extends Actor with Logging {
-  val numberOfLinesPerMessage = 200
+class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines:Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage:Int) extends Actor with Logging {
   val mBuffer = Source.fromFile(path)(codec)
   val mIterator = mBuffer.getLines()
   //.drop(dropFirsLines)

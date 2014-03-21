@@ -36,6 +36,8 @@ import akka.actor.ActorSystem
 import com.taj.supertaxlawyer.FileStructure._
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
+import com.typesafe.scalalogging.slf4j.Logging
+import java.util.regex.Pattern
 
 
 case class testContainer(name: String, numberOfColumns: Int, columnCount: List[Int], splitter: String, encoding: String, numberOfLines: Long)
@@ -43,7 +45,7 @@ case class testContainer(name: String, numberOfColumns: Int, columnCount: List[I
 /**
  * These tests are related to the count of columns in a text file.
  */
-class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll {
+class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll with Logging {
 
   val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
@@ -63,10 +65,10 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
   Seq(semicolon, semicolon_with_title, tab)
     .foreach {
     fileToTest =>
-      s"${fileToTest.name} related to the column size count" must {
+      s"We will evaluate the column sizes of the file ${fileToTest.name}." must {
         val file = new File(encodedFileFolder, fileToTest.name)
 
-        s"The encoding will be detected as ${fileToTest.encoding}" in {
+        s"The encoding should be detected as ${fileToTest.encoding}" in {
           val encoding = FileSizeTools.detectEncoding(file.getAbsolutePath)
           encoding should equal(fileToTest.encoding)
         }
@@ -75,14 +77,14 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
           FileSizeTools.columnCount(file.getAbsolutePath, fileToTest.splitter, fileToTest.encoding) should equal(fileToTest.numberOfColumns)
         }
 
-        "The best size of columns will be determined" in {
+        "The best size of columns will be computed." in {
           val columnSizeTestActor: TestProbe = TestProbe()
           val linesTestActor: TestProbe = TestProbe()
 
           val testSizeActor = SizeActorTest(columnSizeTestActor, fileToTest.name, fileToTest.numberOfColumns, fileToTest.splitter)
 
           val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false)
+          val distributor = Distributor(file, fileToTest.splitter, fileToTest.numberOfColumns, fileToTest.encoding, listOfWorkers, 0, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2)
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(fileToTest.columnCount)
@@ -102,6 +104,19 @@ class CounterTest extends TestKit(ActorSystem("AkkaSystemForTest")) with Implici
           val result = CommonTools.mBiggerColumn(list1, list2)
           result should be(goodResult)
         }
+    }
+  }
+
+  "We will compare several strings to find the best column size." must {
+  Seq((List("first|second|third", "fourth|five|six", "seven|eight|nine"), "|", 3, List(6,6,5)),
+    (List("one;second;fourth", "one;five;two", "one;eight;nineteen"), ";", 3, List(3,6,8)))
+    .zipWithIndex
+    .foreach{case ((listOfString, splitter, numberOfColumns, expectedResult), index )=>
+      s"Size evaluation of the group $index." in {
+
+        val result = CommonTools.mGetBestFitSize(listOfString, splitter, numberOfColumns, List.fill(numberOfColumns)(0))
+        result should be (expectedResult)
+      }
     }
   }
 
