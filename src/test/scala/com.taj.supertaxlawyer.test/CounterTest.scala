@@ -37,7 +37,6 @@ import com.taj.supertaxlawyer.FileStructure._
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.typesafe.scalalogging.slf4j.Logging
-import java.nio.charset.StandardCharsets
 
 
 case class testContainer(name: String, numberOfColumns: Int, columnCountWithTitles: List[Int], columnCountWithoutTitles: List[Int], splitter: String, encoding: String, numberOfLines: Long)
@@ -55,7 +54,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaTestSystem")) with ImplicitSe
   val pipe = testContainer("pipe.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), List(4, 7, 29, 5, 32, 4, 5, 4, 4, 4), "|", "ISO-8859-2", 25l)
   val semicolon_with_title = testContainer("semicolon_with_document_title_on_one_column.csv", 10, List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), List(7, 7, 29, 7, 32, 7, 7, 7, 7, 8), ";", "ISO-8859-2", 26l)
   val tab = testContainer("tab.txt", 10, List(7, 7, 9, 7, 7, 7, 15, 7, 7, 20), List(4, 7, 9, 5, 4, 4, 15, 4, 4, 20), "\t", "ISO-8859-2", 24l)
-  val utf8 = testContainer("utf8_file.txt", 3, List(24, 23, 27), List(24, 23, 23), ";", "ISO-8859-1", 2)
+  val fake_utf8 = testContainer("utf8_file.txt", 3, List(24, 23, 27), List(24, 23, 23), ";", "ISO-8859-1", 2)
 
   /**
    * Clean all temp files before starting
@@ -77,8 +76,7 @@ class CounterTest extends TestKit(ActorSystem("AkkaTestSystem")) with ImplicitSe
       }
   }
 
-
-  Seq(semicolon, semicolon_with_title, tab, pipe, utf8)
+  Seq(semicolon, semicolon_with_title, tab, pipe, fake_utf8)
     .foreach {
     fileToTest =>
       s"We will evaluate the column sizes of the file ${fileToTest.name}." must {
