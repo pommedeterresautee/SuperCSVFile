@@ -13,8 +13,8 @@ object LineCounterActor {
 
   def apply(output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
-      val resultActor = system.actorOf(Props(new ResultLinesActor(output)), "ResultLinesActor")
-      val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
+      override val resultActor = system.actorOf(Props(new ResultLinesActor(output)), "ResultLinesActor")
+      override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
@@ -24,8 +24,8 @@ object LineCounterActorTest {
 
   def apply(testActor: TestProbe, output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
-      val resultActor = testActor.ref
-      val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
+      override val resultActor = testActor.ref
+      override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
