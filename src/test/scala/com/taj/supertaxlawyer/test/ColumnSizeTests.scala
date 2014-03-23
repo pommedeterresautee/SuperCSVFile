@@ -25,30 +25,51 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
 
         "The best size of columns including titles will be computed." in {
           val columnSizeTestActor: TestProbe = TestProbe()
-          val linesTestActor: TestProbe = TestProbe()
-
           val testSizeActor = SizeActorTest(columnSizeTestActor, name, "first", numberOfColumns, splitter)
 
-          val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, 0, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
+          val listOfWorkers = List(testSizeActor)
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(columnCountWithTitles)
+
+        }
+
+        "The number of lines including titles will be computed." in {
+          val linesTestActor: TestProbe = TestProbe()
+          val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterWithTitles")
+          distributor ! Start()
+
           linesTestActor.expectMsg(numberOfLines)
         }
 
         "The best size of columns without titles will be computed." in {
           val columnSizeTestActor: TestProbe = TestProbe()
-          val linesTestActor: TestProbe = TestProbe()
-
           val testSizeActor = SizeActorTest(columnSizeTestActor, name, "bis", numberOfColumns, splitter)
-
-          val listOfWorkers = List(testSizeActor, LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "bis")
+          val listOfWorkers = List(testSizeActor)
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "bis")
           distributor ! Start()
-
           columnSizeTestActor.expectMsg(columnCountWithoutTitles)
-          linesTestActor.expectMsg(numberOfLines - 1) // -1 because we remove one line for the tittles
+        }
+
+
+        "The number of lines excluding titles will be computed." in {
+          val linesTestActor: TestProbe = TestProbe()
+          val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterWithoutTitles")
+          distributor ! Start()
+          // -1 because we remove one line for the tittles
+          linesTestActor.expectMsg(numberOfLines - 1)
+        }
+
+        "We will compute the number of lines read when we begin at line 3 and finish at line 3" in {
+          val linesTestActor: TestProbe = TestProbe()
+          val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = Some(0))
+          distributor ! Start()
+          // from 3 (included) to 4, there are two lines.
+          linesTestActor.expectMsg(1)
         }
       }
   }

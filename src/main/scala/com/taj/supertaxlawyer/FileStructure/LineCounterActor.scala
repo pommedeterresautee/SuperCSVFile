@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.FileStructure
 
 import akka.actor.{ActorRef, ActorSystem, Props, Actor}
-import com.taj.supertaxlawyer.ActorMessages.Lines
+import com.taj.supertaxlawyer.ActorMessages.{ReadNextBlock, Lines}
 import com.taj.supertaxlawyer.ActorContainer
 import akka.testkit.TestProbe
 import scala.reflect.io.{File, Path}
@@ -14,7 +14,7 @@ object LineCounterActor {
   def apply(output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
       override val resultActor = system.actorOf(Props(new ResultLinesActor(output)), "ResultLinesActor")
-      override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
+      override val linesActor = system.actorOf(Props(new LineCounterActor(false)), name = "LinesActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
@@ -25,7 +25,7 @@ object LineCounterActorTest {
   def apply(testActor: TestProbe, output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
       override val resultActor = testActor.ref
-      override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "LinesActor")
+      override val linesActor = system.actorOf(Props(new LineCounterActor(true)), name = "LinesActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
@@ -39,12 +39,13 @@ trait LineCounterActorComponent {
   /**
    * Count lines in the analyzed text file.
    */
-  class LineCounterActor() extends Actor {
+  class LineCounterActor(askNextLine: Boolean) extends Actor {
     var mTotalSize = 0l
 
     override def receive: Actor.Receive = {
       case Lines(lines) =>
         mTotalSize += lines.size
+        if (askNextLine) sender() ! ReadNextBlock()
     }
 
     override def postStop(): Unit = {
