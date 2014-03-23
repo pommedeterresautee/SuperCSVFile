@@ -1,14 +1,13 @@
 package com.taj.supertaxlawyer.test
 
-import org.scalatest.{Matchers, WordSpecLike, Suites}
-import com.typesafe.scalalogging.slf4j.Logging
+import org.scalatest.Suites
 import com.taj.supertaxlawyer.test.DataToTest._
 import java.io.File
 
 /**
  * These tests are related to the count of columns in a text file.
  */
-class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSizeTests) with WordSpecLike with Matchers with Logging {
+class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSizeTests) with TestTrait {
 
 
   Seq(semicolon, semicolon_with_title, tab, pipe)
