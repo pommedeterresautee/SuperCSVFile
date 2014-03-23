@@ -63,13 +63,13 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
           linesTestActor.expectMsg(numberOfLines - 1)
         }
 
-        "We will compute the number of lines read when we begin at line 3 and finish at line 3" in {
+        "We will compute the number of lines read when we begin at line 2 (included) and finish at line 6" in {
           val linesTestActor: TestProbe = TestProbe()
           val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = Some(0))
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = Some(5))
           distributor ! Start()
-          // from 3 (included) to 4, there are two lines.
-          linesTestActor.expectMsg(1)
+          // use min in case the file is too small.
+          linesTestActor.expectMsg((numberOfLines - 1) min 6)
         }
       }
   }
