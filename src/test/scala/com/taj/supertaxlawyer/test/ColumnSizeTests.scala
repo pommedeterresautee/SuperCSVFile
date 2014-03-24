@@ -32,7 +32,6 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(columnCountWithTitles)
-
         }
 
         "The number of lines including titles will be computed." in {
@@ -52,7 +51,6 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
           distributor ! Start()
           columnSizeTestActor.expectMsg(columnCountWithoutTitles)
         }
-
 
         "The number of lines excluding titles will be computed." in {
           val linesTestActor: TestProbe = TestProbe()

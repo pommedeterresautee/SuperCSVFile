@@ -2,6 +2,7 @@ package com.taj.supertaxlawyer.CommandLine
 
 import org.rogach.scallop.ScallopConf
 import java.io.File
+import java.nio.charset.Charset
 
 
 object CommandLineParser {
@@ -29,7 +30,7 @@ class CommandLineParser(args: Array[String]) extends ScallopConf(args) {
 
     val columnSize = opt[String]("columnSize", descr = "Print the detected encoding of each file provided.", validate = fileExist)
     val splitter = opt[String]("splitter", descr = "Character used to split a line in columns. Use TAB for tabulation and SPACE for space separators.")
-    val encoding = opt[String]("forceEncoding", descr = "Force the encoding of the text file.")
+    val encoding = opt[String]("forceEncoding", descr = "Force the encoding of the text file.", validate = Charset.isSupported)
     val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
     val excludeTitles = toggle("excludeTitles", descrYes = "Exclude titles of columns in column size result.", default = Some(false), prefix = "no-")
     val output = opt[String]("outputFolder", descr = "Path to the folder where to save the results.", validate = new File(_).isDirectory)

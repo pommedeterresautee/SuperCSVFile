@@ -35,6 +35,7 @@ import com.ibm.icu.text.CharsetDetector
 import java.io.{BufferedInputStream, File, FileInputStream}
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.{ActorContainer, Distributor}
+import java.nio.charset.Charset
 
 /**
  * Operation related to the count of columns in a text file.
@@ -46,18 +47,19 @@ object FileSizeTools {
    * @param path path to the text file.
    * @param splitter Char or String used to limit the columns.
    * @param expectedColumnQuantity number of columns expected per line. Any line with a different number of column won't be tested.
-   * @param codec Encoding of the text file.
+   * @param encoding Encoding of the text file.
    * @return A list of column sizes.
    */
-  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, codec: String, output: Option[String], titles: Option[List[String]]) {
+  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, encoding: String, output: Option[String], titles: Option[List[String]]) {
     implicit val system: ActorSystem = ActorSystem("ActorSystemComputation")
+
     val listOfWorkers: List[ActorContainer] = List(
       SizeActor(output, expectedColumnQuantity, splitter, titles),
       LineCounterActor(output) /*,
       ExtractEntry(expectedColumnQuantity, splitter)*/
     )
     val dropLines = if (titles.isDefined) 1 else 0
-    val distributor = Distributor(path, splitter, expectedColumnQuantity, codec, listOfWorkers, dropLines)
+    val distributor = Distributor(path, splitter, expectedColumnQuantity, encoding, listOfWorkers, dropLines)
     distributor ! Start()
   }
 

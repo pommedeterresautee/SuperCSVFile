@@ -47,16 +47,16 @@ import com.typesafe.scalalogging.slf4j.Logging
  * Specific actor messages to the column size computer.
  */
 object CommonTools extends Logging {
-  val mBiggerColumn: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
+  val mBiggestColumns: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
   def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: List[Int]): List[Int] = {
     if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
     val escapeRegexSplitter = s"\\Q$splitter\\E"
     listToAnalyze
-      .map(_.split(escapeRegexSplitter)) // transform the line in Array of columns
+      .map(_.split(escapeRegexSplitter, -1)) // transform the line in Array of columns
       .filter(_.size == columnQuantity) // Remove not expected lines
       .map(_.map(_.size).toList) // Change to a list of size of columns
-      .foldLeft(emptyList)(CommonTools.mBiggerColumn) // Mix the best results
+      .foldLeft(emptyList)(CommonTools.mBiggestColumns) // Mix the best results
   }
 }
 
@@ -68,12 +68,15 @@ trait SizeActorTrait {
    * @param columnQuantity expected number of columns.
    * @param splitter char used to separate each column.
    */
-  class SizeActor(output: Option[String], columnQuantity: Int, splitter: String) extends Actor {
+  class SizeActor(output: Option[String], columnQuantity: Int, splitter: String) extends Actor with Logging {
     val emptyList = List.fill(columnQuantity)(0)
+    var counter = 0
 
     override def receive: Actor.Receive = {
       case RegisterYourself() => sender ! RegisterMe()
-      case Lines(listToAnalyze) =>
+      case Lines(listToAnalyze, index) =>
+        counter += listToAnalyze.length
+
         val blockResult: List[Int] =
           CommonTools.mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
         resultAccumulatorActor ! blockResult
@@ -82,6 +85,7 @@ trait SizeActorTrait {
 
     override def postStop(): Unit = {
       resultAccumulatorActor ! JobFinished()
+      logger.debug(s"*** The actor ${self.path.name} has analyzed $counter lines ***")
     }
   }
 }
@@ -103,15 +107,14 @@ trait AccumulatorSizeActorTrait {
       case columnSizes: List[Int] =>
         bestSizes match {
           case None => bestSizes = Some(columnSizes)
-          case Some(currentBestSize) => {
-            bestSizes = Some(CommonTools.mBiggerColumn(currentBestSize, columnSizes))
-          }
+          case Some(currentBestSize) =>
+            bestSizes = Some(CommonTools.mBiggestColumns(currentBestSize, columnSizes))
         }
 
       case JobFinished() =>
         workerFinished += 1
         if (workerFinished == workerQuantity) {
-          resultActor ! bestSizes.get
+          bestSizes.foreach(resultActor ! _)
         }
     }
   }
@@ -123,7 +126,7 @@ trait ResultSizeActorTrait {
   class ResultSizeColumnActor(outputFolder: Option[String], titles: Option[List[String]]) extends Actor with Logging {
 
     override def receive: Actor.Receive = {
-      case bestSizes: List[Int] =>
+      case (bestSizes: List[Int]) =>
         val stringResult: String = (bestSizes, titles) match {
           case (sizes, Some(titleList)) if sizes.size == titleList.size =>
             titleList

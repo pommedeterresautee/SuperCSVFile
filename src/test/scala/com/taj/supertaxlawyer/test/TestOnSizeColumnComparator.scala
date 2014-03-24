@@ -7,7 +7,7 @@ object TestOnSizeColumnComparator extends TestTrait {
   val biggestList: ((List[Int], List[Int], List[Int])) => Unit = {
     case (list1, list2, goodResult) =>
       s"Get the biggest list between $list1 and $list2." in {
-        val result = CommonTools.mBiggerColumn(list1, list2)
+        val result = CommonTools.mBiggestColumns(list1, list2)
         result shouldBe goodResult
       }
   }

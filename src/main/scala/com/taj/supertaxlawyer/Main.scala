@@ -32,15 +32,20 @@ package com.taj.supertaxlawyer
 import java.io.File
 import com.taj.supertaxlawyer.CommandLine.ExecuteCommandLineCommand
 
-
+/**
+ * Main entry in the program.
+ * Class to launch at start.
+ */
 object Main extends App {
   val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
   val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
 
   val file: String = encodedFileFolder + "semicolon.csv"
 
-  val arg = List("--columnSize", file, "--splitter", ";", "--includeTitles")
+  val fileUTF8 = "C:\\Users\\MBenesty\\Private\\GIT\\Super Tax Lawyer\\FEC_EXAMPLE\\FEC_UTF8_TAB.txt"
+  val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
+  val argUTF8 = Array("--columnSize", fileUTF8, "--splitter", "TAB", "--forceEncoding", "ISO-8859-1", "--excludeTitles")
+  val arg = Array("--columnSize", file, "--splitter", ";")
 
   ExecuteCommandLineCommand(args)
 }
-

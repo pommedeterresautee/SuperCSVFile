@@ -47,7 +47,7 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, suffixNameForTest: String = "", limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, codec, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor_${file.getName}_$suffixNameForTest")
+  def apply(file: File, splitter: String, columnNumberExpected: Int, encoding: String, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, suffixNameForTest: String = "", limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor_${file.getName}_$suffixNameForTest")
 }
 
 /**
@@ -55,22 +55,22 @@ object Distributor {
  * @param path path to the file to analyze.
  * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumberExpected: Int, codec: Codec, workers: List[ActorContainer], dropFirsLines: Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
-  val mBuffer = Source.fromFile(path)(codec)
-  val mIterator = mBuffer.getLines()
-  .drop(dropFirsLines)
+class Distributor(path: String, splitter: String, columnNumberExpected: Int, encoding: String, workers: List[ActorContainer], dropFirsLines: Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
+  val mBuffer = Source.fromFile(path, encoding)
+  val mIterator = mBuffer.getLines().drop(dropFirsLines)
   val limitedmIterator =
     limitOfLinesRead
-      .map(limit => mIterator
-      .zipWithIndex
-      .takeWhile {
-      case (read, index) => index <= limit
-    }
-      .map {
-      case (read, index) => read
-    })
+      .map(
+        limit => mIterator
+          .zipWithIndex
+          .takeWhile {
+          case (read, index) => index <= limit
+          }
+          .map {
+          case (read, index) => read
+      })
       .getOrElse(mIterator)
-  val mSource = limitedmIterator.grouped(numberOfLinesPerMessage)
+  val mSource = limitedmIterator.grouped(numberOfLinesPerMessage).zipWithIndex
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var bestSizes = List.fill(columnNumberExpected)(0)
   var operationFinished = false
@@ -92,8 +92,8 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, cod
     case ReadNextBlock() =>
       logger.debug(s"*** Send lines ***")
       if (mSource.hasNext) {
-        val nextLinesBlock = mSource.next()
-        workers.foreach(_.actor ! Lines(nextLinesBlock))
+        val (lines, index) = mSource.next()
+        workers.foreach(_.actor ! Lines(lines, index))
       }
       else {
         if (!operationFinished) {

@@ -43,7 +43,7 @@ trait LineCounterActorComponent {
     var mTotalSize = 0l
 
     override def receive: Actor.Receive = {
-      case Lines(lines) =>
+      case Lines(lines, index) =>
         mTotalSize += lines.size
         if (askNextLine) sender() ! ReadNextBlock()
     }

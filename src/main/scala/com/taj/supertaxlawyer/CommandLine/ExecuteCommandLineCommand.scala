@@ -5,10 +5,12 @@ import com.taj.supertaxlawyer.FileStructure.FileSizeTools
 import java.io.File
 import scala.io.Source
 
-/**
- * Take a parsed command line object and execute the correct methods.
- */
+
 object ExecuteCommandLineCommand {
+  /**
+   * Take a parsed command line object and execute the correct methods.
+   * @param args arguments sent by the user to the application.
+   */
   def apply(args: Array[String]) {
     val opts = CommandLineParser(args)
 
