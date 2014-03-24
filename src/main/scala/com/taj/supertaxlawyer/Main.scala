@@ -30,7 +30,7 @@
 package com.taj.supertaxlawyer
 
 import java.io.File
-import com.taj.supertaxlawyer.CommandLine.ExecuteCommandLineCommand
+import com.taj.supertaxlawyer.CommandLine.ExecuteCommandLine
 
 /**
  * Main entry in the program.
@@ -47,5 +47,5 @@ object Main extends App {
   val argUTF8 = Array("--columnSize", fileUTF8, "--splitter", "TAB", "--forceEncoding", "ISO-8859-1", "--excludeTitles")
   val arg = Array("--columnSize", file, "--splitter", ";")
 
-  ExecuteCommandLineCommand(args)
+  ExecuteCommandLine(args)
 }

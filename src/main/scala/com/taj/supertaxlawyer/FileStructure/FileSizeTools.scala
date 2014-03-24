@@ -63,16 +63,26 @@ object FileSizeTools {
     distributor ! Start()
   }
 
+  def findDelimiter(path: String, encoding: String):(String, Int) = {
+    val buffer = Source.fromFile(path, encoding)
+    buffer
+      .getLines()
+      .take(1000)
+      .map(line => line.groupBy(_.toChar).mapValues(c => c.size))
+      .map(map => ???)
+      ???
+  }
+
   /**
    * Count the number of columns in a text file.
    * @param path path to the file to study.
    * @param splitter String used to limit the columns.
-   * @param codec encoding of the file
+   * @param encoding encoding of the file
    * @return the number of columns in the text file.
    */
-  def columnCount(path: String, splitter: String, codec: String): Int = {
+  def columnCount(path: String, splitter: String, encoding: String): Int = {
     val splitterWithEscapedChar = s"\\Q$splitter\\E"
-    val buffer = Source.fromFile(path, codec)
+    val buffer = Source.fromFile(path, encoding)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)

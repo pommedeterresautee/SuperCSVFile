@@ -6,7 +6,7 @@ import java.io.File
 import scala.io.Source
 
 
-object ExecuteCommandLineCommand {
+object ExecuteCommandLine {
   /**
    * Take a parsed command line object and execute the correct methods.
    * @param args arguments sent by the user to the application.
