@@ -19,6 +19,7 @@ object LineExtractorActor {
    * @param end finish the extraction at this line.
    */
   def extract(path: String, encoding: String, output: Option[String], start: Int, end: Int) = {
+    implicit val system: ActorSystem = ActorSystem("ActorSystemExtraction")
     val file = new File(path)
     val extractor = ActorContainer(LineExtractorActor(output), isRooter = false)
     val listOfWorker = List(extractor)
