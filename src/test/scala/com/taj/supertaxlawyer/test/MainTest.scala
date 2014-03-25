@@ -30,7 +30,6 @@ class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSi
   "We will compare 2 lists to find the best size." must {
     Seq((List(1, 2, 3, 1), List(4, 5, 3, 2), List(4, 5, 3, 2)), (List(1, 8, 3, 7), List(8, 9, 0, 5), List(8, 9, 3, 7)), (List(1, 2, -3, -1), List(-4, -5, 3, 2), List(1, 2, 3, 2)))
       .foreach(TestOnSizeColumnComparator.biggestList)
-
   }
 
   "We will compare several strings to find the best column size." must {

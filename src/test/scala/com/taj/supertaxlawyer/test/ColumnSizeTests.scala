@@ -7,6 +7,8 @@ import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.actor.ActorSystem
 import org.scalatest.BeforeAndAfterAll
+import scalaz._
+import Scalaz._
 
 
 object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender with BeforeAndAfterAll {
@@ -19,6 +21,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
 
         s"METHOD 1 - The number of columns should be $numberOfColumns" in {
           val result = FileSizeTools.columnCount(file.getAbsolutePath, splitter, encoding)
+
           result should be(numberOfColumns)
         }
 
@@ -55,6 +58,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
           val listOfWorkers = List(testSizeActor)
           val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "bis")
           distributor ! Start()
+
           columnSizeTestActor.expectMsg(columnCountWithoutTitles)
         }
 
@@ -70,7 +74,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
         "We will compute the number of lines read when we begin at line 2 (included) and finish at line 6" in {
           val linesTestActor: TestProbe = TestProbe()
           val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = Some(5))
+          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = 5.some)
           distributor ! Start()
           // use min in case the file is too small.
           linesTestActor.expectMsg((numberOfLines - 1) min 6)

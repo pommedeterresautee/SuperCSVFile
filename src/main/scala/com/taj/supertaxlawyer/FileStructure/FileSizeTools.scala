@@ -35,11 +35,12 @@ import com.ibm.icu.text.CharsetDetector
 import java.io.{BufferedInputStream, File, FileInputStream}
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.{ActorContainer, Distributor}
+import com.typesafe.scalalogging.slf4j.Logging
 
 /**
  * Operation related to the count of columns in a text file.
  */
-object FileSizeTools {
+object FileSizeTools extends Logging {
 
   /**
    * Compute the size of each column in the text file.
@@ -75,11 +76,12 @@ object FileSizeTools {
       Source.fromFile(path, encoding)
       .getLines()
       .take(1000)
-      .map(line => line.groupBy(_.toChar).mapValues(c => c.size)) // return the frequency of each char per line.
+      .map(line => line.groupBy(_.toChar).mapValues(char => char.size)) // return the frequency of each char per line.
       .flatMap(map => map.toList) // transform each Map in List of Tuple and then flat the Iterator of List of Tuple.
       .toList
       .groupBy(tuple => tuple) // enumerate each Tuple (Char, Quantity) in the big list and group them.
       .map{case (tuple, list) => (tuple, list.length)}
+      .filter{case ((char, _), _) => !char.isLetterOrDigit} // remove letters and digits from the List of Tuple.
       .toList
 
     val (_, max) = tupleList
@@ -88,6 +90,8 @@ object FileSizeTools {
     val ((delimiter, frequency), _) = tupleList
       .filter{case (tuple, tupleFrequency) => tupleFrequency == max} // keep only the most frequent Tuple in the entire file.
       .maxBy(_._1._2) // choose the Character which has the highest frequency per line.
+
+    logger.debug(s"*** The character the most recurrent is [$delimiter] and its frequency per line is equal to $frequency. It appears in $max lines. ***")
 
     (delimiter.toString, frequency + 1) // +1 because there is always one column more than quantity of delimiters.
   }

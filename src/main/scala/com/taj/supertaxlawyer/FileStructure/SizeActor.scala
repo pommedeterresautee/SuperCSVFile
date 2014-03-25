@@ -41,6 +41,8 @@ import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import com.typesafe.scalalogging.slf4j.Logging
+import scalaz._
+import Scalaz._
 
 
 /**
@@ -108,7 +110,7 @@ trait AccumulatorSizeActorTrait {
         bestSizes match {
           case None => bestSizes = Some(columnSizes)
           case Some(currentBestSize) =>
-            bestSizes = Some(CommonTools.mBiggestColumns(currentBestSize, columnSizes))
+            bestSizes = CommonTools.mBiggestColumns(currentBestSize, columnSizes).some
         }
 
       case JobFinished() =>
