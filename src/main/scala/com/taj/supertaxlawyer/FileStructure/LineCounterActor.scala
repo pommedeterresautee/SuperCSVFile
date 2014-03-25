@@ -63,9 +63,9 @@ trait ResultLineCounterActorComponent {
       case mTotalSize: Long =>
         output match {
           case None => println(s"The text file contains $mTotalSize lines")
-          case Some(outputPath) =>
-            if (Path(outputPath).isDirectory) File(outputPath + self.path.name).writeAll(mTotalSize.toString)
-            else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
+          case Some(outputPath) if Path(outputPath).isDirectory =>
+            File(outputPath + self.path.name).writeAll(mTotalSize.toString)
+          case Some(outputPath) => throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
         }
     }
   }
