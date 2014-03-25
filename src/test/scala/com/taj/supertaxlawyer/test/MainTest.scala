@@ -14,7 +14,7 @@ class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSi
     .map(fileToTest => (fileToTest.name, new File(encodedFileFolder, fileToTest.name), fileToTest.encoding))
     .foreach(EncodingTest.test)
 
-  Seq(semicolon, semicolon_with_title, tab, pipe, utf8, fake_utf8_bis)
+  Seq(semicolon, semicolon_with_title, tab, pipe, utf8, fake_utf8)
     .map(fileToTest =>
     (new File(encodedFileFolder, fileToTest.name),
       fileToTest.name,

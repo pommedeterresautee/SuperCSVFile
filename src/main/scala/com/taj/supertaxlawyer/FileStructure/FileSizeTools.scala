@@ -35,7 +35,6 @@ import com.ibm.icu.text.CharsetDetector
 import java.io.{BufferedInputStream, File, FileInputStream}
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.{ActorContainer, Distributor}
-import java.nio.charset.Charset
 
 /**
  * Operation related to the count of columns in a text file.
@@ -63,14 +62,34 @@ object FileSizeTools {
     distributor ! Start()
   }
 
-  def findDelimiter(path: String, encoding: String):(String, Int) = {
-    val buffer = Source.fromFile(path, encoding)
-    buffer
+  /**
+   * <p>Find the delimiter and the number of columns based on the first 1000 lines.</p>
+   * <p>In case of several characters equally present, choose the one with the highest frequency per line.</p><br>
+   * <p><b>WARNING</b>: May fail on small text file (less than 50 lines).</p><br>
+   * @param path to the file to analyze.
+   * @param encoding of the text file.
+   * @return a Tuple with the delimiter and the number of columns found.
+   */
+  def findColumnDelimiter(path: String, encoding: String):(String, Int) = {
+    val tupleList =
+      Source.fromFile(path, encoding)
       .getLines()
       .take(1000)
-      .map(line => line.groupBy(_.toChar).mapValues(c => c.size))
-      .map(map => ???)
-      ???
+      .map(line => line.groupBy(_.toChar).mapValues(c => c.size)) // return the frequency of each char per line.
+      .flatMap(map => map.toList) // transform each Map in List of Tuple and then flat the Iterator of List of Tuple.
+      .toList
+      .groupBy(tuple => tuple) // enumerate each Tuple (Char, Quantity) in the big list and group them.
+      .map{case (tuple, list) => (tuple, list.length)}
+      .toList
+
+    val (_, max) = tupleList
+      .maxBy{case (tuple, tupleQuantity) => tupleQuantity} // search for the most frequent Tuple.
+
+    val ((delimiter, frequency), _) = tupleList
+      .filter{case (tuple, tupleFrequency) => tupleFrequency == max} // keep only the most frequent Tuple in the entire file.
+      .maxBy(_._1._2) // choose the Character which has the highest frequency per line.
+
+    (delimiter.toString, frequency + 1) // +1 because there is always one column more than quantity of delimiters.
   }
 
   /**

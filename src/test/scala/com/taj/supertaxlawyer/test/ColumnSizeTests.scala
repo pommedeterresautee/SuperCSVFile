@@ -17,10 +17,16 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
     case (file, name, encoding, splitter, numberOfLines, numberOfColumns, columnCountWithTitles, columnCountWithoutTitles) =>
       s"We will evaluate the column sizes of the file $name." must {
 
-        val numberOfColumns = FileSizeTools.columnCount(file.getAbsolutePath, splitter, encoding)
+        s"METHOD 1 - The number of columns should be $numberOfColumns" in {
+          val result = FileSizeTools.columnCount(file.getAbsolutePath, splitter, encoding)
+          result should be(numberOfColumns)
+        }
 
-        s"The number of columns should be $numberOfColumns" in {
-          numberOfColumns should equal(numberOfColumns)
+        s"METHOD 2 - The number of columns should be $numberOfColumns and the splitter should be [$splitter]." in {
+          val (resultSplitter, resultColumns) = FileSizeTools.findColumnDelimiter(file.getAbsolutePath, encoding)
+
+          resultColumns should be(numberOfColumns)
+          resultSplitter should be(splitter)
         }
 
         "The best size of columns including titles will be computed." in {
