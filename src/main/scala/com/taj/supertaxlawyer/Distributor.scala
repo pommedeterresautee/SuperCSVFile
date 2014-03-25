@@ -29,7 +29,7 @@
 
 package com.taj.supertaxlawyer
 
-import scala.io.{Source, Codec}
+import scala.io.Source
 import akka.actor._
 import scala.collection.mutable.ArrayBuffer
 import com.taj.supertaxlawyer.ActorMessages.RegisterMe
@@ -47,15 +47,14 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, splitter: String, columnNumberExpected: Int, encoding: String, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, suffixNameForTest: String = "", limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, splitter, columnNumberExpected, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor_${file.getName}_$suffixNameForTest")
+  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, suffixNameForTest: String = "", limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor_${file.getName}_$suffixNameForTest")
 }
 
 /**
  * Read the file and send the work.
  * @param path path to the file to analyze.
- * @param columnNumberExpected expected number of columns.
  */
-class Distributor(path: String, splitter: String, columnNumberExpected: Int, encoding: String, workers: List[ActorContainer], dropFirsLines: Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
+class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
   val mBuffer = Source.fromFile(path, encoding)
   val mIterator = mBuffer.getLines().drop(dropFirsLines)
   val limitedmIterator =
@@ -72,7 +71,6 @@ class Distributor(path: String, splitter: String, columnNumberExpected: Int, enc
       .getOrElse(mIterator)
   val mSource = limitedmIterator.grouped(numberOfLinesPerMessage).zipWithIndex
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
-  var bestSizes = List.fill(columnNumberExpected)(0)
   var operationFinished = false
 
   override def receive: Actor.Receive = {

@@ -37,7 +37,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
           val testSizeActor = SizeActorTest(columnSizeTestActor, name, "first", numberOfColumns, splitter)
 
           val listOfWorkers = List(testSizeActor)
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
+          val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "first")
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(columnCountWithTitles)
@@ -46,7 +46,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
         "The number of lines including titles will be computed." in {
           val linesTestActor: TestProbe = TestProbe()
           val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterWithTitles")
+          val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterWithTitles")
           distributor ! Start()
 
           linesTestActor.expectMsg(numberOfLines)
@@ -56,7 +56,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
           val columnSizeTestActor: TestProbe = TestProbe()
           val testSizeActor = SizeActorTest(columnSizeTestActor, name, "bis", numberOfColumns, splitter)
           val listOfWorkers = List(testSizeActor)
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "bis")
+          val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "bis")
           distributor ! Start()
 
           columnSizeTestActor.expectMsg(columnCountWithoutTitles)
@@ -65,7 +65,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
         "The number of lines excluding titles will be computed." in {
           val linesTestActor: TestProbe = TestProbe()
           val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterWithoutTitles")
+          val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterWithoutTitles")
           distributor ! Start()
           // -1 because we remove one line for the tittles
           linesTestActor.expectMsg(numberOfLines - 1)
@@ -74,7 +74,7 @@ object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender wi
         "We will compute the number of lines read when we begin at line 2 (included) and finish at line 6" in {
           val linesTestActor: TestProbe = TestProbe()
           val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-          val distributor = Distributor(file, splitter, numberOfColumns, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = 5.some)
+          val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, suffixNameForTest = "lineCounterReadPartFile", limitNumberOfLinesToRead = 5.some)
           distributor ! Start()
           // use min in case the file is too small.
           linesTestActor.expectMsg((numberOfLines - 1) min 6)

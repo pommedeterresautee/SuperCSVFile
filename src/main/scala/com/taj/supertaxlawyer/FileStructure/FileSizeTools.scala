@@ -59,7 +59,7 @@ object FileSizeTools extends Logging {
       ExtractEntry(expectedColumnQuantity, splitter)*/
     )
     val dropLines = if (titles.isDefined) 1 else 0
-    val distributor = Distributor(path, splitter, expectedColumnQuantity, encoding, listOfWorkers, dropLines)
+    val distributor = Distributor(path, encoding, listOfWorkers, dropLines)
     distributor ! Start()
   }
 
