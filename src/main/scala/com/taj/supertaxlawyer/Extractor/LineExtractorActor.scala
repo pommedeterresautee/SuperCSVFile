@@ -1,14 +1,29 @@
 package com.taj.supertaxlawyer.Extractor
 
 import akka.actor.{Props, ActorSystem, Actor}
-import scala.reflect.io.File
+
+import com.taj.supertaxlawyer.{ActorContainer, Distributor}
+import java.io.File
+import com.taj.supertaxlawyer.ActorMessages.Start
 
 
 object LineExtractorActor {
   def apply(output: Option[String])(implicit system: ActorSystem) = system.actorOf(Props(new LineExtractorActor(output)), "ExtractLinesActor")
 
-  def extract() = {
-
+  /**
+   * Extract lines from a file and write it to another file or print them to screen.
+   * @param path to the original file.
+   * @param encoding to the original file.
+   * @param output optional path to the external file.
+   * @param start begin the extraction with this line.
+   * @param end finish the extraction at this line.
+   */
+  def extract(path: String, encoding: String, output: Option[String], start: Int, end: Int) = {
+    val file = new File(path)
+    val extractor = ActorContainer(LineExtractorActor(output), isRooter = false)
+    val listOfWorker = List(extractor)
+    val actor = Distributor(file, encoding, listOfWorker, dropFirsLines = start, limitNumberOfLinesToRead = Some(end - start))
+    actor ! Start()
   }
 }
 
@@ -16,6 +31,8 @@ object LineExtractorActor {
  * Write the lines received in an output file.
  */
 class LineExtractorActor(outputFile: Option[String]) extends Actor {
+
+  import scala.reflect.io.File
   override def receive: Receive = {
     case lines: List[String] =>
       outputFile match {
