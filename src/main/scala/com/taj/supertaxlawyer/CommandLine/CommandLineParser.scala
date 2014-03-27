@@ -26,14 +26,18 @@ class CommandLineParser(args: Array[String]) extends ScallopConf(args) {
 
     Super Tax Lawyer is a program to play with accounting exported as text files.
      """)
-    val fileExist: String => Boolean = new File(_).exists()
+    val fileExist: String => Boolean = new File(_).isFile
     val fileListExist: List[String] => Boolean = _.forall(fileExist)
     val columnSize = opt[String]("columnSize", descr = "Print the detected encoding of each file provided.", validate = fileExist)
     val splitter = opt[String]("splitter", descr = "Character used to split a line in columns. Use TAB for tabulation and SPACE for space separators.")
+    val extract = opt[String]("extractLines", descr = "Extract specific block of lines from the file. Need to precise the number of lines to extract from the text file.", validate = fileExist)
+    val startLine = opt[Int]("firstLine", descr = "Set the first line for the extraction.", validate = _ >= 0)
+    val endLine = opt[Int]("lastLine", descr = "Set the last line for the extraction.", validate = _ >= 0)
     val encoding = opt[String]("forceEncoding", descr = "Force the encoding of the text file.", validate = Charset.isSupported)
     val columnCount = opt[Int]("columnCount", descr = "[OPTIONAL] Number of columns expected.")
     val excludeTitles = toggle("excludeTitles", descrYes = "Exclude titles of columns in column size result.", default = false.some, prefix = "no-")
-    val output = opt[String]("outputFolder", descr = "Path to the folder where to save the results.", validate = new File(_).isDirectory)
+    val outputFolder = opt[String]("outputFolder", descr = "Path to the folder where to save the results.", validate = new File(_).isDirectory)
+  val outputFile = opt[String]("outputFile", descr = "Path to the file where to save the results.", validate = ! new File(_).isDirectory)
     val debug = toggle("debug", descrYes = "Display lots of debug information during the process.", descrNo = "Display minimum during the process (same as not using this argument).", default = false.some, prefix = "no-")
     val help = opt[Boolean]("help", descr = "Show this message.")
     conflicts(columnSize, List(help))

@@ -75,9 +75,10 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
 
   override def receive: Actor.Receive = {
     case Start() =>
-      logger.debug(s"*** Watching ${sender().path} ***")
+      logger.debug(s"*** Start watching ***")
       workers.foreach {
         actor =>
+          logger.debug(s"*** Will watch the actor ${actor.actor.path.name} ***")
           context.watch(actor.actor)
           mListWatchedRoutees += actor.actor
           if (actor.isRooter) actor.actor ! Broadcast(RegisterYourself()) // Will watch the rootees
