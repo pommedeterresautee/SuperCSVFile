@@ -46,6 +46,7 @@ object Main extends App {
   val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
   val argUTF8 = Array("--columnSize", fileUTF8, "--forceEncoding", "ISO-8859-1", "--excludeTitles")
   val arg = Array("--columnSize", file)
+  val argExtract = Array("--extractLines", file, "--firstLine", "0", "--lastLine", "0")
 
   ExecuteCommandLine(args)
 }
