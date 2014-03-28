@@ -9,21 +9,20 @@ import java.io.File
  */
 class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSizeTests) with TestTrait {
 
-
   Seq(semicolon, semicolon_with_title, tab, pipe)
-    .map(fileToTest => (fileToTest.name, new File(encodedFileFolder, fileToTest.name), fileToTest.encoding))
+    .map(fileToTest ⇒ (fileToTest.name, new File(encodedFileFolder, fileToTest.name), fileToTest.encoding))
     .foreach(EncodingTest.test)
 
   Seq(semicolon, semicolon_with_title, tab, pipe, utf8, fake_utf8)
-    .map(fileToTest =>
-    (new File(encodedFileFolder, fileToTest.name),
-      fileToTest.name,
-      fileToTest.encoding,
-      fileToTest.splitter,
-      fileToTest.numberOfLines,
-      fileToTest.numberOfColumns,
-      fileToTest.columnCountWithTitles,
-      fileToTest.columnCountWithoutTitles
+    .map(fileToTest ⇒
+      (new File(encodedFileFolder, fileToTest.name),
+        fileToTest.name,
+        fileToTest.encoding,
+        fileToTest.splitter,
+        fileToTest.numberOfLines,
+        fileToTest.numberOfColumns,
+        fileToTest.columnCountWithTitles,
+        fileToTest.columnCountWithoutTitles
       ))
     .foreach(ColumnSizeTests.test)
 
@@ -36,6 +35,6 @@ class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSi
     Seq((List("first|second|third", "fourth|five|six", "seven|eight|nine"), "|", 3, List(6, 6, 5)),
       (List("one;second;fourth", "one;five;two", "one;eight;nineteen"), ";", 3, List(3, 6, 8)))
       .zipWithIndex
-      .foreach(t => TestOnSizeColumnComparator.bestSize)
+      .foreach(t ⇒ TestOnSizeColumnComparator.bestSize)
   }
 }

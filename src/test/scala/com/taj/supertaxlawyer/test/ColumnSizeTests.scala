@@ -1,8 +1,8 @@
 package com.taj.supertaxlawyer.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.{LineCounterActorTest, SizeActorTest, FileSizeTools}
-import akka.testkit.{TestKit, TestKitBase, ImplicitSender, TestProbe}
+import com.taj.supertaxlawyer.FileStructure.{ LineCounterActorTest, SizeActorTest, FileSizeTools }
+import akka.testkit.{ TestKit, TestKitBase, ImplicitSender, TestProbe }
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.actor.ActorSystem
@@ -10,13 +10,12 @@ import org.scalatest.BeforeAndAfterAll
 import scalaz._
 import Scalaz._
 
-
 object ColumnSizeTests extends TestTrait with TestKitBase with ImplicitSender with BeforeAndAfterAll {
 
   implicit lazy val system = ActorSystem("AkkaTestSystem")
 
-  val test: ((File, String, String, String, Long, Int, scala.List[Int], scala.List[Int])) => Unit = {
-    case (file, name, encoding, splitter, numberOfLines, numberOfColumns, columnCountWithTitles, columnCountWithoutTitles) =>
+  val test: ((File, String, String, String, Long, Int, scala.List[Int], scala.List[Int])) ⇒ Unit = {
+    case (file, name, encoding, splitter, numberOfLines, numberOfColumns, columnCountWithTitles, columnCountWithoutTitles) ⇒
       s"We will evaluate the column sizes of the file $name." must {
 
         s"METHOD 1 - The number of columns should be $numberOfColumns" in {

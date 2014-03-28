@@ -7,7 +7,6 @@ import scala.io.Source
 import scalaz._
 import Scalaz._
 
-
 object ExecuteCommandLine {
   /**
    * Take a parsed command line object and execute the correct methods.
@@ -27,28 +26,28 @@ object ExecuteCommandLine {
     val optionEncoding = opts.encoding.get
 
     optionColumnSize match {
-      case Some(path) =>
+      case Some(path) ⇒
 
         val includeTitles = optionIncludeTitles.getOrElse(false)
         val encoding = optionEncoding.getOrElse(FileSizeTools.detectEncoding(path))
 
         val (splitter, columnCount) = (opts.splitter.get, opts.columnCount.get) match {
-          case (Some(tmpSplitter), Some(col)) => (tmpSplitter, col)
-          case (Some(tmpSplitter), None) =>
+          case (Some(tmpSplitter), Some(col)) ⇒ (tmpSplitter, col)
+          case (Some(tmpSplitter), None) ⇒
             val replacedSplitter: String = tmpSplitter match {
-              case "TAB" => "\t"
-              case "SPACE" => " "
-              case c => c
+              case "TAB"   ⇒ "\t"
+              case "SPACE" ⇒ " "
+              case c       ⇒ c
             }
             (replacedSplitter, FileSizeTools.columnCount(path, replacedSplitter, encoding))
-          case _ => FileSizeTools.findColumnDelimiter(path, encoding)
+          case _ ⇒ FileSizeTools.findColumnDelimiter(path, encoding)
         }
 
         val file = new File(path)
         val lines = Source.fromFile(path, encoding).getLines()
         val titles = if (includeTitles && lines.hasNext) lines.next().split(s"\\Q$splitter\\E").toList.some else None
         FileSizeTools.computeSize(file, splitter, columnCount, encoding, optionOutput, titles)
-      case _ =>
+      case _ ⇒
     }
   }
 }

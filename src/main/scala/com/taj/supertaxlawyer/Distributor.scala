@@ -42,7 +42,6 @@ import akka.routing.Broadcast
 import java.io.File
 import com.typesafe.scalalogging.slf4j.Logging
 
-
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
@@ -60,34 +59,34 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
   val limitedmIterator =
     limitOfLinesRead
       .map(
-        limit => mIterator
+        limit ⇒ mIterator
           .zipWithIndex
           .takeWhile {
-          case (read, index) => index <= limit
+            case (read, index) ⇒ index <= limit
           }
           .map {
-          case (read, index) => read
-      })
+            case (read, index) ⇒ read
+          })
       .getOrElse(mIterator)
   val mSource = limitedmIterator.grouped(numberOfLinesPerMessage).zipWithIndex
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var operationFinished = false
 
   override def receive: Actor.Receive = {
-    case Start() =>
+    case Start() ⇒
       logger.debug(s"*** Watching ${sender().path} ***")
       workers.foreach {
-        actor =>
+        actor ⇒
           context.watch(actor.actor)
           mListWatchedRoutees += actor.actor
           if (actor.isRooter) actor.actor ! Broadcast(RegisterYourself()) // Will watch the rootees
       }
       self ! ReadNextBlock() // Start the process of reading the file
-    case RegisterMe() =>
+    case RegisterMe() ⇒
       logger.debug(s"*** Register rootee ${sender().path} ***")
       mListWatchedRoutees += sender
       context.watch(sender())
-    case ReadNextBlock() =>
+    case ReadNextBlock() ⇒
       logger.debug(s"*** Send lines ***")
       if (mSource.hasNext) {
         val (lines, index) = mSource.next()
@@ -98,20 +97,20 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           logger.debug(s"*** Send poison pill to all workers ***")
           operationFinished = true
           workers.partition(_.isRooter) match {
-            case (withRooter, withoutRooter) =>
+            case (withRooter, withoutRooter) ⇒
               withRooter.foreach(_.actor ! Broadcast(PoisonPill))
               withoutRooter.foreach(_.actor ! PoisonPill)
           }
         }
       }
-    case Terminated(ref) =>
+    case Terminated(ref) ⇒
       logger.debug(s"*** Rootee ${sender().path} is dead ***")
       mListWatchedRoutees -= ref
       if (mListWatchedRoutees.isEmpty) {
         logger.debug("*** Everybody is gone  ***")
         if (stopSystemAtTheEnd) context.system.shutdown()
       }
-    case t =>
+    case t ⇒
       throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
   }
 

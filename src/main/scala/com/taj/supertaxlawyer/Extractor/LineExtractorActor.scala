@@ -1,11 +1,10 @@
 package com.taj.supertaxlawyer.Extractor
 
-import akka.actor.{Props, ActorSystem, Actor}
+import akka.actor.{ Props, ActorSystem, Actor }
 
-import com.taj.supertaxlawyer.{ActorContainer, Distributor}
+import com.taj.supertaxlawyer.{ ActorContainer, Distributor }
 import java.io.File
 import com.taj.supertaxlawyer.ActorMessages.Start
-
 
 object LineExtractorActor {
   def apply(output: Option[String])(implicit system: ActorSystem) = system.actorOf(Props(new LineExtractorActor(output)), "ExtractLinesActor")
@@ -35,11 +34,11 @@ class LineExtractorActor(outputFile: Option[String]) extends Actor {
 
   import scala.reflect.io.File
   override def receive: Receive = {
-    case lines: List[String] =>
+    case lines: List[String] ⇒
       outputFile match {
-        case Some(filePath) =>
+        case Some(filePath) ⇒
           File(filePath + self.path.name).appendAll(lines.mkString("\n"))
-        case None => println(lines.mkString("\n"))
+        case None ⇒ println(lines.mkString("\n"))
       }
   }
 }

@@ -1,10 +1,10 @@
 package com.taj.supertaxlawyer.FileStructure
 
-import akka.actor.{ActorRef, ActorSystem, Props, Actor}
-import com.taj.supertaxlawyer.ActorMessages.{ReadNextBlock, Lines}
+import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
+import com.taj.supertaxlawyer.ActorMessages.{ ReadNextBlock, Lines }
 import com.taj.supertaxlawyer.ActorContainer
 import akka.testkit.TestProbe
-import scala.reflect.io.{File, Path}
+import scala.reflect.io.{ File, Path }
 
 /**
  * Constructor for the line counter
@@ -31,9 +31,8 @@ object LineCounterActorTest {
   }
 }
 
-
 trait LineCounterActorComponent {
-  self: ResultLineCounterActorComponent =>
+  self: ResultLineCounterActorComponent ⇒
   val linesActor: ActorRef
 
   /**
@@ -43,7 +42,7 @@ trait LineCounterActorComponent {
     var mTotalSize = 0l
 
     override def receive: Actor.Receive = {
-      case Lines(lines, index) =>
+      case Lines(lines, index) ⇒
         mTotalSize += lines.size
         if (askNextLine) sender() ! ReadNextBlock()
     }
@@ -60,12 +59,12 @@ trait ResultLineCounterActorComponent {
   class ResultLinesActor(output: Option[String]) extends Actor {
 
     override def receive: Actor.Receive = {
-      case mTotalSize: Long =>
+      case mTotalSize: Long ⇒
         output match {
-          case None => println(s"The text file contains $mTotalSize lines")
-          case Some(outputPath) if Path(outputPath).isDirectory =>
+          case None ⇒ println(s"The text file contains $mTotalSize lines")
+          case Some(outputPath) if Path(outputPath).isDirectory ⇒
             File(outputPath + self.path.name).writeAll(mTotalSize.toString)
-          case Some(outputPath) => throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
+          case Some(outputPath) ⇒ throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
         }
     }
   }

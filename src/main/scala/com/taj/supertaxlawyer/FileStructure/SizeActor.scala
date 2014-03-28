@@ -44,12 +44,11 @@ import com.typesafe.scalalogging.slf4j.Logging
 import scalaz._
 import Scalaz._
 
-
 /**
  * Contains algorithms of column sizes computation.
  */
 trait SizeComputation extends Logging {
-  val mBiggestColumns: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
+  val mBiggestColumns: (List[Int], List[Int]) ⇒ List[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
 
   def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: List[Int]): List[Int] = {
     if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
@@ -63,7 +62,7 @@ trait SizeComputation extends Logging {
 }
 
 trait SizeActorTrait extends SizeComputation {
-  self: AccumulatorSizeActorTrait =>
+  self: AccumulatorSizeActorTrait ⇒
 
   /**
    * Analyze each block of lines received and send back the best match of size of columns.
@@ -75,8 +74,8 @@ trait SizeActorTrait extends SizeComputation {
     var counter = 0
 
     override def receive: Actor.Receive = {
-      case RegisterYourself() => sender ! RegisterMe()
-      case Lines(listToAnalyze, index) =>
+      case RegisterYourself() ⇒ sender ! RegisterMe()
+      case Lines(listToAnalyze, index) ⇒
         counter += listToAnalyze.length
 
         val blockResult: List[Int] =
@@ -93,7 +92,7 @@ trait SizeActorTrait extends SizeComputation {
 }
 
 trait AccumulatorSizeActorTrait extends SizeComputation {
-  self: ResultSizeActorTrait =>
+  self: ResultSizeActorTrait ⇒
 
   val resultAccumulatorActor: ActorRef
 
@@ -106,14 +105,14 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
     var workerFinished = 0
 
     override def receive: Actor.Receive = {
-      case columnSizes: List[Int] =>
+      case columnSizes: List[Int] ⇒
         bestSizes match {
-          case None => bestSizes = Some(columnSizes)
-          case Some(currentBestSize) =>
+          case None ⇒ bestSizes = Some(columnSizes)
+          case Some(currentBestSize) ⇒
             bestSizes = mBiggestColumns(currentBestSize, columnSizes).some
         }
 
-      case JobFinished() =>
+      case JobFinished() ⇒
         workerFinished += 1
         if (workerFinished == workerQuantity) {
           bestSizes.foreach(resultActor ! _)
@@ -128,30 +127,30 @@ trait ResultSizeActorTrait {
   class ResultSizeColumnActor(outputFolder: Option[String], titles: Option[List[String]]) extends Actor with Logging {
 
     override def receive: Actor.Receive = {
-      case (bestSizes: List[Int]) =>
+      case (bestSizes: List[Int]) ⇒
         val stringResult: String = (bestSizes, titles) match {
-          case (sizes, Some(titleList)) if sizes.size == titleList.size =>
+          case (sizes, Some(titleList)) if sizes.size == titleList.size ⇒
             titleList
               .zip(sizes)
               .map {
-              case (title, size) => s"$title;$size"
-            }
+                case (title, size) ⇒ s"$title;$size"
+              }
               .mkString("\n")
-          case (sizes, Some(titleList)) if sizes.size != titleList.size =>
+          case (sizes, Some(titleList)) if sizes.size != titleList.size ⇒
             s"""The program has found a result equal to:
             ${sizes.mkString(";")}
             However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns ${titleList.size}.
             You should audit the result.
             """"
-          case (sizes, None) => sizes.mkString(";")
+          case (sizes, None) ⇒ sizes.mkString(";")
         }
 
         outputFolder match {
-          case Some(outputPath) => // a path to save the result in a file is provided
+          case Some(outputPath) ⇒ // a path to save the result in a file is provided
             import scala.reflect.io._
             if (Path(outputPath).isDirectory) File(outputPath + self.path.name).writeAll(stringResult)
             else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
-          case None => println(stringResult)
+          case None ⇒ println(stringResult)
         }
     }
   }
@@ -180,7 +179,7 @@ object SizeActor {
  */
 object SizeActorTest {
 
-  def apply(testActor: TestProbe, fileName: String, suffixToActorName:String, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
+  def apply(testActor: TestProbe, fileName: String, suffixToActorName: String, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
 
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 

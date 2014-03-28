@@ -33,7 +33,7 @@ import akka.actor.ActorRef
 
 object ActorMessages {
 
-  case class Lines(blockToAnalyze: Seq[String], blockIndex:Int)
+  case class Lines(blockToAnalyze: Seq[String], blockIndex: Int)
 
   case class Start()
 

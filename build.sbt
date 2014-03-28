@@ -1,3 +1,5 @@
+
+
 name := "Super Tax Lawyer"
 
 version := "1.0.1"
@@ -5,8 +7,8 @@ version := "1.0.1"
 scalaVersion := "2.10.4"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.0",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.0",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.1",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.1",
   "com.ibm.icu" % "icu4j" % "52.1",
   "com.typesafe" % "scalalogging-slf4j_2.10" % "1.1.0",
   "org.slf4j" % "slf4j-simple" % "1.7.6",
@@ -22,3 +24,18 @@ scalacOptions ++= Seq(
   "-feature",
   "-language:reflectiveCalls"
 )
+
+scalariformSettings
+
+ScalariformKeys.preferences := ScalariformKeys.preferences.value
+  .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(DoubleIndentClassDeclaration, true)
+  .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(CompactControlReadability, true)
+  .setPreference(IndentLocalDefs, true)
+  .setPreference(PreserveDanglingCloseParenthesis, true)
+  .setPreference(RewriteArrowSymbols, true)
+  .setPreference(DoubleIndentClassDeclaration, true)
+  .setPreference(PreserveDanglingCloseParenthesis, true)
+
+net.virtualvoid.sbt.graph.Plugin.graphSettings

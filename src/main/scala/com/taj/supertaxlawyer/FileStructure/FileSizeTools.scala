@@ -32,9 +32,9 @@ package com.taj.supertaxlawyer.FileStructure
 import scala.io.Source
 import akka.actor._
 import com.ibm.icu.text.CharsetDetector
-import java.io.{BufferedInputStream, File, FileInputStream}
+import java.io.{ BufferedInputStream, File, FileInputStream }
 import com.taj.supertaxlawyer.ActorMessages.Start
-import com.taj.supertaxlawyer.{ActorContainer, Distributor}
+import com.taj.supertaxlawyer.{ ActorContainer, Distributor }
 import com.typesafe.scalalogging.slf4j.Logging
 
 /**
@@ -71,24 +71,26 @@ object FileSizeTools extends Logging {
    * @param encoding of the text file.
    * @return a Tuple with the delimiter and the number of columns found.
    */
-  def findColumnDelimiter(path: String, encoding: String):(String, Int) = {
+  def findColumnDelimiter(path: String, encoding: String): (String, Int) = {
     val tupleList =
       Source.fromFile(path, encoding)
-      .getLines()
-      .take(1000)
-        .map(line => line.filter(!_.isLetterOrDigit)) // remove letters and digits
-      .map(line => line.groupBy(_.toChar).mapValues(char => char.size)) // return the frequency of each char per line.
-      .flatMap(map => map.toList) // transform each Map in List of Tuple and then flat the Iterator of List of Tuple.
-      .toList
-      .groupBy(tuple => tuple) // enumerate each Tuple (Char, Quantity) in the big list and group them.
-      .map{case (tuple, list) => (tuple, list.length)}
-      .toList
+        .getLines()
+        .take(1000)
+        .map(line ⇒ line.filter(!_.isLetterOrDigit)) // remove letters and digits
+        .map(line ⇒ line.groupBy(_.toChar).mapValues(char ⇒ char.size)) // return the frequency of each char per line.
+        .flatMap(map ⇒ map.toList) // transform each Map in List of Tuple and then flat the Iterator of List of Tuple.
+        .toList
+        .groupBy(tuple ⇒ tuple) // enumerate each Tuple (Char, Quantity) in the big list and group them.
+        .map { case (tuple, list) ⇒ (tuple, list.length) }
+        .toList
 
     val (_, max) = tupleList
-      .maxBy{case (tuple, tupleQuantity) => tupleQuantity} // search for the most frequent Tuple.
+      .maxBy {
+        case (tuple, tupleQuantity) ⇒ tupleQuantity
+      } // search for the most frequent Tuple.
 
     val ((delimiter, frequency), _) = tupleList
-      .filter{case (tuple, tupleFrequency) => tupleFrequency == max} // keep only the most frequent Tuple in the entire file.
+      .filter { case (tuple, tupleFrequency) ⇒ tupleFrequency == max } // keep only the most frequent Tuple in the entire file.
       .maxBy(_._1._2) // choose the Character which has the highest frequency per line.
 
     logger.debug(s"*** The character the most recurrent is [$delimiter] and its frequency per line is equal to $frequency. It appears in $max lines. ***")
@@ -110,13 +112,13 @@ object FileSizeTools extends Logging {
       .getLines()
       .take(1000)
       .toList
-      .groupBy(line => line.split(splitterWithEscapedChar).size)
+      .groupBy(line ⇒ line.split(splitterWithEscapedChar).size)
       .map {
-      case (numberOfTimes, listOfColumns) => (numberOfTimes, listOfColumns.size)
-    }
+        case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
+      }
       .maxBy {
-      case (numberOfTimes, numberOfColumnsPerLine) => numberOfTimes
-    }
+        case (numberOfTimes, numberOfColumnsPerLine) ⇒ numberOfTimes
+      }
     buffer.close()
     numberOfColumns
   }
