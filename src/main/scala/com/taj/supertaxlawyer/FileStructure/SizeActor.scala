@@ -46,9 +46,9 @@ import Scalaz._
 
 
 /**
- * Specific actor messages to the column size computer.
+ * Contains algorithms of column sizes computation.
  */
-object CommonTools extends Logging {
+trait SizeComputation extends Logging {
   val mBiggestColumns: (List[Int], List[Int]) => List[Int] = (first, second) => first zip second map (tuple => tuple._1 max tuple._2)
 
   def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: List[Int]): List[Int] = {
@@ -58,11 +58,11 @@ object CommonTools extends Logging {
       .map(_.split(escapeRegexSplitter, -1)) // transform the line in Array of columns
       .filter(_.size == columnQuantity) // Remove not expected lines
       .map(_.map(_.size).toList) // Change to a list of size of columns
-      .foldLeft(emptyList)(CommonTools.mBiggestColumns) // Mix the best results
+      .foldLeft(emptyList)(mBiggestColumns) // Mix the best results
   }
 }
 
-trait SizeActorTrait {
+trait SizeActorTrait extends SizeComputation {
   self: AccumulatorSizeActorTrait =>
 
   /**
@@ -80,7 +80,7 @@ trait SizeActorTrait {
         counter += listToAnalyze.length
 
         val blockResult: List[Int] =
-          CommonTools.mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
+          mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
         resultAccumulatorActor ! blockResult
         sender ! ReadNextBlock() // Ask for the next line
     }
@@ -92,7 +92,7 @@ trait SizeActorTrait {
   }
 }
 
-trait AccumulatorSizeActorTrait {
+trait AccumulatorSizeActorTrait extends SizeComputation {
   self: ResultSizeActorTrait =>
 
   val resultAccumulatorActor: ActorRef
@@ -110,7 +110,7 @@ trait AccumulatorSizeActorTrait {
         bestSizes match {
           case None => bestSizes = Some(columnSizes)
           case Some(currentBestSize) =>
-            bestSizes = CommonTools.mBiggestColumns(currentBestSize, columnSizes).some
+            bestSizes = mBiggestColumns(currentBestSize, columnSizes).some
         }
 
       case JobFinished() =>
