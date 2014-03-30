@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.{ LineCounterActorTest, SizeActorTest, FileSizeTools }
+import com.taj.supertaxlawyer.FileStructure.{ LineCounterActorTest, SizeActorTest, FileTools }
 import akka.testkit.TestProbe
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
@@ -18,14 +18,14 @@ object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
 
         s"METHOD 1 - The number of columns should be $numberOfColumns" in {
           f ⇒
-            val result = FileSizeTools.columnCount(file.getAbsolutePath, splitter, encoding)
+            val result = FileTools.columnCount(file.getAbsolutePath, splitter, encoding)
 
             result should be(numberOfColumns)
         }
 
         s"METHOD 2 - The number of columns should be $numberOfColumns and the splitter should be [$splitter]." in {
           f ⇒
-            val (resultSplitter, resultColumns) = FileSizeTools.findColumnDelimiter(file.getAbsolutePath, encoding)
+            val (resultSplitter, resultColumns) = FileTools.findColumnDelimiter(file.getAbsolutePath, encoding)
 
             resultColumns should be(numberOfColumns)
             resultSplitter should be(splitter)
@@ -38,7 +38,7 @@ object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
             val testSizeActor = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
 
             val listOfWorkers = List(testSizeActor)
-            val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2)
+            val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
             columnSizeTestActor.expectMsg(columnCountWithTitles)
@@ -49,7 +49,7 @@ object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
             implicit val system = f.system
             val linesTestActor: TestProbe = TestProbe()
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-            val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2)
+            val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
             linesTestActor.expectMsg(numberOfLines)
@@ -61,7 +61,7 @@ object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
             val columnSizeTestActor: TestProbe = TestProbe()
             val testSizeActor = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
             val listOfWorkers = List(testSizeActor)
-            val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2)
+            val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = Some(1), stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
             columnSizeTestActor.expectMsg(columnCountWithoutTitles)
@@ -72,7 +72,7 @@ object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
             implicit val system = f.system
             val linesTestActor: TestProbe = TestProbe()
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-            val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2)
+            val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1.some, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
             distributor ! Start()
             // -1 because we remove one line for the tittles
             linesTestActor.expectMsg(numberOfLines - 1)
@@ -83,7 +83,7 @@ object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
             implicit val system = f.system
             val linesTestActor: TestProbe = TestProbe()
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
-            val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = 5.some)
+            val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = 1.some, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = 5.some)
             distributor ! Start()
             // use min in case the file is too small.
             linesTestActor.expectMsg((numberOfLines - 1) min 6)

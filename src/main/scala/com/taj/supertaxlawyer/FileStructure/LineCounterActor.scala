@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.FileStructure
 
 import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
-import com.taj.supertaxlawyer.ActorMessages.{ ReadNextBlock, Lines }
+import com.taj.supertaxlawyer.ActorMessages.{ RegisterMe, RegisterYourself, ReadNextBlock, Lines }
 import com.taj.supertaxlawyer.ActorContainer
 import akka.testkit.TestProbe
 import scala.reflect.io.{ File, Path }
@@ -14,7 +14,7 @@ object LineCounterActor {
   def apply(output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
       override val resultActor = system.actorOf(Props(new ResultLinesActor(output)), "ResultLinesActor")
-      override val linesActor = system.actorOf(Props(new LineCounterActor(false)), name = "LinesActor")
+      override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "CounterLineActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
@@ -25,7 +25,7 @@ object LineCounterActorTest {
   def apply(testActor: TestProbe, output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
       override val resultActor = testActor.ref
-      override val linesActor = system.actorOf(Props(new LineCounterActor(true)), name = "LinesActor")
+      override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "CounterLineActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)
   }
@@ -38,13 +38,14 @@ trait LineCounterActorComponent {
   /**
    * Count lines in the analyzed text file.
    */
-  class LineCounterActor(askNextLine: Boolean) extends Actor {
+  class LineCounterActor() extends Actor {
     var mTotalSize = 0l
 
     override def receive: Actor.Receive = {
+      case RegisterYourself() ⇒ sender ! RegisterMe()
       case Lines(lines, index) ⇒
         mTotalSize += lines.size
-        if (askNextLine) sender() ! ReadNextBlock()
+        sender() ! ReadNextBlock()
     }
 
     override def postStop(): Unit = {

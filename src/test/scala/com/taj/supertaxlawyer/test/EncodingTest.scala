@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.FileSizeTools
+import com.taj.supertaxlawyer.FileStructure.FileTools
 
 object EncodingTest extends TestTrait {
   val test: ((String, File, String)) ⇒ Unit = {
@@ -9,7 +9,7 @@ object EncodingTest extends TestTrait {
       s"We will evaluate the encoding of the file $name." should {
         s"The encoding should be detected as $encoding" in {
           f ⇒
-            val encoding = FileSizeTools.detectEncoding(file.getAbsolutePath)
+            val encoding = FileTools.detectEncoding(file.getAbsolutePath)
             encoding should equal(encoding)
         }
       }

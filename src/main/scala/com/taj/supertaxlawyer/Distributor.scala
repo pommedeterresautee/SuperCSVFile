@@ -46,17 +46,22 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor")
+  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, limitNumberOfLinesToRead: Option[Int])(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor")
 }
 
 /**
  * Read the file and send the work.
  * @param path path to the file to analyze.
  */
-class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Int, stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
+class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
   val mBuffer = Source.fromFile(path, encoding)
-  val mIterator = mBuffer.getLines().drop(dropFirsLines)
-  val limitedmIterator =
+  val mIterator = mBuffer.getLines().drop {
+    dropFirsLines match {
+      case Some(linesToDrop) ⇒ linesToDrop
+      case None              ⇒ 0
+    }
+  }
+  val mlimitedIterator =
     limitOfLinesRead
       .map(
         limit ⇒ mIterator
@@ -68,28 +73,29 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
             case (read, index) ⇒ read
           })
       .getOrElse(mIterator)
-  val mSource = limitedmIterator.grouped(numberOfLinesPerMessage).zipWithIndex
+  val mSource = mlimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var operationFinished = false
+  var counterReadNextBlock = 0 // count the number of actors which are awaiting for more work.
 
   override def receive: Actor.Receive = {
     case Start() ⇒
       logger.debug(s"*** Start watching ***")
       workers.foreach {
         actor ⇒
-          context.watch(actor.actor)
           logger.debug(s"*** Will watch the actor ${actor.actor.path.name} ***")
-          mListWatchedRoutees += actor.actor
+          actor.actor ! RegisterYourself()
           if (actor.isRooter) actor.actor ! Broadcast(RegisterYourself()) // Will watch the rootees
       }
-      self ! ReadNextBlock() // Start the process of reading the file
     case RegisterMe() ⇒
       logger.debug(s"*** Register rootee ${sender().path} ***")
       mListWatchedRoutees += sender
       context.watch(sender())
-    case ReadNextBlock() ⇒
-      logger.debug(s"*** Send lines ***")
+      self ! ReadNextBlock() // Start the process of reading the file
+    case ReadNextBlock() if mListWatchedRoutees.size == counterReadNextBlock + 1 ⇒
+      counterReadNextBlock = 0
       if (mSource.hasNext) {
+        logger.debug(s"*** Send lines ***")
         val (lines, index) = mSource.next()
         workers.foreach(_.actor ! Lines(lines, index))
       }
@@ -104,6 +110,10 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           }
         }
       }
+    case ReadNextBlock() ⇒
+      counterReadNextBlock += 1
+      logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $counterReadNextBlock ${ReadNextBlock.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
+
     case Terminated(ref) ⇒
       logger.debug(s"*** Rootee ${sender().path} is dead ***")
       mListWatchedRoutees -= ref

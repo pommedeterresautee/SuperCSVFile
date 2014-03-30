@@ -6,11 +6,17 @@ import akka.testkit.{ TestKitBase, ImplicitSender }
 import akka.actor.ActorSystem
 import java.util.concurrent.atomic.AtomicInteger
 
-object TestSystemCounter {
+/**
+ * Offer an atomic counter.
+ */
+private object TestSystemCounter {
   private val sysId = new AtomicInteger()
   def nextSysId() = sysId.incrementAndGet()
 }
 
+/**
+ * For each test, an Akka system is generated, therefore there is no chock in Akka names.
+ */
 trait TestTrait extends fixture.WordSpecLike with Matchers with Logging {
 
   import TestSystemCounter._

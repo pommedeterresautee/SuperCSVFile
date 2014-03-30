@@ -36,11 +36,13 @@ import java.io.{ BufferedInputStream, File, FileInputStream }
 import com.taj.supertaxlawyer.ActorMessages.Start
 import com.taj.supertaxlawyer.{ ActorContainer, Distributor }
 import com.typesafe.scalalogging.slf4j.Logging
+import scalaz._
+import Scalaz._
 
 /**
  * Operation related to the count of columns in a text file.
  */
-object FileSizeTools extends Logging {
+object FileTools extends Logging {
 
   /**
    * Compute the size of each column in the text file.
@@ -55,11 +57,10 @@ object FileSizeTools extends Logging {
 
     val listOfWorkers: List[ActorContainer] = List(
       SizeActor(output, expectedColumnQuantity, splitter, titles),
-      LineCounterActor(output) /*,
-      ExtractEntry(expectedColumnQuantity, splitter)*/
+      LineCounterActor(output)
     )
-    val dropLines = if (titles.isDefined) 1 else 0
-    val distributor = Distributor(path, encoding, listOfWorkers, dropLines)
+    val dropLines = if (titles.isDefined) 1.some else None
+    val distributor = Distributor(path, encoding, listOfWorkers, dropLines, limitNumberOfLinesToRead = None)
     distributor ! Start()
   }
 
@@ -77,7 +78,7 @@ object FileSizeTools extends Logging {
         .getLines()
         .take(1000)
         .map(line ⇒ line.filter(!_.isLetterOrDigit)) // remove letters and digits
-        .map(line ⇒ line.groupBy(_.toChar).mapValues(char ⇒ char.size)) // return the frequency of each char per line.
+        .map(filteredLine ⇒ filteredLine.groupBy(_.toChar).mapValues(char ⇒ char.size)) // return the frequency of each char per line.
         .flatMap(map ⇒ map.toList) // transform each Map in List of Tuple and then flat the Iterator of List of Tuple.
         .toList
         .groupBy(tuple ⇒ tuple) // enumerate each Tuple (Char, Quantity) in the big list and group them.
