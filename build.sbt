@@ -1,4 +1,4 @@
-
+import scalariform.formatter.preferences._
 
 name := "Super Tax Lawyer"
 
@@ -37,5 +37,6 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(RewriteArrowSymbols, true)
   .setPreference(DoubleIndentClassDeclaration, true)
   .setPreference(PreserveDanglingCloseParenthesis, true)
+  .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
