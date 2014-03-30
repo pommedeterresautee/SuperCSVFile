@@ -179,16 +179,16 @@ object SizeActor {
  */
 object SizeActorTest {
 
-  def apply(testActor: TestProbe, fileName: String, suffixToActorName: String, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
+  def apply(testActor: TestProbe, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
 
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
     val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
-      override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(rooteesQuantity)), s"AccumulatorActor_${fileName}_$suffixToActorName")
+      override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(rooteesQuantity)), "TestAccumulatorActor")
 
       override val resultActor = testActor.ref
 
-      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = s"TestSizeActor_$fileName")
+      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
     }
     ActorContainer(actorTestTrait.sizeActor, isRooter = true)
   }

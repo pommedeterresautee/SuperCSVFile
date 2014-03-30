@@ -46,7 +46,7 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, suffixNameForTest: String = "", limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor_${file.getName}_$suffixNameForTest")
+  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Int = 0, stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, limitNumberOfLinesToRead: Option[Int] = None)(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor")
 }
 
 /**

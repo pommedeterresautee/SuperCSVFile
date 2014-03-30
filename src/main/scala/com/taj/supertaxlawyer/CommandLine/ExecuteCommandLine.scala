@@ -57,7 +57,7 @@ object ExecuteCommandLine {
       case (Some((firstLine, lastLine)), Some(filePath)) ⇒
         val encoding = optionEncoding.getOrElse(FileSizeTools.detectEncoding(filePath))
         LineExtractorActor.extract(filePath, encoding, opts.outputFile.get, firstLine, lastLine)
-
+      case _ ⇒
     }
   }
 }
