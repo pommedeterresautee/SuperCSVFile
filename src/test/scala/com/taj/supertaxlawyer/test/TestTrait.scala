@@ -21,7 +21,7 @@ trait TestTrait extends fixture.WordSpecLike with Matchers with Logging {
   // Our basic Fixture. You would derive from this if you
   // want to specialize it with more fields, methods, etc...
   class AkkaFixture extends ImplicitSender with TestKitBase {
-    override implicit lazy val system = ActorSystem(s"TestAkkaSystem_${nextSysId()}")
+    override implicit lazy val system = ActorSystem(s"TestAkkaSystem${nextSysId()}")
   }
   // Abstract. Derivations must implement this
   def createAkkaFixture(): FixtureParam = new AkkaFixture
