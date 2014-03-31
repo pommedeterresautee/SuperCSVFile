@@ -82,17 +82,19 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
     case Start() ⇒
       logger.debug(s"*** Start watching ***")
       workers.foreach {
-        actor ⇒
-          logger.debug(s"*** Will watch the actor ${actor.actor.path.name} ***")
-          actor.actor ! RegisterYourself()
-          if (actor.isRooter) actor.actor ! Broadcast(RegisterYourself()) // Will watch the rootees
+        case ActorContainer(ref, true) ⇒
+          ref ! Broadcast(RegisterYourself()) // ask to the routees to register themselves.
+          context.watch(ref) // register ourselves the router because there is no other way to do it.
+          mListWatchedRoutees += ref // add ourselves the router to our Array.
+        case ActorContainer(ref, false) ⇒ ref ! RegisterYourself()
       }
+
     case RegisterMe() ⇒
-      logger.debug(s"*** Register rootee ${sender().path} ***")
+      logger.debug(s"*** Register rootee ${sender().path.name} ***")
       mListWatchedRoutees += sender
       context.watch(sender())
       self ! ReadNextBlock() // Start the process of reading the file
-    case ReadNextBlock() if mListWatchedRoutees.size == counterReadNextBlock + 1 ⇒
+    case ReadNextBlock() if true ⇒ //mListWatchedRoutees.size == counterReadNextBlock + 1 ⇒
       counterReadNextBlock = 0
       if (mSource.hasNext) {
         logger.debug(s"*** Send lines ***")
@@ -115,14 +117,14 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
       logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $counterReadNextBlock ${ReadNextBlock.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
 
     case Terminated(ref) ⇒
-      logger.debug(s"*** Rootee ${sender().path} is dead ***")
       mListWatchedRoutees -= ref
+      logger.debug(s"*** Rootee ${ref.path.name} is dead. Remaining ${mListWatchedRoutees.size} ***")
       if (mListWatchedRoutees.isEmpty) {
         logger.debug("*** Everybody is gone  ***")
         if (stopSystemAtTheEnd) context.system.shutdown()
       }
     case t ⇒
-      throw new IllegalStateException(s"Bad parameter sent to ${self.path} ($t)")
+      throw new IllegalStateException(s"Bad parameter sent to ${self.path.name} ($t)")
   }
 
   override def postStop(): Unit = {
