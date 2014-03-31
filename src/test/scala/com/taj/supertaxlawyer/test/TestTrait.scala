@@ -14,10 +14,14 @@ private object TestSystemCounter {
   def nextSysId() = sysId.incrementAndGet()
 }
 
+trait TestCommonTrait extends Matchers with Logging
+
+trait TestTrait extends WordSpecLike with TestCommonTrait
+
 /**
  * For each test, an Akka system is generated, therefore there is no chock in Akka names.
  */
-trait TestTrait extends fixture.WordSpecLike with Matchers with Logging {
+trait TestTraitAkka extends fixture.WordSpecLike with TestCommonTrait {
 
   import TestSystemCounter._
 

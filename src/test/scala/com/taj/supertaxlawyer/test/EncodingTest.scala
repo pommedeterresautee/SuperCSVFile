@@ -8,9 +8,8 @@ object EncodingTest extends TestTrait {
     case (name, file, encoding) ⇒
       s"We will evaluate the encoding of the file $name." should {
         s"The encoding should be detected as $encoding" in {
-          f ⇒
-            val encoding = FileTools.detectEncoding(file.getAbsolutePath)
-            encoding should equal(encoding)
+          val encoding = FileTools.detectEncoding(file.getAbsolutePath)
+          encoding should equal(encoding)
         }
       }
   }

@@ -10,7 +10,7 @@ import org.scalatest.BeforeAndAfterAll
 import scalaz._
 import Scalaz._
 
-object ColumnSizeTests extends TestTrait with BeforeAndAfterAll {
+object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 
   val test: ((File, String, String, String, Long, Int, scala.List[Int], scala.List[Int])) ⇒ Unit = {
     case (file, name, encoding, splitter, numberOfLines, numberOfColumns, columnCountWithTitles, columnCountWithoutTitles) ⇒
