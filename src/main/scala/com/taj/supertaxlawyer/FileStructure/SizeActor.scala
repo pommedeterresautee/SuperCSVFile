@@ -37,7 +37,7 @@ import akka.testkit.TestProbe
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
-import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
+import com.taj.supertaxlawyer.ActorMessages.RequestMoreWork
 import com.typesafe.scalalogging.slf4j.Logging
 import scalaz._
 import Scalaz._
@@ -78,7 +78,7 @@ trait SizeActorTrait extends SizeComputation {
         val blockResult: List[Int] =
           mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
         resultAccumulatorActor ! blockResult
-        sender ! ReadNextBlock() // Ask for the next line
+        sender ! RequestMoreWork() // Ask for the next line
     }
 
     override def postStop(): Unit = {

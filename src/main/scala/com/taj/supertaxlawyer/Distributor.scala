@@ -32,7 +32,7 @@ package com.taj.supertaxlawyer
 import scala.io.Source
 import akka.actor._
 import scala.collection.mutable.ArrayBuffer
-import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
+import com.taj.supertaxlawyer.ActorMessages.RequestMoreWork
 import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
@@ -74,7 +74,7 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
   val mSource = mlimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
   val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var operationFinished = false
-  var counterReadNextBlock = 0 // count the number of actors which are awaiting for more work.
+  var notFinishedWork = 0 // count the number of actors which are awaiting for more work.
 
   override def receive: Actor.Receive = {
     case Start() ⇒
@@ -84,13 +84,16 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           context.watch(ref)
           mListWatchedRoutees += ref
       }
-      self ! ReadNextBlock()
-    case ReadNextBlock() if true ⇒ //mListWatchedRoutees.size == counterReadNextBlock + 1 ⇒
-      counterReadNextBlock = 0
+      self ! RequestMoreWork() // launch the process
+    case RequestMoreWork() if notFinishedWork < 200 ⇒
+      notFinishedWork -= 1
       if (mSource.hasNext) {
         logger.debug(s"*** Send lines ***")
         val (lines, index) = mSource.next()
-        workers.foreach(_.actor ! Lines(lines, index))
+        workers.foreach {
+          notFinishedWork += 1
+          _.actor ! Lines(lines, index)
+        }
       }
       else {
         if (!operationFinished) {
@@ -102,9 +105,9 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           }
         }
       }
-    case ReadNextBlock() ⇒
-      counterReadNextBlock += 1
-      logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $counterReadNextBlock ${ReadNextBlock.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
+    case RequestMoreWork() ⇒
+      notFinishedWork -= 1
+      logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
 
     case Terminated(ref) ⇒
       mListWatchedRoutees -= ref

@@ -3,7 +3,7 @@ package com.taj.supertaxlawyer.Extractor
 import akka.actor.{ Props, ActorSystem, Actor }
 
 import com.taj.supertaxlawyer.ActorContainer
-import com.taj.supertaxlawyer.ActorMessages.{ ReadNextBlock, Lines }
+import com.taj.supertaxlawyer.ActorMessages.{ RequestMoreWork, Lines }
 import com.typesafe.scalalogging.slf4j.Logging
 
 object LineExtractorActor {
@@ -24,7 +24,7 @@ class LineExtractorActor(outputFile: Option[String]) extends Actor with Logging 
           File(filePath).appendAll(lines.mkString("\n"))
         case None ⇒ println(lines.mkString("\n"))
       }
-      sender() ! ReadNextBlock()
+      sender() ! RequestMoreWork()
   }
 
   override def postStop(): Unit = {

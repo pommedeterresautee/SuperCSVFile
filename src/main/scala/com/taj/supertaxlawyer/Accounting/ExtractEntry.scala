@@ -32,7 +32,7 @@ package com.taj.supertaxlawyer.Accounting
 import akka.actor.{ Props, ActorSystem, Actor }
 import com.taj.supertaxlawyer.ActorMessages._
 import com.taj.supertaxlawyer.ActorMessages.Lines
-import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
+import com.taj.supertaxlawyer.ActorMessages.RequestMoreWork
 import com.taj.supertaxlawyer.ActorContainer
 
 /**
@@ -50,6 +50,6 @@ class ExtractEntry(positions: EntryFieldPositions, splitter: String) extends Act
     case Lines(lines, index) ⇒
       val entry: Seq[AccountEntry] = lines.map(_.split(splitter)).map(new AccountEntry(_, positions))
       println(s"received ${entry.size}")
-      sender ! ReadNextBlock() // Ask for the next line
+      sender ! RequestMoreWork() // Ask for the next line
   }
 }

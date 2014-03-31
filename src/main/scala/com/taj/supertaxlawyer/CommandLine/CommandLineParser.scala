@@ -46,8 +46,8 @@ class CommandLineParser(args: Array[String]) extends ScallopConf(args) {
   val outputColumnSizes = opt[String]("columnOutput", descr = "Path to the file where to save the sizes of columns of the analyzed file.", validate = parentFolderExists, noshort = true)
 
   val extract = opt[Boolean]("extract", descr = "Extract specific block of lines from the file. Need to precise the number of lines to extract from the text file.")
-  val startLine = opt[Int]("firstLine", descr = "[OPTIONAL INFO] Set the first line for the extraction.", validate = _ >= 0)
-  val lastLine = opt[Int]("lastLine", descr = "[OPTIONAL INFO] Set the last line for the extraction.", validate = _ >= 0)
+  val startLine = opt[Int]("firstLine", descr = "[OPTIONAL INFO] Set the first line for the selection. WARNING: Start at 0 and not 1. This line is included in the selection.", validate = _ >= 0)
+  val lastLine = opt[Int]("lastLine", descr = "[OPTIONAL INFO] Set the last line for the selection. This line is included in the selection.", validate = _ >= 0)
   val outputExtractLines = opt[String]("extractLinesOutput", descr = "Path to the file where to save the lines extracted from the file.", validate = parentFolderExists, noshort = true)
 
   val linesCount = opt[Boolean]("linesCount", descr = "Count the lines in the input file.")

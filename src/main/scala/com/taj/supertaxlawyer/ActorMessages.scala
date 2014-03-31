@@ -37,7 +37,7 @@ object ActorMessages {
 
   case class Start()
 
-  case class ReadNextBlock()
+  case class RequestMoreWork()
 
   /**
    * Contains positions of fields listed in the Article A 47 A-1 of the Book of tax procedures.

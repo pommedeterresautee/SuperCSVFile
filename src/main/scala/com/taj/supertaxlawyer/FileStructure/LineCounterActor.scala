@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.FileStructure
 
 import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
-import com.taj.supertaxlawyer.ActorMessages.{ ReadNextBlock, Lines }
+import com.taj.supertaxlawyer.ActorMessages.{ RequestMoreWork, Lines }
 import com.taj.supertaxlawyer.ActorContainer
 import akka.testkit.TestProbe
 import scala.reflect.io.{ File, Path }
@@ -44,7 +44,7 @@ trait LineCounterActorComponent {
     override def receive: Actor.Receive = {
       case Lines(lines, index) ⇒
         mTotalSize += lines.size
-        sender() ! ReadNextBlock()
+        sender() ! RequestMoreWork()
     }
 
     override def postStop(): Unit = {
