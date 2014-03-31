@@ -37,8 +37,9 @@ import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.routing.Broadcast
-import java.io.File
+import java.io.{ RandomAccessFile, File }
 import com.typesafe.scalalogging.slf4j.Logging
+import java.nio.channels.Channels
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
@@ -52,7 +53,11 @@ object Distributor {
  * @param path path to the file to analyze.
  */
 class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
-  val mBuffer = Source.fromFile(path, encoding)
+  val f = new RandomAccessFile(path, "r")
+  val fileSize = f.length()
+  val channel = f.getChannel
+  val is = Channels.newInputStream(channel)
+  val mBuffer = Source.fromInputStream(is, encoding)
   val mIterator = mBuffer.getLines().drop {
     dropFirsLines match {
       case Some(linesToDrop) ⇒ linesToDrop
@@ -94,10 +99,12 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           notFinishedWork += 1
           _.actor ! Lines(lines, index)
         }
+        print(s"\rProgress: ${channel.position * 100 / fileSize}")
       }
       else {
         if (!operationFinished) {
           logger.debug(s"*** Send poison pill to all workers ***")
+          println()
           operationFinished = true
           workers.foreach {
             case ActorContainer(ref, true)  ⇒ ref ! Broadcast(PoisonPill)
@@ -122,6 +129,9 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
 
   override def postStop(): Unit = {
     mBuffer.close()
+    is.close()
+    channel.close()
+    f.close()
     super.postStop()
   }
 }
