@@ -37,7 +37,7 @@ import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.routing.Broadcast
-import java.io.{ RandomAccessFile, File }
+import java.io.{ FileInputStream, RandomAccessFile, File }
 import com.typesafe.scalalogging.slf4j.Logging
 import java.nio.channels.Channels
 
@@ -53,10 +53,9 @@ object Distributor {
  * @param path path to the file to analyze.
  */
 class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
-  val f = new RandomAccessFile(path, "r")
-  val fileSize = f.length()
-  val channel = f.getChannel
-  val is = Channels.newInputStream(channel)
+  val fileSize = new File(path).length()
+  val is = new FileInputStream(path)
+  val channel = is.getChannel
   val mBuffer = Source.fromInputStream(is, encoding)
   val mIterator = mBuffer.getLines().drop {
     dropFirsLines match {
@@ -129,9 +128,8 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
 
   override def postStop(): Unit = {
     mBuffer.close()
-    is.close()
     channel.close()
-    f.close()
+    is.close()
     super.postStop()
   }
 }
