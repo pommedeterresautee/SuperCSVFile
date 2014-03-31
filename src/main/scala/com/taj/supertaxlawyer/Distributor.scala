@@ -32,12 +32,10 @@ package com.taj.supertaxlawyer
 import scala.io.Source
 import akka.actor._
 import scala.collection.mutable.ArrayBuffer
-import com.taj.supertaxlawyer.ActorMessages.RegisterMe
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
 import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
-import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import akka.routing.Broadcast
 import java.io.File
 import com.typesafe.scalalogging.slf4j.Logging
@@ -82,18 +80,11 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
     case Start() ⇒
       logger.debug(s"*** Start watching ***")
       workers.foreach {
-        case ActorContainer(ref, true) ⇒
-          ref ! Broadcast(RegisterYourself()) // ask to the routees to register themselves.
-          context.watch(ref) // register ourselves the router because there is no other way to do it.
-          mListWatchedRoutees += ref // add ourselves the router to our Array.
-        case ActorContainer(ref, false) ⇒ ref ! RegisterYourself()
+        case ActorContainer(ref, _) ⇒
+          context.watch(ref)
+          mListWatchedRoutees += ref
       }
-
-    case RegisterMe() ⇒
-      logger.debug(s"*** Register rootee ${sender().path.name} ***")
-      mListWatchedRoutees += sender
-      context.watch(sender())
-      self ! ReadNextBlock() // Start the process of reading the file
+      self ! ReadNextBlock()
     case ReadNextBlock() if true ⇒ //mListWatchedRoutees.size == counterReadNextBlock + 1 ⇒
       counterReadNextBlock = 0
       if (mSource.hasNext) {
@@ -105,10 +96,9 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
         if (!operationFinished) {
           logger.debug(s"*** Send poison pill to all workers ***")
           operationFinished = true
-          workers.partition(_.isRooter) match {
-            case (withRooter, withoutRooter) ⇒
-              withRooter.foreach(_.actor ! Broadcast(PoisonPill))
-              withoutRooter.foreach(_.actor ! PoisonPill)
+          workers.foreach {
+            case ActorContainer(ref, true)  ⇒ ref ! Broadcast(PoisonPill)
+            case ActorContainer(ref, false) ⇒ ref ! PoisonPill
           }
         }
       }

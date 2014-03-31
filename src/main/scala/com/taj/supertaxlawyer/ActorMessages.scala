@@ -37,10 +37,6 @@ object ActorMessages {
 
   case class Start()
 
-  case class RegisterMe()
-
-  case class RegisterYourself()
-
   case class ReadNextBlock()
 
   /**

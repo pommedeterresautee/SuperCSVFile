@@ -34,9 +34,7 @@ import akka.routing.RoundRobinPool
 import com.taj.supertaxlawyer.ActorMessages._
 
 import akka.testkit.TestProbe
-import com.taj.supertaxlawyer.ActorMessages.RegisterMe
 import com.taj.supertaxlawyer.ActorMessages.Lines
-import com.taj.supertaxlawyer.ActorMessages.RegisterYourself
 import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
 import com.taj.supertaxlawyer.ActorMessages.ReadNextBlock
@@ -74,7 +72,6 @@ trait SizeActorTrait extends SizeComputation {
     var counter = 0
 
     override def receive: Actor.Receive = {
-      case RegisterYourself() ⇒ sender ! RegisterMe()
       case Lines(listToAnalyze, index) ⇒
         counter += listToAnalyze.length
 
