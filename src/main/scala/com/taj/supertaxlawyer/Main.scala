@@ -42,11 +42,11 @@ object Main extends App {
 
   val file: String = encodedFileFolder + "airports.csv"
 
-  val fileUTF8 = "/home/geantvert/SCC324_319472775FEC20121231.txt"
+  val fileUTF8 = "C:\\Users\\MBenesty\\Private\\GIT\\Super Tax Lawyer\\FEC_EXAMPLE\\FEC_UTF8_TAB.txt"
   val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
   val argUTF8 = Array("--columnSize", fileUTF8, "--forceEncoding", "ISO-8859-1", "--excludeTitles")
   val arg = Array("--columnSize", file)
-  val argExtract = Array("--inputFile", fileUTF8, "--linesCount", "--columnSize")
+  val argExtract = Array("--inputFile", file, "--linesCount", "--columnSize")
 
   val help = Array("--help")
 

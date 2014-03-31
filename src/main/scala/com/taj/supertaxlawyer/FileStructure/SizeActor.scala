@@ -145,8 +145,8 @@ trait ResultSizeActorTrait {
         outputFolder match {
           case Some(outputPath) ⇒ // a path to save the result in a file is provided
             import scala.reflect.io._
-            if (Path(outputPath).isDirectory) File(outputPath + self.path.name).writeAll(stringResult)
-            else throw new IllegalArgumentException(s"Path provided is not to a folder: $outputPath.")
+            if (Path(outputPath).isFile) File(outputPath).writeAll(stringResult)
+            else throw new IllegalArgumentException(s"Path provided is not to a file: $outputPath.")
           case None ⇒ println(stringResult)
         }
     }
