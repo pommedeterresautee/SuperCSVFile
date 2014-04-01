@@ -37,9 +37,8 @@ import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.routing.Broadcast
-import java.io.{ FileInputStream, RandomAccessFile, File }
+import java.io.{ FileInputStream, File }
 import com.typesafe.scalalogging.slf4j.Logging
-import java.nio.channels.Channels
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
@@ -53,6 +52,7 @@ object Distributor {
  * @param path path to the file to analyze.
  */
 class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
+  val thresholdJobWaiting = 200
   val fileSize = new File(path).length()
   val is = new FileInputStream(path)
   val channel = is.getChannel
@@ -89,16 +89,17 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           mListWatchedRoutees += ref
       }
       self ! RequestMoreWork() // launch the process
-    case RequestMoreWork() if notFinishedWork < 200 ⇒
-      notFinishedWork -= 1
+    case RequestMoreWork() if notFinishedWork < thresholdJobWaiting ⇒
+      if (notFinishedWork > 0) notFinishedWork -= 1
       if (mSource.hasNext) {
         logger.debug(s"*** Send lines ***")
         val (lines, index) = mSource.next()
         workers.foreach {
-          notFinishedWork += 1
           _.actor ! Lines(lines, index)
         }
-        print(s"\rProgress: ${channel.position * 100 / fileSize}")
+        notFinishedWork += workers.size
+        val percent = (channel.position * 100 / fileSize).toInt
+        print(s"\rProgress: $percent% [${"*" * (percent / 2)}${" " * (50 - (percent / 2))}]")
       }
       else {
         if (!operationFinished) {
@@ -112,6 +113,7 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
         }
       }
     case RequestMoreWork() ⇒
+      //      println("purging")
       notFinishedWork -= 1
       logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
 
