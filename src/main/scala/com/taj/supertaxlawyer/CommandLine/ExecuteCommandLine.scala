@@ -50,6 +50,18 @@ object ExecuteCommandLine extends Logging {
     val linesCount = opts.linesCount.get
     val outputLinesCount = opts.outputLinesCount.get
 
+    val (splitter, columnCount) = (opts.setSplitter.get, opts.columnCount.get) match {
+      case (Some(tmpSplitter), Some(col)) ⇒ (tmpSplitter, col)
+      case (Some(tmpSplitter), None) ⇒
+        val replacedSplitter: String = tmpSplitter match {
+          case "TAB"   ⇒ "\t"
+          case "SPACE" ⇒ " "
+          case c       ⇒ c
+        }
+        (replacedSplitter, FileTools.columnCount(path, replacedSplitter, encoding))
+      case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
+    }
+
     linesCount match {
       case Some(true) ⇒
         listOfWorkers += LineCounterActor(outputLinesCount)
@@ -58,21 +70,8 @@ object ExecuteCommandLine extends Logging {
 
     actionColumnSize match {
       case Some(true) ⇒
-        val (splitter, columnCount) = (opts.setSplitter.get, opts.columnCount.get) match {
-          case (Some(tmpSplitter), Some(col)) ⇒ (tmpSplitter, col)
-          case (Some(tmpSplitter), None) ⇒
-            val replacedSplitter: String = tmpSplitter match {
-              case "TAB"   ⇒ "\t"
-              case "SPACE" ⇒ " "
-              case c       ⇒ c
-            }
-            (replacedSplitter, FileTools.columnCount(path, replacedSplitter, encoding))
-          case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
-        }
-
         val lines = Source.fromFile(path, encoding).getLines()
         val titles = if (includeTitles && lines.hasNext) lines.next().split(s"\\Q$splitter\\E").toList.some else None
-
         listOfWorkers += SizeActor(outputColumnSize, columnCount, splitter, titles)
       case _ ⇒
     }
@@ -81,6 +80,11 @@ object ExecuteCommandLine extends Logging {
       case Some(true) ⇒
         listOfWorkers += LineExtractorActor(outputExtract)
       case _ ⇒
+    }
+
+    outputDelimiter match {
+      case Some(outputDelimiterPath) ⇒ scala.reflect.io.File(outputDelimiterPath).writeAll(splitter)
+      case None                      ⇒
     }
 
     val distributor = Distributor(file, encoding, listOfWorkers.toList, startLine, limitNumberOfLinesToRead = endLine)

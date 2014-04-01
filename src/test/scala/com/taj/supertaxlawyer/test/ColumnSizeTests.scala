@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.{ LineCounterActorTest, SizeActorTest, FileTools }
+import com.taj.supertaxlawyer.FileStructure.{ ColumnSizes, LineCounterActorTest, SizeActorTest, FileTools }
 import akka.testkit.TestProbe
 import com.taj.supertaxlawyer.Distributor
 import com.taj.supertaxlawyer.ActorMessages.Start
@@ -41,7 +41,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val distributor = Distributor(file, encoding, listOfWorkers, stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
-            columnSizeTestActor.expectMsg(columnCountWithTitles)
+            columnSizeTestActor.expectMsg(ColumnSizes(columnCountWithTitles))
         }
 
         "The number of lines including titles will be computed." in {
@@ -64,7 +64,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val distributor = Distributor(file, encoding, listOfWorkers, dropFirsLines = Some(1), stopSystemAtTheEnd = false, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
-            columnSizeTestActor.expectMsg(columnCountWithoutTitles)
+            columnSizeTestActor.expectMsg(ColumnSizes(columnCountWithoutTitles))
         }
 
         "The number of lines excluding titles will be computed." in {
@@ -90,14 +90,4 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
         }
       }
   }
-
-  /**
-   * Stops all actors when tests are finished.
-   * Delete all temp files.
-   */
-  //  override def afterAll(): Unit = {
-  //    f=>
-  //    TestKit.shutdownActorSystem(f.system)
-  //    f.system.shutdown()
-  //  }
 }
