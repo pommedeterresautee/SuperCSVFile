@@ -90,14 +90,14 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
       }
       self ! RequestMoreWork() // launch the process
     case RequestMoreWork() if notFinishedWork < thresholdJobWaiting ⇒
-      if (notFinishedWork > 0) notFinishedWork -= 1
+      notFinishedWork -= 1 // decrease by one the number of job done (current message).
       if (mSource.hasNext) {
         logger.debug(s"*** Send lines ***")
         val (lines, index) = mSource.next()
         workers.foreach {
           _.actor ! Lines(lines, index)
         }
-        notFinishedWork += workers.size
+        notFinishedWork += workers.size // increase the number of job sent.
         val percent = (channel.position * 100 / fileSize).toInt
         print(s"\rProgress: $percent% [${"*" * (percent / 2)}${" " * (50 - (percent / 2))}]")
       }
@@ -113,8 +113,7 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
         }
       }
     case RequestMoreWork() ⇒
-      //      println("purging")
-      notFinishedWork -= 1
+      notFinishedWork -= 1 // decrease by one the number of job done (current message).
       logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
 
     case Terminated(ref) ⇒
