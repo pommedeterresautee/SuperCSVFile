@@ -32,37 +32,16 @@ package com.taj.supertaxlawyer.FileStructure
 import scala.io.Source
 import akka.actor._
 import com.ibm.icu.text.CharsetDetector
-import java.io.{ BufferedInputStream, File, FileInputStream }
+import java.io.{ BufferedInputStream, FileInputStream }
 import com.taj.supertaxlawyer.ActorMessages.Start
-import com.taj.supertaxlawyer.{ ActorContainer, Distributor }
+import com.taj.supertaxlawyer.Distributor
 import com.typesafe.scalalogging.slf4j.Logging
-import scalaz._
 import Scalaz._
 
 /**
  * Operation related to the count of columns in a text file.
  */
 object FileTools extends Logging {
-
-  /**
-   * Compute the size of each column in the text file.
-   * @param path path to the text file.
-   * @param splitter Char or String used to limit the columns.
-   * @param expectedColumnQuantity number of columns expected per line. Any line with a different number of column won't be tested.
-   * @param encoding Encoding of the text file.
-   * @return A list of column sizes.
-   */
-  def computeSize(path: File, splitter: String, expectedColumnQuantity: Int, encoding: String, output: Option[String], titles: Option[List[String]]) {
-    implicit val system: ActorSystem = ActorSystem("ActorSystemComputation")
-
-    val listOfWorkers: List[ActorContainer] = List(
-      SizeActor(output, expectedColumnQuantity, splitter, titles),
-      LineCounterActor(output)
-    )
-    val dropLines = if (titles.isDefined) 1.some else None
-    val distributor = Distributor(path, encoding, listOfWorkers, dropLines, limitNumberOfLinesToRead = None)
-    distributor ! Start()
-  }
 
   /**
    * <p>Find the delimiter and the number of columns based on the first 1000 lines.</p>
