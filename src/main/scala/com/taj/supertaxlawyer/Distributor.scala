@@ -39,6 +39,7 @@ import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
 import com.typesafe.scalalogging.slf4j.Logging
+import java.util.concurrent.TimeUnit
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
@@ -52,7 +53,8 @@ object Distributor {
  * @param path path to the file to analyze.
  */
 class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
-  val thresholdJobWaiting = 200
+  val startTime = System.currentTimeMillis()
+  var thresholdJobWaiting = 200
   val fileSize = new File(path).length()
   val is = new FileInputStream(path)
   val channel = is.getChannel
@@ -114,7 +116,7 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
       }
     case RequestMoreWork() ⇒
       notFinishedWork -= 1 // decrease by one the number of job done (current message).
-      logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last from ${sender().path.name} ***")
+      logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last is from ${sender().path.name} ***")
 
     case Terminated(ref) ⇒
       mListWatchedRoutees -= ref
@@ -131,6 +133,12 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
     mBuffer.close()
     channel.close()
     is.close()
-    super.postStop()
+    var diff = System.currentTimeMillis() - startTime
+    val hours = TimeUnit.MILLISECONDS.toHours(diff)
+    diff = diff - (hours * 60 * 60 * 1000)
+    val min = TimeUnit.MILLISECONDS.toMinutes(diff)
+    diff = diff - (min * 60 * 1000)
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
+    println(s"The file has been processed in $hours:$min:$seconds")
   }
 }
