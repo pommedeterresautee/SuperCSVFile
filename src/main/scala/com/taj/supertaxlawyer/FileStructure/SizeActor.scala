@@ -42,8 +42,9 @@ import com.typesafe.scalalogging.slf4j.Logging
 import scalaz._
 import Scalaz._
 import scala.collection.mutable.ArrayBuffer
+import scala.annotation.tailrec
 
-case class WrongLines(lines: Seq[String])
+case class WrongLines(lines: Seq[(Int, String)])
 case class ColumnSizes(lines: Seq[Int])
 
 /**
@@ -90,18 +91,25 @@ object SizeActorTest {
 trait SizeComputation extends Logging {
   val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
 
-  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: Seq[Int]): (Seq[Int], Seq[String]) = {
+  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: Seq[Int]): (Seq[Int], Seq[(Int, String)]) = {
     if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
     val escapeRegexSplitter = s"\\Q$splitter\\E"
+
     val (correctSizeLines, notCorrectSizeLines) =
       listToAnalyze
         .map(_.split(escapeRegexSplitter, -1)) // transform the line in Array of columns
-        .partition(line ⇒ line.size == columnQuantity)
+        .zipWithIndex
+        .partition { case (line, index) ⇒ line.size == columnQuantity }
 
-    val result = correctSizeLines.filter(_.size == columnQuantity) // Remove not expected lines
+    val correctLines = correctSizeLines
+      .map { case (line, index) ⇒ line }
       .map(_.map(_.size).toSeq) // Change to a list of size of columns
       .foldLeft(emptyList)(mBiggestColumns) // Mix the best results
-    (result, notCorrectSizeLines.map(_.mkString(escapeRegexSplitter)))
+
+    val wrongLines = notCorrectSizeLines
+      .map { case (lines, index) ⇒ (index, lines.mkString(escapeRegexSplitter)) }
+
+    (correctLines, wrongLines)
   }
 }
 
@@ -121,10 +129,10 @@ trait SizeActorTrait extends SizeComputation {
       case Lines(listToAnalyze, index) ⇒
         counter += listToAnalyze.length
 
-        val (blockResult: Seq[Int], wrongLines: Seq[String]) =
+        val (blockResult: Seq[Int], wrongLines: Seq[(Int, String)]) =
           mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
         resultAccumulatorActor ! ColumnSizes(blockResult)
-        //        resultAccumulatorActor ! WrongLines(wrongLines)
+        resultAccumulatorActor ! WrongLines(wrongLines)
         sender ! RequestMoreWork() // Ask for the next line
     }
 
@@ -147,7 +155,33 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
   class AccumulatorActor(workerQuantity: Int) extends Actor with Logging {
     var bestSizes: Option[Seq[Int]] = None
     var workerFinished = 0
-    val wrongSizeAccumulator: ArrayBuffer[String] = ArrayBuffer()
+    val wrongSizeAccumulator: ArrayBuffer[(Int, String)] = ArrayBuffer()
+
+
+    /**
+     * Classify the lines by merging the one forming one line and the other non matching lines.
+     * @param listToCheck lines to check.
+     * @param size expected number of the columns.
+     * @return a Tuple of good and bad lines)
+     */
+    def classifyLines(listToCheck: Seq[(Int, Seq[String])], size:Int): (Seq[Seq[String]], Seq[Seq[String]]) = {
+
+      classifyLines(Seq(), Seq(), listToCheck, size)
+
+      @tailrec
+      def classifyLines(accumulateGood: Seq[Seq[String]], accumulateBad: Seq[Seq[String]], listToCheck: Seq[(Int, Seq[String])], size:Int): (Seq[Seq[String]], Seq[Seq[String]]) = {
+        listToCheck match {
+          case Nil         ⇒ (accumulateGood, accumulateBad)
+          case (indexHead, lineHead) :: Nil ⇒ (accumulateGood, accumulateBad:+lineHead)
+          case (indexHead, lineHead) :: (indexNext, lineNext) :: tail if indexHead + 1 == indexNext && lineHead.size + lineNext.size == size ⇒
+            val newList: Seq[Seq[String]] = accumulateGood :+ (lineHead ++ lineNext)
+            classifyLines(newList, accumulateBad, tail, size)
+          case (indexHead, lineHead) :: (indexNext, lineNext) :: tail ⇒
+            val newList = accumulateBad:+lineHead
+            classifyLines(accumulateGood, newList, (indexNext, lineNext)::tail, size)
+        }
+      }
+    }
 
     override def receive: Actor.Receive = {
       case ColumnSizes(columnSizes) ⇒
@@ -156,14 +190,16 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
           case Some(currentBestSize) ⇒
             bestSizes = mBiggestColumns(currentBestSize, columnSizes).some
         }
-
       case WrongLines(wrongSize) ⇒
         wrongSizeAccumulator ++= wrongSize
-
       case JobFinished() ⇒
         workerFinished += 1
         if (workerFinished == workerQuantity) {
           bestSizes.foreach(resultActor ! ColumnSizes(_))
+          val sorted = wrongSizeAccumulator
+            .sortBy { case (index, line) ⇒ index }
+
+
           self ! PoisonPill
         }
     }
