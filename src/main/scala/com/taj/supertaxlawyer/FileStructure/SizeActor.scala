@@ -50,7 +50,7 @@ case class ColumnSizes(lines: Seq[Int])
  * Init a real size actor.
  */
 object SizeActor {
-  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, titles: Option[Seq[String]])(implicit system: ActorSystem): ActorContainer = {
+  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
     val rooteesQuantity = Runtime.getRuntime.availableProcessors
 
     val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
@@ -60,7 +60,7 @@ object SizeActor {
 
       val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(rooteesQuantity)), name = "SizeActor")
     }
-    ActorContainer(actorTrait.sizeActor, isRooter = true)
+    (ActorContainer(actorTrait.sizeActor, isRooter = true), actorTrait.resultAccumulatorActor, actorTrait.resultActor)
   }
 }
 
@@ -164,6 +164,7 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
         workerFinished += 1
         if (workerFinished == workerQuantity) {
           bestSizes.foreach(resultActor ! ColumnSizes(_))
+          self ! PoisonPill
         }
     }
   }
@@ -200,6 +201,7 @@ trait ResultSizeActorTrait {
             else throw new IllegalArgumentException(s"Path provided is not to a file: $outputPath.")
           case None ⇒ println(stringResult)
         }
+        self ! PoisonPill
     }
   }
 }

@@ -30,13 +30,9 @@
 package com.taj.supertaxlawyer.FileStructure
 
 import scala.io.Source
-import akka.actor._
 import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
-import com.taj.supertaxlawyer.ActorMessages.Start
-import com.taj.supertaxlawyer.Distributor
 import com.typesafe.scalalogging.slf4j.Logging
-import Scalaz._
 
 /**
  * Operation related to the count of columns in a text file.

@@ -31,9 +31,7 @@ package com.taj.supertaxlawyer
 
 import scala.io.Source
 import akka.actor._
-import scala.collection.mutable.ArrayBuffer
 import com.taj.supertaxlawyer.ActorMessages.RequestMoreWork
-import akka.actor.Terminated
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import com.taj.supertaxlawyer.ActorMessages.Start
 import akka.routing.Broadcast
@@ -78,18 +76,12 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
           })
       .getOrElse(mIterator)
   val mSource = mlimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
-  val mListWatchedRoutees = ArrayBuffer.empty[ActorRef]
   var operationFinished = false
   var notFinishedWork = 0 // count the number of actors which are awaiting for more work.
 
   override def receive: Actor.Receive = {
     case Start() ⇒
       logger.debug(s"*** Start watching ***")
-      workers.foreach {
-        case ActorContainer(ref, _) ⇒
-          context.watch(ref)
-          mListWatchedRoutees += ref
-      }
       self ! RequestMoreWork() // launch the process
     case RequestMoreWork() if notFinishedWork < thresholdJobWaiting ⇒
       notFinishedWork -= 1 // decrease by one the number of job done (current message).
@@ -116,15 +108,7 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
       }
     case RequestMoreWork() ⇒
       notFinishedWork -= 1 // decrease by one the number of job done (current message).
-      logger.debug(s"*** There are ${mListWatchedRoutees.size} watched rootees and ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last is from ${sender().path.name} ***")
-
-    case Terminated(ref) ⇒
-      mListWatchedRoutees -= ref
-      logger.debug(s"*** Rootee ${ref.path.name} is dead. Remaining ${mListWatchedRoutees.size} ***")
-      if (mListWatchedRoutees.isEmpty) {
-        logger.debug("*** Everybody is gone  ***")
-        if (stopSystemAtTheEnd) context.system.shutdown()
-      }
+      logger.debug(s"*** ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last is from ${sender().path.name} ***")
     case t ⇒
       throw new IllegalStateException(s"Bad parameter sent to ${self.path.name} ($t)")
   }
@@ -139,6 +123,6 @@ class Distributor(path: String, encoding: String, workers: List[ActorContainer],
     val min = TimeUnit.MILLISECONDS.toMinutes(diff)
     diff = diff - (min * 60 * 1000)
     val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
-    println(s"The file has been processed in $hours:$min:$seconds")
+    println(s"The file has been read in $hours:$min:$seconds")
   }
 }

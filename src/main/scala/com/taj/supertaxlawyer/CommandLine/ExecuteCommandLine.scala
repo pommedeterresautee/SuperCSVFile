@@ -8,10 +8,11 @@ import scalaz._
 import Scalaz._
 import com.taj.supertaxlawyer.Extractor.LineExtractorActor
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.{ Distributor, ActorContainer }
+import com.taj.supertaxlawyer.{ Reaper, Distributor, ActorContainer }
 import com.taj.supertaxlawyer.ActorMessages.Start
 import scala.collection.mutable.ArrayBuffer
 import com.typesafe.scalalogging.slf4j.Logging
+import com.taj.supertaxlawyer.ActorLife.RegisterMe
 
 object ExecuteCommandLine extends Logging {
   /**
@@ -24,6 +25,8 @@ object ExecuteCommandLine extends Logging {
     System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, if (opts.debug.get.getOrElse(false)) "debug" else "info")
 
     implicit val system: ActorSystem = ActorSystem("ActorSystemComputation")
+
+    val reaper = Reaper()
 
     val listOfWorkers: ArrayBuffer[ActorContainer] = ArrayBuffer()
 
@@ -64,7 +67,9 @@ object ExecuteCommandLine extends Logging {
 
     linesCount match {
       case Some(true) ⇒
-        listOfWorkers += LineCounterActor(outputLinesCount)
+        val actor = LineCounterActor(outputLinesCount)
+        listOfWorkers += actor
+        reaper ! RegisterMe(actor.actor)
       case _ ⇒
     }
 
@@ -72,13 +77,19 @@ object ExecuteCommandLine extends Logging {
       case Some(true) ⇒
         val lines = Source.fromFile(path, encoding).getLines()
         val titles = if (includeTitles && lines.hasNext) lines.next().split(s"\\Q$splitter\\E").toList.some else None
-        listOfWorkers += SizeActor(outputColumnSize, columnCount, splitter, titles)
+        val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
+        listOfWorkers += computer
+        reaper ! RegisterMe(computer.actor)
+        reaper ! RegisterMe(resultAccumulator)
+        reaper ! RegisterMe(finalResult)
       case _ ⇒
     }
 
     actionExtract match {
       case Some(true) ⇒
-        listOfWorkers += LineExtractorActor(outputExtract)
+        val actor = LineExtractorActor(outputExtract)
+        listOfWorkers += actor
+        reaper ! RegisterMe(actor.actor)
       case _ ⇒
     }
 
@@ -88,6 +99,7 @@ object ExecuteCommandLine extends Logging {
     }
 
     val distributor = Distributor(file, encoding, listOfWorkers.toList, startLine, limitNumberOfLinesToRead = endLine)
+
     distributor ! Start()
   }
 }
