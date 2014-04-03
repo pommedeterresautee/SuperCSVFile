@@ -157,30 +157,29 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
     var workerFinished = 0
     val wrongSizeAccumulator: ArrayBuffer[(Int, String)] = ArrayBuffer()
 
-
     /**
      * Classify the lines by merging the one forming one line and the other non matching lines.
      * @param listToCheck lines to check.
      * @param size expected number of the columns.
      * @return a Tuple of good and bad lines)
      */
-    def classifyLines(listToCheck: Seq[(Int, Seq[String])], size:Int): (Seq[Seq[String]], Seq[Seq[String]]) = {
+    def classifyLines(listToCheck: Seq[(Int, Seq[String])], size: Int): (Seq[Seq[String]], Seq[Seq[String]]) = {
+
+        @tailrec
+        def classifyLines(accumulateGood: Seq[Seq[String]], accumulateBad: Seq[Seq[String]], listToCheck: Seq[(Int, Seq[String])], size: Int): (Seq[Seq[String]], Seq[Seq[String]]) = {
+          listToCheck match {
+            case Nil                          ⇒ (accumulateGood, accumulateBad)
+            case (indexHead, lineHead) :: Nil ⇒ (accumulateGood, accumulateBad :+ lineHead)
+            case (indexHead, lineHead) :: (indexNext, lineNext) :: tail if indexHead + 1 == indexNext && lineHead.size + lineNext.size == size ⇒
+              val newList: Seq[Seq[String]] = accumulateGood :+ (lineHead ++ lineNext)
+              classifyLines(newList, accumulateBad, tail, size)
+            case (indexHead, lineHead) :: (indexNext, lineNext) :: tail ⇒
+              val newList = accumulateBad :+ lineHead
+              classifyLines(accumulateGood, newList, (indexNext, lineNext) :: tail, size)
+          }
+        }
 
       classifyLines(Seq(), Seq(), listToCheck, size)
-
-      @tailrec
-      def classifyLines(accumulateGood: Seq[Seq[String]], accumulateBad: Seq[Seq[String]], listToCheck: Seq[(Int, Seq[String])], size:Int): (Seq[Seq[String]], Seq[Seq[String]]) = {
-        listToCheck match {
-          case Nil         ⇒ (accumulateGood, accumulateBad)
-          case (indexHead, lineHead) :: Nil ⇒ (accumulateGood, accumulateBad:+lineHead)
-          case (indexHead, lineHead) :: (indexNext, lineNext) :: tail if indexHead + 1 == indexNext && lineHead.size + lineNext.size == size ⇒
-            val newList: Seq[Seq[String]] = accumulateGood :+ (lineHead ++ lineNext)
-            classifyLines(newList, accumulateBad, tail, size)
-          case (indexHead, lineHead) :: (indexNext, lineNext) :: tail ⇒
-            val newList = accumulateBad:+lineHead
-            classifyLines(accumulateGood, newList, (indexNext, lineNext)::tail, size)
-        }
-      }
     }
 
     override def receive: Actor.Receive = {
@@ -198,7 +197,6 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
           bestSizes.foreach(resultActor ! ColumnSizes(_))
           val sorted = wrongSizeAccumulator
             .sortBy { case (index, line) ⇒ index }
-
 
           self ! PoisonPill
         }
