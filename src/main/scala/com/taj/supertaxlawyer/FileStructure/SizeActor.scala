@@ -33,7 +33,6 @@ import akka.actor._
 import akka.routing.RoundRobinPool
 import com.taj.supertaxlawyer.ActorMessages._
 
-import akka.testkit.TestProbe
 import com.taj.supertaxlawyer.ActorMessages.Lines
 import scala.Some
 import com.taj.supertaxlawyer.ActorContainer
@@ -53,7 +52,7 @@ case class ColumnSizes(lines: Seq[Int])
 object SizeActor {
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
-    val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
+    val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "AccumulatorActor")
       override val finalResultActor = system.actorOf(Props(new ResultSizeColumnActor(output, titles)), "ResultSizeColumnActor")
       override val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(routeesQuantity)), name = "SizeActor")
@@ -69,7 +68,7 @@ object SizeActor {
 object SizeActorInjectedResultActor {
   def apply(injectedFinalResultActor: ActorRef, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): (ActorContainer, ActorContainer) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
-    val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
+    val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "TestAccumulatorActor")
       override val finalResultActor = injectedFinalResultActor
       override val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
@@ -139,9 +138,9 @@ trait SizeActorTrait extends SizeComputation {
 }
 
 trait AccumulatorSizeActorTrait extends SizeComputation {
-  self: ResultSizeActorTrait ⇒
 
   val resultAccumulatorActor: ActorRef
+  val finalResultActor: ActorRef
 
   /**
    * Receive the result of each analyze, choose the best result and at the end of the process, display the result, or save it to a file.
@@ -198,38 +197,34 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
   }
 }
 
-trait ResultSizeActorTrait {
-  val finalResultActor: ActorRef
+class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[String]]) extends Actor with Logging {
 
-  class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[String]]) extends Actor with Logging {
+  override def receive: Actor.Receive = {
+    case ColumnSizes(bestSizes) ⇒
+      val stringResult: String = (bestSizes, titles) match {
+        case (sizes, Some(titleList)) if sizes.size == titleList.size ⇒
+          titleList
+            .zip(sizes)
+            .map {
+              case (title, size) ⇒ s"$title;$size"
+            }
+            .mkString("\n")
+        case (sizes, Some(titleList)) if sizes.size != titleList.size ⇒
+          s"""The program has found a result equal to:
+          ${sizes.mkString(";")}
+          However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns ${titleList.size}.
+          You should audit the result.
+          """"
+        case (sizes, None) ⇒ sizes.mkString(";")
+      }
 
-    override def receive: Actor.Receive = {
-      case ColumnSizes(bestSizes) ⇒
-        val stringResult: String = (bestSizes, titles) match {
-          case (sizes, Some(titleList)) if sizes.size == titleList.size ⇒
-            titleList
-              .zip(sizes)
-              .map {
-                case (title, size) ⇒ s"$title;$size"
-              }
-              .mkString("\n")
-          case (sizes, Some(titleList)) if sizes.size != titleList.size ⇒
-            s"""The program has found a result equal to:
-            ${sizes.mkString(";")}
-            However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns ${titleList.size}.
-            You should audit the result.
-            """"
-          case (sizes, None) ⇒ sizes.mkString(";")
-        }
-
-        outputFile match {
-          case Some(outputPath) ⇒ // a path to save the result in a file is provided
-            import scala.reflect.io._
-            if (Path(outputPath).isFile) File(outputPath).writeAll(stringResult)
-            else throw new IllegalArgumentException(s"Path provided is not to a file: $outputPath.")
-          case None ⇒ println(stringResult)
-        }
-        self ! PoisonPill
-    }
+      outputFile match {
+        case Some(outputPath) ⇒ // a path to save the result in a file is provided
+          import scala.reflect.io._
+          if (Path(outputPath).isFile) File(outputPath).writeAll(stringResult)
+          else throw new IllegalArgumentException(s"Path provided is not to a file: $outputPath.")
+        case None ⇒ println(stringResult)
+      }
+      self ! PoisonPill
   }
 }

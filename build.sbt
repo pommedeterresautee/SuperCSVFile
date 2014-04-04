@@ -1,6 +1,7 @@
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
-name := "Super Tax Lawyer"
+name := "SuperCSVFile"
 
 version := "1.0.1"
 

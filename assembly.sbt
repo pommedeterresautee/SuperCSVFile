@@ -3,7 +3,7 @@ import AssemblyKeys._
 
 assemblySettings
 
-jarName in assembly := "SuperTaxLawyer.jar"
+jarName in assembly := "SuperCSVFile.jar"
 
 mainClass in assembly := Some("com.taj.supertaxlawyer.Main")
 

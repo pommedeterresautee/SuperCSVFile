@@ -14,7 +14,7 @@ private object TestSystemCounter {
   def nextSysId() = sysId.incrementAndGet()
 }
 
-trait TestCommonTrait extends ShouldMatchers with Logging with Suite
+trait TestCommonTrait extends ShouldMatchers with Logging
 
 trait TestTrait extends WordSpecLike with TestCommonTrait
 

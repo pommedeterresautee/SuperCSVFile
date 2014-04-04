@@ -45,7 +45,7 @@ object Distributor {
 
   def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], limitNumberOfLinesToRead: Option[Int])(implicit system: ActorSystem) = {
     val actor = new ComponentDistributor with DisplayProgress {
-      override val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, numberOfLinesPerMessage = 500, limitNumberOfLinesToRead)), name = s"Distributor")
+      override val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, numberOfLinesPerMessage = 500, limitNumberOfLinesToRead)), name = "Distributor")
     }
 
     actor.distributor
@@ -56,7 +56,7 @@ object DistributorTest {
 
   def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitNumberOfLinesToRead: Option[Int])(implicit system: ActorSystem) = {
     val actor = new ComponentDistributor with NoDisplayProgress {
-      override val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"DistributorTest")
+      override val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = "DistributorTest")
     }
 
     actor.distributor
@@ -77,20 +77,24 @@ trait DisplayProgress extends Progress {
   override def displayProgress(position: Long, fileSize: Long) {
     val currentPercent = (position * 100 / fileSize).toInt
     if (currentPercent > precedentPercentage) {
+      precedentPercentage = currentPercent
       val remaining = fileSize - position
       val timeUsed = System.currentTimeMillis() - startTime
       val timeRemaining = (remaining * timeUsed) / position
       val time = whatTimeIsIt(timeRemaining)
-      precedentPercentage = currentPercent
-      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${time.hours}h ${time.minutes}m ${time.seconds}s)")
+      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${timeString(time)}))")
     }
   }
 
-  override def newLine() = println()
+  override def newLine() = print("\r")
   override def timeToReadFile() {
     val diff = System.currentTimeMillis() - startTime
     val time = whatTimeIsIt(diff)
-    println(s"The file has been read in ${time.hours}:${time.minutes}:${time.seconds}")
+    println(s"The file has been read in ${timeString(time)}")
+  }
+
+  private def timeString(time: TimeContainer): String = {
+    s"${time.hours}h ${time.minutes}m ${time.seconds}s"
   }
 
   private def whatTimeIsIt(timeDiff: Long): TimeContainer = {

@@ -1,14 +1,17 @@
 package com.taj.supertaxlawyer.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.{ ColumnSizes, LineCounterActorTest, SizeActorInjectedResultActor, FileTools }
+import com.taj.supertaxlawyer.FileStructure.{ LineCounterActorTest, SizeActorInjectedResultActor, FileTools }
 import akka.testkit.TestProbe
-import com.taj.supertaxlawyer.{ DistributorTest, Distributor }
-import com.taj.supertaxlawyer.ActorMessages.Start
-import akka.actor.ActorSystem
+import com.taj.supertaxlawyer.DistributorTest
 import org.scalatest.BeforeAndAfterAll
 import scalaz._
 import Scalaz._
+import scala.concurrent.duration._
+import scala.concurrent.duration
+import scala.Some
+import com.taj.supertaxlawyer.FileStructure.ColumnSizes
+import com.taj.supertaxlawyer.ActorMessages.Start
 
 object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 
@@ -41,8 +44,9 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! Start()
-
-            columnSizeTestProbe.expectMsg(ColumnSizes(columnCountWithTitles))
+            import duration._
+            val time = FiniteDuration(10000, SECONDS)
+            columnSizeTestProbe.expectMsg(time, ColumnSizes(columnCountWithTitles))
         }
 
         "The number of lines including titles will be computed." in {
@@ -52,8 +56,8 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! Start()
-
-            linesTestActor.expectMsg(numberOfLines)
+            val time = FiniteDuration(10000, SECONDS)
+            linesTestActor.expectMsg(time, numberOfLines)
         }
 
         "The best size of columns without titles will be computed." in {
