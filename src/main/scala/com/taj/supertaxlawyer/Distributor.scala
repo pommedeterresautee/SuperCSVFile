@@ -64,26 +64,49 @@ object DistributorTest {
 }
 
 trait Progress {
-  def displayProgress(position: Long, fileSize: Long)
-  def newLine()
+  def displayProgress(position: Long, fileSize: Long): Unit
+  def newLine(): Unit
+  def timeToReadFile(): Unit
 }
 
 trait DisplayProgress extends Progress {
-  var precedentPercentage = 0
+  private case class TimeContainer(hours: Long, minutes: Long, seconds: Long)
+  private var precedentPercentage = 0
+  private val startTime = System.currentTimeMillis()
 
   override def displayProgress(position: Long, fileSize: Long) {
     val currentPercent = (position * 100 / fileSize).toInt
     if (currentPercent > precedentPercentage) {
+      val remaining = fileSize - position
+      val timeUsed = System.currentTimeMillis() - startTime
+      val timeRemaining = (remaining * timeUsed) / position
+      val time = whatTimeIsIt(timeRemaining)
       precedentPercentage = currentPercent
-      print(s"\rProgress: $currentPercent% [${"*" * (currentPercent / 2)}${" " * (50 - (currentPercent / 2))}]")
+      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${time.hours}h ${time.minutes}m ${time.seconds}s)")
     }
   }
-  def newLine() = println()
+  override def newLine() = println()
+  override def timeToReadFile() {
+    val diff = System.currentTimeMillis() - startTime
+    val time = whatTimeIsIt(diff)
+    println(s"The file has been read in ${time.hours}:${time.minutes}:${time.seconds}")
+  }
+
+  private def whatTimeIsIt(timeDiff: Long): TimeContainer = {
+    var diff = timeDiff
+    val hours = TimeUnit.MILLISECONDS.toHours(diff)
+    diff = diff - (hours * 60 * 60 * 1000)
+    val min = TimeUnit.MILLISECONDS.toMinutes(diff)
+    diff = diff - (min * 60 * 1000)
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
+    TimeContainer(hours, min, seconds)
+  }
 }
 
 trait NoDisplayProgress extends Progress {
   override def displayProgress(position: Long, fileSize: Long) {}
   override def newLine() {}
+  override def timeToReadFile() {}
 }
 
 trait ComponentDistributor {
@@ -97,7 +120,6 @@ trait ComponentDistributor {
    */
   class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
 
-    val startTime = System.currentTimeMillis()
     var thresholdJobWaiting = 200
     val fileSize = new File(path).length()
     val is = new FileInputStream(path)
@@ -162,13 +184,7 @@ trait ComponentDistributor {
       mBuffer.close()
       channel.close()
       is.close()
-      var diff = System.currentTimeMillis() - startTime
-      val hours = TimeUnit.MILLISECONDS.toHours(diff)
-      diff = diff - (hours * 60 * 60 * 1000)
-      val min = TimeUnit.MILLISECONDS.toMinutes(diff)
-      diff = diff - (min * 60 * 1000)
-      val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
-      println(s"The file has been read in $hours:$min:$seconds")
+      timeToReadFile()
     }
   }
 }
