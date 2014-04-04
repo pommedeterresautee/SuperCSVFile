@@ -1,6 +1,6 @@
 package com.taj.supertaxlawyer.test
 
-import org.scalatest.{ Outcome, fixture, Matchers, WordSpecLike }
+import org.scalatest._
 import com.typesafe.scalalogging.slf4j.Logging
 import akka.testkit.{ TestKitBase, ImplicitSender }
 import akka.actor.ActorSystem
@@ -14,7 +14,7 @@ private object TestSystemCounter {
   def nextSysId() = sysId.incrementAndGet()
 }
 
-trait TestCommonTrait extends Matchers with Logging
+trait TestCommonTrait extends ShouldMatchers with Logging with Suite
 
 trait TestTrait extends WordSpecLike with TestCommonTrait
 

@@ -52,15 +52,13 @@ case class ColumnSizes(lines: Seq[Int])
  */
 object SizeActor {
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
-    val rooteesQuantity = Runtime.getRuntime.availableProcessors
-
+    val routeesQuantity = Runtime.getRuntime.availableProcessors
     val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
-      override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(rooteesQuantity)), "AccumulatorActor")
-
+      override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "AccumulatorActor")
       override val resultActor = system.actorOf(Props(new ResultSizeColumnActor(output, titles)), "ResultSizeColumnActor")
-
-      val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(rooteesQuantity)), name = "SizeActor")
+      override val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(routeesQuantity)), name = "SizeActor")
     }
+
     (ActorContainer(actorTrait.sizeActor, isRooter = true), actorTrait.resultAccumulatorActor, actorTrait.resultActor)
   }
 }
@@ -69,18 +67,14 @@ object SizeActor {
  * Init an actor to test the column size computation.
  */
 object SizeActorTest {
-
   def apply(testActor: TestProbe, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): ActorContainer = {
-
     val routeesQuantity = Runtime.getRuntime.availableProcessors
-
     val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait with ResultSizeActorTrait {
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "TestAccumulatorActor")
-
       override val resultActor = testActor.ref
-
-      val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
+      override val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
     }
+
     ActorContainer(actorTestTrait.sizeActor, isRooter = true)
   }
 }
@@ -115,6 +109,7 @@ trait SizeComputation extends Logging {
 
 trait SizeActorTrait extends SizeComputation {
   self: AccumulatorSizeActorTrait ⇒
+  val sizeActor: ActorRef
 
   /**
    * Analyze each block of lines received and send back the best match of size of columns.
@@ -190,14 +185,13 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
             bestSizes = mBiggestColumns(currentBestSize, columnSizes).some
         }
       case WrongLines(wrongSize) ⇒
-        wrongSizeAccumulator ++= wrongSize
+      //        wrongSizeAccumulator ++= wrongSize
       case JobFinished() ⇒
         workerFinished += 1
         if (workerFinished == workerQuantity) {
           bestSizes.foreach(resultActor ! ColumnSizes(_))
-          val sorted = wrongSizeAccumulator
-            .sortBy { case (index, line) ⇒ index }
-
+          //          val sorted = wrongSizeAccumulator
+          //            .sortBy { case (index, line) ⇒ index }
           self ! PoisonPill
         }
     }

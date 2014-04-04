@@ -43,86 +43,132 @@ case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
 object Distributor {
 
-  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean = true, numberOfLinesPerMessage: Int = 500, limitNumberOfLinesToRead: Option[Int])(implicit system: ActorSystem) = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, stopSystemAtTheEnd, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"Distributor")
+  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], limitNumberOfLinesToRead: Option[Int])(implicit system: ActorSystem) = {
+    val actor = new ComponentDistributor with DisplayProgress {
+      override val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, numberOfLinesPerMessage = 500, limitNumberOfLinesToRead)), name = s"Distributor")
+    }
+
+    actor.distributor
+  }
 }
 
-/**
- * Read the file and send the work.
- * @param path path to the file to analyze.
- */
-class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], stopSystemAtTheEnd: Boolean, numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
-  val startTime = System.currentTimeMillis()
-  var thresholdJobWaiting = 200
-  val fileSize = new File(path).length()
-  val is = new FileInputStream(path)
-  val channel = is.getChannel
-  val mBuffer = Source.fromInputStream(is, encoding)
-  val mIterator = mBuffer.getLines().drop {
-    dropFirsLines match {
-      case Some(linesToDrop) ⇒ linesToDrop
-      case None              ⇒ 0
+object DistributorTest {
+
+  def apply(file: File, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitNumberOfLinesToRead: Option[Int])(implicit system: ActorSystem) = {
+    val actor = new ComponentDistributor with NoDisplayProgress {
+      override val distributor = system.actorOf(Props(new Distributor(file.getAbsolutePath, encoding, workers, dropFirsLines, numberOfLinesPerMessage, limitNumberOfLinesToRead)), name = s"DistributorTest")
+    }
+
+    actor.distributor
+  }
+}
+
+trait Progress {
+  def displayProgress(position: Long, fileSize: Long)
+  def newLine()
+}
+
+trait DisplayProgress extends Progress {
+  var precedentPercentage = 0
+
+  override def displayProgress(position: Long, fileSize: Long) {
+    val currentPercent = (position * 100 / fileSize).toInt
+    if (currentPercent > precedentPercentage) {
+      precedentPercentage = currentPercent
+      print(s"\rProgress: $currentPercent% [${"*" * (currentPercent / 2)}${" " * (50 - (currentPercent / 2))}]")
     }
   }
-  val mlimitedIterator =
-    limitOfLinesRead
-      .map(
-        limit ⇒ mIterator
-          .zipWithIndex
-          .takeWhile {
-            case (read, index) ⇒ index <= limit
-          }
-          .map {
-            case (read, index) ⇒ read
-          })
-      .getOrElse(mIterator)
-  val mSource = mlimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
-  var operationFinished = false
-  var notFinishedWork = 0 // count the number of actors which are awaiting for more work.
+  def newLine() = println()
+}
 
-  override def receive: Actor.Receive = {
-    case Start() ⇒
-      logger.debug(s"*** Start watching ***")
-      self ! RequestMoreWork() // launch the process
-    case RequestMoreWork() if notFinishedWork < thresholdJobWaiting ⇒
-      notFinishedWork -= 1 // decrease by one the number of job done (current message).
-      if (mSource.hasNext) {
-        logger.debug(s"*** Send lines ***")
-        val (lines, index) = mSource.next()
-        workers.foreach {
-          _.actor ! Lines(lines, index)
-        }
-        notFinishedWork += workers.size // increase the number of job sent.
-        val percent = (channel.position * 100 / fileSize).toInt
-        print(s"\rProgress: $percent% [${"*" * (percent / 2)}${" " * (50 - (percent / 2))}]")
+trait NoDisplayProgress extends Progress {
+  override def displayProgress(position: Long, fileSize: Long) {}
+  override def newLine() {}
+}
+
+trait ComponentDistributor {
+  self: Progress ⇒
+
+  val distributor: ActorRef
+
+  /**
+   * Read the file and send the work.
+   * @param path path to the file to analyze.
+   */
+  class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
+
+    val startTime = System.currentTimeMillis()
+    var thresholdJobWaiting = 200
+    val fileSize = new File(path).length()
+    val is = new FileInputStream(path)
+    val channel = is.getChannel
+    val mBuffer = Source.fromInputStream(is, encoding)
+    val mIterator = mBuffer.getLines().drop {
+      dropFirsLines match {
+        case Some(linesToDrop) ⇒ linesToDrop
+        case None              ⇒ 0
       }
-      else {
-        if (!operationFinished) {
-          logger.debug(s"*** Send poison pill to all workers ***")
-          println()
-          operationFinished = true
+    }
+    val mlimitedIterator =
+      limitOfLinesRead
+        .map(
+          limit ⇒ mIterator
+            .zipWithIndex
+            .takeWhile {
+              case (read, index) ⇒ index <= limit
+            }
+            .map {
+              case (read, index) ⇒ read
+            })
+        .getOrElse(mIterator)
+    val mSource = mlimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
+    var operationFinished = false
+    var notFinishedWork = 0 // count the number of actors which are awaiting for more work.
+
+    override def receive: Actor.Receive = {
+      case Start() ⇒
+        logger.debug(s"*** Start watching ***")
+        self ! RequestMoreWork() // launch the process
+      case RequestMoreWork() if notFinishedWork < thresholdJobWaiting ⇒
+        notFinishedWork -= 1 // decrease by one the number of job done (current message).
+        if (mSource.hasNext) {
+          logger.debug(s"*** Send lines ***")
+          val (lines, index) = mSource.next()
           workers.foreach {
-            case ActorContainer(ref, true)  ⇒ ref ! Broadcast(PoisonPill)
-            case ActorContainer(ref, false) ⇒ ref ! PoisonPill
+            _.actor ! Lines(lines, index)
+          }
+          notFinishedWork += workers.size // increase the number of job sent.
+          displayProgress(channel.position, fileSize)
+        }
+        else {
+          if (!operationFinished) {
+            logger.debug(s"*** Send poison pill to all workers ***")
+            newLine()
+            operationFinished = true
+            workers.foreach {
+              case ActorContainer(ref, true)  ⇒ ref ! Broadcast(PoisonPill)
+              case ActorContainer(ref, false) ⇒ ref ! PoisonPill
+            }
           }
         }
-      }
-    case RequestMoreWork() ⇒
-      notFinishedWork -= 1 // decrease by one the number of job done (current message).
-      logger.debug(s"*** ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last is from ${sender().path.name} ***")
-    case t ⇒
-      throw new IllegalStateException(s"Bad parameter sent to ${self.path.name} ($t)")
-  }
+      case RequestMoreWork() ⇒
+        notFinishedWork -= 1 // decrease by one the number of job done (current message).
+        logger.debug(s"*** ${self.path.name} has received $notFinishedWork ${RequestMoreWork.getClass.getSimpleName} messages, the last is from ${sender().path.name} ***")
+      case t ⇒
+        throw new IllegalStateException(s"Bad parameter sent to ${self.path.name} ($t)")
+    }
 
-  override def postStop(): Unit = {
-    mBuffer.close()
-    channel.close()
-    is.close()
-    var diff = System.currentTimeMillis() - startTime
-    val hours = TimeUnit.MILLISECONDS.toHours(diff)
-    diff = diff - (hours * 60 * 60 * 1000)
-    val min = TimeUnit.MILLISECONDS.toMinutes(diff)
-    diff = diff - (min * 60 * 1000)
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
-    println(s"The file has been read in $hours:$min:$seconds")
+    override def postStop(): Unit = {
+      mBuffer.close()
+      channel.close()
+      is.close()
+      var diff = System.currentTimeMillis() - startTime
+      val hours = TimeUnit.MILLISECONDS.toHours(diff)
+      diff = diff - (hours * 60 * 60 * 1000)
+      val min = TimeUnit.MILLISECONDS.toMinutes(diff)
+      diff = diff - (min * 60 * 1000)
+      val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
+      println(s"The file has been read in $hours:$min:$seconds")
+    }
   }
 }
