@@ -1,7 +1,7 @@
 package com.taj.supertaxlawyer.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.{ ColumnSizes, LineCounterActorTest, SizeActorTest, FileTools }
+import com.taj.supertaxlawyer.FileStructure.{ ColumnSizes, LineCounterActorTest, SizeActorInjectedResultActor, FileTools }
 import akka.testkit.TestProbe
 import com.taj.supertaxlawyer.{ DistributorTest, Distributor }
 import com.taj.supertaxlawyer.ActorMessages.Start
@@ -34,14 +34,15 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
         "The best size of columns including titles will be computed." in {
           f ⇒
             implicit val system = f.system
-            val columnSizeTestActor: TestProbe = TestProbe()
-            val (testSizeActor, _) = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
+            val columnSizeTestProbe: TestProbe = TestProbe()
+            val columnSizeTestActor = columnSizeTestProbe.ref
+            val (testSizeActor, _) = SizeActorInjectedResultActor(columnSizeTestActor, numberOfColumns, splitter)
 
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
-            columnSizeTestActor.expectMsg(ColumnSizes(columnCountWithTitles))
+            columnSizeTestProbe.expectMsg(ColumnSizes(columnCountWithTitles))
         }
 
         "The number of lines including titles will be computed." in {
@@ -58,13 +59,14 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
         "The best size of columns without titles will be computed." in {
           f ⇒
             implicit val system = f.system
-            val columnSizeTestActor: TestProbe = TestProbe()
-            val (testSizeActor, _) = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
+            val columnSizeTestProbe: TestProbe = TestProbe()
+            val columnSizeTestActor = columnSizeTestProbe.ref
+            val (testSizeActor, _) = SizeActorInjectedResultActor(columnSizeTestActor, numberOfColumns, splitter)
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = Some(1), numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
             distributor ! Start()
 
-            columnSizeTestActor.expectMsg(ColumnSizes(columnCountWithoutTitles))
+            columnSizeTestProbe.expectMsg(ColumnSizes(columnCountWithoutTitles))
         }
 
         "The number of lines excluding titles will be computed." in {
