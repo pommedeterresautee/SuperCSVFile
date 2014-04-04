@@ -136,7 +136,7 @@ trait ComponentDistributor {
         case None              ⇒ 0
       }
     }
-    val mlimitedIterator =
+    val mLimitedIterator =
       limitOfLinesRead
         .map(
           limit ⇒ mIterator
@@ -148,7 +148,7 @@ trait ComponentDistributor {
               case (read, index) ⇒ read
             })
         .getOrElse(mIterator)
-    val mSource = mlimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
+    val mSource = mLimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
     var operationFinished = false
     var notFinishedWork = 0 // count the number of actors which are awaiting for more work.
 
