@@ -35,7 +35,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
           f ⇒
             implicit val system = f.system
             val columnSizeTestActor: TestProbe = TestProbe()
-            val testSizeActor = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
+            val (testSizeActor, _) = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
 
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
@@ -59,7 +59,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
           f ⇒
             implicit val system = f.system
             val columnSizeTestActor: TestProbe = TestProbe()
-            val testSizeActor = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
+            val (testSizeActor, _) = SizeActorTest(columnSizeTestActor, numberOfColumns, splitter)
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = Some(1), numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
             distributor ! Start()

@@ -85,6 +85,7 @@ trait DisplayProgress extends Progress {
       print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${time.hours}h ${time.minutes}m ${time.seconds}s)")
     }
   }
+
   override def newLine() = println()
   override def timeToReadFile() {
     val diff = System.currentTimeMillis() - startTime
