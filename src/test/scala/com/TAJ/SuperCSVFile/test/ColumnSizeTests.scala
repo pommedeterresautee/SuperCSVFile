@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 import scala.concurrent.duration
 import scala.Some
 import com.TAJ.SuperCSVFile.FileStructure.ColumnSizes
-import com.TAJ.SuperCSVFile.ActorMessages.Start
+import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 
 object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 
@@ -43,7 +43,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
-            distributor ! Start()
+            distributor ! RequestMoreWork()
             import duration._
             val time = FiniteDuration(10000, SECONDS)
             columnSizeTestProbe.expectMsg(time, ColumnSizes(columnCountWithTitles))
@@ -55,7 +55,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val linesTestActor: TestProbe = TestProbe()
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
-            distributor ! Start()
+            distributor ! RequestMoreWork()
             val time = FiniteDuration(10000, SECONDS)
             linesTestActor.expectMsg(time, numberOfLines)
         }
@@ -68,7 +68,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val (testSizeActor, _) = SizeActorInjectedResultActor(columnSizeTestActor, numberOfColumns, splitter)
             val listOfWorkers = List(testSizeActor)
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = Some(1), numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
-            distributor ! Start()
+            distributor ! RequestMoreWork()
 
             columnSizeTestProbe.expectMsg(ColumnSizes(columnCountWithoutTitles))
         }
@@ -79,7 +79,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val linesTestActor: TestProbe = TestProbe()
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = 1.some, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
-            distributor ! Start()
+            distributor ! RequestMoreWork()
             // -1 because we remove one line for the tittles
             linesTestActor.expectMsg(numberOfLines - 1)
         }
@@ -90,7 +90,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             val linesTestActor: TestProbe = TestProbe()
             val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = 1.some, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = 5.some)
-            distributor ! Start()
+            distributor ! RequestMoreWork()
             // use min in case the file is too small.
             linesTestActor.expectMsg((numberOfLines - 1) min 6)
         }

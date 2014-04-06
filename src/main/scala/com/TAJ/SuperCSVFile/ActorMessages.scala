@@ -35,8 +35,6 @@ object ActorMessages {
 
   case class Lines(blockToAnalyze: Seq[String], blockIndex: Int)
 
-  case class Start()
-
   case class RequestMoreWork()
 
   /**

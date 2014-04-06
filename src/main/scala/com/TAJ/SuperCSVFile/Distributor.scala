@@ -33,7 +33,6 @@ import scala.io.Source
 import akka.actor._
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.TAJ.SuperCSVFile.ActorMessages.Lines
-import com.TAJ.SuperCSVFile.ActorMessages.Start
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
 import com.typesafe.scalalogging.slf4j.Logging
@@ -150,12 +149,9 @@ trait ComponentDistributor {
         .getOrElse(mIterator)
     val mSource = mLimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
     var operationFinished = false
-    var notFinishedWork = 0 // count the number of actors which are awaiting for more work.
+    var notFinishedWork = 1 // count the number of actors which are awaiting for more work. Start with one because we send RequestMoreWork() in the start case (count for one).
 
     override def receive: Actor.Receive = {
-      case Start() ⇒
-        logger.debug(s"*** Start watching ***")
-        self ! RequestMoreWork() // launch the process
       case RequestMoreWork() if notFinishedWork < thresholdJobWaiting ⇒
         notFinishedWork -= 1 // decrease by one the number of job done (current message).
         if (mSource.hasNext) {
@@ -168,7 +164,7 @@ trait ComponentDistributor {
           displayProgress(channel.position, fileSize)
         }
         else {
-          if (!operationFinished) {
+          if (!operationFinished && notFinishedWork == 0) { // 0 to wait that the list of Job is totally empty.
             logger.debug(s"*** Send poison pill to all workers ***")
             newLine()
             operationFinished = true

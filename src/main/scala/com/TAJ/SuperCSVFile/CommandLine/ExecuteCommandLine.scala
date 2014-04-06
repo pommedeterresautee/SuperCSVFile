@@ -9,10 +9,10 @@ import Scalaz._
 import com.TAJ.SuperCSVFile.Extractor.LineExtractorActor
 import akka.actor.ActorSystem
 import com.TAJ.SuperCSVFile.{ Reaper, Distributor, ActorContainer }
-import com.TAJ.SuperCSVFile.ActorMessages.Start
 import scala.collection.mutable.ArrayBuffer
 import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.ActorLife.RegisterMe
+import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 
 object ExecuteCommandLine extends Logging {
   /**
@@ -100,6 +100,6 @@ object ExecuteCommandLine extends Logging {
 
     val distributor = Distributor(file, encoding, listOfWorkers.toList, startLine, limitNumberOfLinesToRead = endLine)
 
-    distributor ! Start()
+    distributor ! RequestMoreWork()
   }
 }
