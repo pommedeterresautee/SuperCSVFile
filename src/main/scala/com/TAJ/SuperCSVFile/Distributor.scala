@@ -27,13 +27,13 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supercsvfile
+package com.TAJ.SuperCSVFile
 
 import scala.io.Source
 import akka.actor._
-import com.taj.supercsvfile.ActorMessages.RequestMoreWork
-import com.taj.supercsvfile.ActorMessages.Lines
-import com.taj.supercsvfile.ActorMessages.Start
+import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
+import com.TAJ.SuperCSVFile.ActorMessages.Lines
+import com.TAJ.SuperCSVFile.ActorMessages.Start
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
 import com.typesafe.scalalogging.slf4j.Logging

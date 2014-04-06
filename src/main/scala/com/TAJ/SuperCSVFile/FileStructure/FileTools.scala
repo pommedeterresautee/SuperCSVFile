@@ -27,7 +27,7 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supercsvfile.FileStructure
+package com.TAJ.SuperCSVFile.FileStructure
 
 import scala.io.Source
 import com.ibm.icu.text.CharsetDetector

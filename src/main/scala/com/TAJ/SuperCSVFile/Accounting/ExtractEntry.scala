@@ -27,13 +27,13 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supercsvfile.Accounting
+package com.TAJ.SuperCSVFile.Accounting
 
 import akka.actor.{ Props, ActorSystem, Actor }
-import com.taj.supercsvfile.ActorMessages._
-import com.taj.supercsvfile.ActorMessages.Lines
-import com.taj.supercsvfile.ActorMessages.RequestMoreWork
-import com.taj.supercsvfile.ActorContainer
+import com.TAJ.SuperCSVFile.ActorMessages._
+import com.TAJ.SuperCSVFile.ActorMessages.Lines
+import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
+import com.TAJ.SuperCSVFile.ActorContainer
 
 /**
  * Messages between Actors.

@@ -1,4 +1,4 @@
-package com.taj.supercsvfile.test
+package com.TAJ.SuperCSVFile.test
 
 import org.scalatest._
 import com.typesafe.scalalogging.slf4j.Logging

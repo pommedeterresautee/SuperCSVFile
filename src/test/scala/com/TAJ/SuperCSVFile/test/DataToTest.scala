@@ -1,4 +1,4 @@
-package com.taj.supercsvfile.test
+package com.TAJ.SuperCSVFile.test
 
 import java.io.File
 

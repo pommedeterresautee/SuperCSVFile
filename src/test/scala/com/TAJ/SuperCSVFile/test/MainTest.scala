@@ -1,7 +1,7 @@
-package com.taj.supercsvfile.test
+package com.TAJ.SuperCSVFile.test
 
 import org.scalatest.Suites
-import com.taj.supercsvfile.test.DataToTest._
+import com.TAJ.SuperCSVFile.test.DataToTest._
 import java.io.File
 
 /**

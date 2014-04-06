@@ -1,9 +1,9 @@
-package com.taj.supercsvfile.Extractor
+package com.TAJ.SuperCSVFile.Extractor
 
 import akka.actor.{ Props, ActorSystem, Actor }
 
-import com.taj.supercsvfile.ActorContainer
-import com.taj.supercsvfile.ActorMessages.{ RequestMoreWork, Lines }
+import com.TAJ.SuperCSVFile.ActorContainer
+import com.TAJ.SuperCSVFile.ActorMessages.{ RequestMoreWork, Lines }
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.reflect.io.Path
 

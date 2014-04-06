@@ -27,10 +27,10 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supercsvfile
+package com.TAJ.SuperCSVFile
 
 import java.io.File
-import com.taj.supercsvfile.CommandLine.ExecuteCommandLine
+import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
 
 /**
  * Main entry in the program.

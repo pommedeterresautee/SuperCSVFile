@@ -1,8 +1,8 @@
-package com.taj.supercsvfile.FileStructure
+package com.TAJ.SuperCSVFile.FileStructure
 
 import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
-import com.taj.supercsvfile.ActorMessages.{ RequestMoreWork, Lines }
-import com.taj.supercsvfile.ActorContainer
+import com.TAJ.SuperCSVFile.ActorMessages.{ RequestMoreWork, Lines }
+import com.TAJ.SuperCSVFile.ActorContainer
 import akka.testkit.TestProbe
 import scala.reflect.io.{ File, Path }
 

@@ -1,4 +1,4 @@
-package com.taj.supercsvfile.CommandLine
+package com.TAJ.SuperCSVFile.CommandLine
 
 import org.rogach.scallop.ScallopConf
 import java.io.File
@@ -32,7 +32,7 @@ class CommandLineParser(args: Array[String]) extends ScallopConf(args) {
      """)
   footer("\nThis application has been brought to you by Taj - Société d'avocats.")
 
-  version(s"Super CSV File - version ${com.taj.supercsvfile.Main.getClass.getPackage.getImplementationVersion}")
+  version(s"Super CSV File - version ${com.TAJ.SuperCSVFile.Main.getClass.getPackage.getImplementationVersion}")
 
   val inputFiles = opt[String]("inputFile", descr = "Path to the file to analyze.", validate = fileExist)
 
