@@ -1,5 +1,6 @@
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
+import sbtrelease.ReleasePlugin._
 
 name := "SuperCSVFile"
 
@@ -41,3 +42,5 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings
+
+releaseSettings
