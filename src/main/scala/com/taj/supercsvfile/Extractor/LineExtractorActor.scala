@@ -1,9 +1,9 @@
-package com.taj.supertaxlawyer.Extractor
+package com.taj.supercsvfile.Extractor
 
 import akka.actor.{ Props, ActorSystem, Actor }
 
-import com.taj.supertaxlawyer.ActorContainer
-import com.taj.supertaxlawyer.ActorMessages.{ RequestMoreWork, Lines }
+import com.taj.supercsvfile.ActorContainer
+import com.taj.supercsvfile.ActorMessages.{ RequestMoreWork, Lines }
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.reflect.io.Path
 

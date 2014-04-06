@@ -1,4 +1,4 @@
-package com.taj.supertaxlawyer.CommandLine
+package com.taj.supercsvfile.CommandLine
 
 import org.rogach.scallop.ScallopConf
 import java.io.File

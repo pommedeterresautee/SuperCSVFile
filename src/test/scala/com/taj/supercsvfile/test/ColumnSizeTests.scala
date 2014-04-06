@@ -1,17 +1,17 @@
-package com.taj.supertaxlawyer.test
+package com.taj.supercsvfile.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.{ LineCounterActorTest, SizeActorInjectedResultActor, FileTools }
+import com.taj.supercsvfile.FileStructure.{ LineCounterActorTest, SizeActorInjectedResultActor, FileTools }
 import akka.testkit.TestProbe
-import com.taj.supertaxlawyer.DistributorTest
+import com.taj.supercsvfile.DistributorTest
 import org.scalatest.BeforeAndAfterAll
 import scalaz._
 import Scalaz._
 import scala.concurrent.duration._
 import scala.concurrent.duration
 import scala.Some
-import com.taj.supertaxlawyer.FileStructure.ColumnSizes
-import com.taj.supertaxlawyer.ActorMessages.Start
+import com.taj.supercsvfile.FileStructure.ColumnSizes
+import com.taj.supercsvfile.ActorMessages.Start
 
 object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 

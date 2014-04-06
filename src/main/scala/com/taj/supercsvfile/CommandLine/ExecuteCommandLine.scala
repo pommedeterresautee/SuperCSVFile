@@ -1,18 +1,18 @@
-package com.taj.supertaxlawyer.CommandLine
+package com.taj.supercsvfile.CommandLine
 
 import org.slf4j.impl.SimpleLogger
-import com.taj.supertaxlawyer.FileStructure.{ LineCounterActor, SizeActor, FileTools }
+import com.taj.supercsvfile.FileStructure.{ LineCounterActor, SizeActor, FileTools }
 import java.io.File
 import scala.io.Source
 import scalaz._
 import Scalaz._
-import com.taj.supertaxlawyer.Extractor.LineExtractorActor
+import com.taj.supercsvfile.Extractor.LineExtractorActor
 import akka.actor.ActorSystem
-import com.taj.supertaxlawyer.{ Reaper, Distributor, ActorContainer }
-import com.taj.supertaxlawyer.ActorMessages.Start
+import com.taj.supercsvfile.{ Reaper, Distributor, ActorContainer }
+import com.taj.supercsvfile.ActorMessages.Start
 import scala.collection.mutable.ArrayBuffer
 import com.typesafe.scalalogging.slf4j.Logging
-import com.taj.supertaxlawyer.ActorLife.RegisterMe
+import com.taj.supercsvfile.ActorLife.RegisterMe
 
 object ExecuteCommandLine extends Logging {
   /**

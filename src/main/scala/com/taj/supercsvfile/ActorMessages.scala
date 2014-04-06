@@ -27,7 +27,7 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer
+package com.taj.supercsvfile
 
 import akka.actor.ActorRef
 

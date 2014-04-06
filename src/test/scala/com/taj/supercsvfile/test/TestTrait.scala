@@ -1,4 +1,4 @@
-package com.taj.supertaxlawyer.test
+package com.taj.supercsvfile.test
 
 import org.scalatest._
 import com.typesafe.scalalogging.slf4j.Logging

@@ -1,6 +1,6 @@
-package com.taj.supertaxlawyer.test
+package com.taj.supercsvfile.test
 
-import com.taj.supertaxlawyer.FileStructure.SizeComputation
+import com.taj.supercsvfile.FileStructure.SizeComputation
 
 object TestOnSizeColumnComparator extends TestTrait with SizeComputation {
   val biggestList: ((List[Int], List[Int], List[Int])) ⇒ Unit = {

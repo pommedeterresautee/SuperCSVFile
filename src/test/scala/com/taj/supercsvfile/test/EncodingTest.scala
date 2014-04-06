@@ -1,7 +1,7 @@
-package com.taj.supertaxlawyer.test
+package com.taj.supercsvfile.test
 
 import java.io.File
-import com.taj.supertaxlawyer.FileStructure.FileTools
+import com.taj.supercsvfile.FileStructure.FileTools
 
 object EncodingTest extends TestTrait {
   val test: ((String, File, String)) ⇒ Unit = {

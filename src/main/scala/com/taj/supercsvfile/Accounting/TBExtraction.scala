@@ -27,7 +27,7 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer.Accounting
+package com.taj.supercsvfile.Accounting
 
 /**
  * Extract a TB from an electronic accounting text file.

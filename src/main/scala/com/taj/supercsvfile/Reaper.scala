@@ -27,14 +27,14 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer
+package com.taj.supercsvfile
 
 import akka.actor._
 import com.typesafe.scalalogging.slf4j.Logging
 
 import akka.actor.Terminated
 import scala.collection.mutable
-import com.taj.supertaxlawyer.ActorLife.RegisterMe
+import com.taj.supercsvfile.ActorLife.RegisterMe
 
 object ActorLife {
 

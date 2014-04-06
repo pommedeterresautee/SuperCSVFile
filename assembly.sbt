@@ -5,6 +5,6 @@ assemblySettings
 
 jarName in assembly := "SuperCSVFile.jar"
 
-mainClass in assembly := Some("com.taj.supertaxlawyer.Main")
+mainClass in assembly := Some("com.taj.supercsvfile.Main")
 
 

@@ -27,28 +27,29 @@
  * TAJ - Société d'avocats.
  */
 
-package com.taj.supertaxlawyer
+package com.taj.supercsvfile.Accounting
 
-import java.io.File
-import com.taj.supertaxlawyer.CommandLine.ExecuteCommandLine
+import akka.actor.{ Props, ActorSystem, Actor }
+import com.taj.supercsvfile.ActorMessages._
+import com.taj.supercsvfile.ActorMessages.Lines
+import com.taj.supercsvfile.ActorMessages.RequestMoreWork
+import com.taj.supercsvfile.ActorContainer
 
 /**
- * Main entry in the program.
- * Class to launch at start.
+ * Messages between Actors.
  */
-object Main extends App {
-  val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"
-  val encodedFileFolder = testResourcesFolder + s"encoded_files${File.separator}"
+object ExtractEntry {
+  def apply(positions: EntryFieldPositions, splitter: String)(implicit system: ActorSystem): ActorContainer = ActorContainer(system.actorOf(Props(new ExtractEntry(positions, splitter)), name = "ExtractEntry"), isRooter = false)
+}
 
-  val file: String = encodedFileFolder + "airports.csv"
-
-  val fileUTF8 = "C:\\Users\\MBenesty\\Private\\GIT\\SuperCSVFile\\FEC_EXAMPLE\\FEC_UTF8_TAB.txt"
-  val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
-  val argUTF8 = Array("--columnSize", fileUTF8, "--forceEncoding", "ISO-8859-1", "--excludeTitles")
-  val arg = Array("--columnSize", file)
-  val argExtract = Array("--inputFile", fileUTF8, "--linesCount", "--columnSize")
-
-  val help = Array("--help")
-
-  ExecuteCommandLine(args)
+/**
+ * Extract entry from a provided String.
+ */
+class ExtractEntry(positions: EntryFieldPositions, splitter: String) extends Actor {
+  override def receive: Actor.Receive = {
+    case Lines(lines, index) ⇒
+      val entry: Seq[AccountEntry] = lines.map(_.split(splitter)).map(new AccountEntry(_, positions))
+      println(s"received ${entry.size}")
+      sender ! RequestMoreWork() // Ask for the next line
+  }
 }

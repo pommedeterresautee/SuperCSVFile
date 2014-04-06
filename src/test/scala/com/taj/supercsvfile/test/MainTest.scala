@@ -1,7 +1,7 @@
-package com.taj.supertaxlawyer.test
+package com.taj.supercsvfile.test
 
 import org.scalatest.Suites
-import com.taj.supertaxlawyer.test.DataToTest._
+import com.taj.supercsvfile.test.DataToTest._
 import java.io.File
 
 /**
