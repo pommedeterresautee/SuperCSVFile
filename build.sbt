@@ -48,6 +48,8 @@ net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 releaseSettings
 
+useGlobalVersion := false
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
