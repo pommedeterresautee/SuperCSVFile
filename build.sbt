@@ -1,6 +1,9 @@
 import com.typesafe.sbt.SbtScalariform._
 import scalariform.formatter.preferences._
 import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleasePlugin.ReleaseKeys._
+import sbtrelease._
+import ReleaseStateTransformations._
 
 name := "SuperCSVFile"
 
@@ -44,3 +47,16 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
 net.virtualvoid.sbt.graph.Plugin.graphSettings
 
 releaseSettings
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  setNextVersion,
+  commitNextVersion,
+  pushChanges
+)
