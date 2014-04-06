@@ -7,7 +7,7 @@ import ReleaseStateTransformations._
 
 name := "SuperCSVFile"
 
-version := "1.0.1"
+version := "1.0.4"
 
 scalaVersion := "2.10.4"
 
