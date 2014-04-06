@@ -172,6 +172,7 @@ trait ComponentDistributor {
               case ActorContainer(ref, true)  ⇒ ref ! Broadcast(PoisonPill)
               case ActorContainer(ref, false) ⇒ ref ! PoisonPill
             }
+            self ! PoisonPill
           }
         }
       case RequestMoreWork() ⇒

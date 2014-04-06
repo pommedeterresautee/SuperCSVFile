@@ -99,6 +99,7 @@ object ExecuteCommandLine extends Logging {
     }
 
     val distributor = Distributor(file, encoding, listOfWorkers.toList, startLine, limitNumberOfLinesToRead = endLine)
+    reaper ! RegisterMe(distributor)
 
     distributor ! RequestMoreWork()
   }
