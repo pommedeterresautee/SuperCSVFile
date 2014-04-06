@@ -19,20 +19,20 @@ object CommandLineParser {
  */
 class CommandLineParser(args: Array[String]) extends ScallopConf(args) {
   import CommandLineParser._
-
   banner("""
-                  | ____                          _____            _
-                  |/ ___| _   _ _ __   ___ _ __  |_   _|_ ___  __ | |    __ ___      ___   _  ___ _ __
-                  |\___ \| | | | '_ \ / _ \ '__|   | |/ _` \ \/ / | |   / _` \ \ /\ / / | | |/ _ \ '__|
-                  | ___) | |_| | |_) |  __/ |      | | (_| |>  <  | |__| (_| |\ V  V /| |_| |  __/ |
-                  ||____/ \__,_| .__/ \___|_|      |_|\__,_/_/\_\ |_____\__,_| \_/\_/  \__, |\___|_|
-                  |            |_|                                                     |___/
-                  |		""".stripMargin + s"""
+           | ____                           ____ ______     __  _____ _ _
+           |/ ___| _   _ _ __   ___ _ __   / ___/ ___\ \   / / |  ___(_) | ___
+           |\___ \| | | | '_ \ / _ \ '__| | |   \___ \\ \ / /  | |_  | | |/ _ \
+           | ___) | |_| | |_) |  __/ |    | |___ ___) |\ V /   |  _| | | |  __/
+           ||____/ \__,_| .__/ \___|_|     \____|____/  \_/    |_|   |_|_|\___|
+           |            |_|
+           |		""".stripMargin + s"""
 
-    Super Tax Lawyer is a program to play with accounting exported as text files.
+    Super CSV File is a program to play with accounting exported as text files.
      """)
   footer("\nThis application has been brought to you by Taj - Société d'avocats.")
-  version("Super Tax Lawyer - version 1.0.1")
+
+  version(s"Super CSV File - version ${com.taj.supercsvfile.Main.getClass.getPackage.getImplementationVersion}")
 
   val inputFiles = opt[String]("inputFile", descr = "Path to the file to analyze.", validate = fileExist)
 
