@@ -50,5 +50,5 @@ object Main extends App {
 
   val help = Array("--help")
 
-  ExecuteCommandLine(argExtract)
+  ExecuteCommandLine(args)
 }
