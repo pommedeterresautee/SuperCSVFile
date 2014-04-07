@@ -128,10 +128,12 @@ trait SizeActorTrait extends SizeComputation {
         resultAccumulatorActor ! ColumnSizes(blockResult)
         resultAccumulatorActor ! WrongLines(wrongLines)
         sender ! RequestMoreWork() // Ask for the next line
+      case JobFinished() ⇒
+        resultAccumulatorActor ! JobFinished()
+        self ! PoisonPill
     }
 
     override def postStop(): Unit = {
-      resultAccumulatorActor ! JobFinished()
       logger.debug(s"*** The actor ${self.path.name} has analyzed $counter lines ***")
     }
   }

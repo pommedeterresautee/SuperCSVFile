@@ -31,8 +31,7 @@ package com.TAJ.SuperCSVFile
 
 import scala.io.Source
 import akka.actor._
-import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
-import com.TAJ.SuperCSVFile.ActorMessages.Lines
+import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines }
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
 import com.typesafe.scalalogging.slf4j.Logging
@@ -169,8 +168,8 @@ trait ComponentDistributor {
             newLine()
             operationFinished = true
             workers.foreach {
-              case ActorContainer(ref, true)  ⇒ ref ! Broadcast(PoisonPill)
-              case ActorContainer(ref, false) ⇒ ref ! PoisonPill
+              case ActorContainer(ref, true)  ⇒ ref ! Broadcast(JobFinished())
+              case ActorContainer(ref, false) ⇒ ref ! JobFinished()
             }
             self ! PoisonPill
           }

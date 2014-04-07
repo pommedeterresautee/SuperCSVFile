@@ -1,10 +1,15 @@
 package com.TAJ.SuperCSVFile.FileStructure
 
-import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
-import com.TAJ.SuperCSVFile.ActorMessages.{ RequestMoreWork, Lines }
-import com.TAJ.SuperCSVFile.ActorContainer
+import akka.actor._
+import com.TAJ.SuperCSVFile.ActorMessages.Lines
 import akka.testkit.TestProbe
 import scala.reflect.io.{ File, Path }
+import com.typesafe.scalalogging.slf4j.Logging
+import com.TAJ.SuperCSVFile.ActorContainer
+import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
+import com.TAJ.SuperCSVFile.ActorMessages.JobFinished
+import com.TAJ.SuperCSVFile.ActorMessages.Lines
+import scala.Some
 
 /**
  * Constructor for the line counter
@@ -31,7 +36,7 @@ object LineCounterActorTest {
   }
 }
 
-trait LineCounterActorComponent {
+trait LineCounterActorComponent extends Logging {
   self: ResultLineCounterActorComponent ⇒
   val linesActor: ActorRef
 
@@ -45,10 +50,13 @@ trait LineCounterActorComponent {
       case Lines(lines, index) ⇒
         mTotalSize += lines.size
         sender() ! RequestMoreWork()
+      case JobFinished() ⇒
+        resultActor ! mTotalSize
+        self ! PoisonPill
     }
 
     override def postStop(): Unit = {
-      resultActor ! mTotalSize
+      logger.debug(s"*** Actor ${self.path.name} is dead. ***")
     }
   }
 }

@@ -1,9 +1,9 @@
 package com.TAJ.SuperCSVFile.Extractor
 
-import akka.actor.{ Props, ActorSystem, Actor }
+import akka.actor.{ PoisonPill, Props, ActorSystem, Actor }
 
 import com.TAJ.SuperCSVFile.ActorContainer
-import com.TAJ.SuperCSVFile.ActorMessages.{ RequestMoreWork, Lines }
+import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines }
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.reflect.io.Path
 
@@ -28,9 +28,11 @@ class LineExtractorActor(outputFile: Option[String]) extends Actor with Logging 
         case None ⇒ println(lines.mkString("\n"))
       }
       sender() ! RequestMoreWork()
+    case JobFinished() ⇒
+      self ! PoisonPill
   }
 
   override def postStop(): Unit = {
-    logger.debug("*** Line extractor actor is dead. ***")
+    logger.debug(s"*** Actor ${self.path.name} is dead. ***")
   }
 }
