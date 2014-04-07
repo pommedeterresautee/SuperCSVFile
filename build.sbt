@@ -1,5 +1,11 @@
+import com.typesafe.sbt.SbtScalariform._
+import scalariform.formatter.preferences._
+import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleasePlugin.ReleaseKeys._
+import sbtrelease._
+import ReleaseStateTransformations._
 
-name := "supercsvfile"
+name := "SuperCSVFile"
 
 version := "1.0.4"
 

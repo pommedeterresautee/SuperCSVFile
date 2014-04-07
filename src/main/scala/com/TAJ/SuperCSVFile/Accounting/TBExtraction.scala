@@ -25,9 +25,7 @@
  * NOT BE USED IN ADVERTISING OR OTHERWISE TO PROMOTE THE SALE, USE OR OTHER
  * DEALINGS IN THIS SOFTWARE WITHOUT PRIOR WRITTEN AUTHORIZATION FROM
  * TAJ - Société d'avocats.
- */
-
-package com.TAJ.SuperCSVFile.Accounting
+ */ package com.TAJ.SuperCSVFile.Accounting
 
 /**
  * Extract a TB from an electronic accounting text file.

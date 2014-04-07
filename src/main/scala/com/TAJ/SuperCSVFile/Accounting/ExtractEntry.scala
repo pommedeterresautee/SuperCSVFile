@@ -25,9 +25,7 @@
  * NOT BE USED IN ADVERTISING OR OTHERWISE TO PROMOTE THE SALE, USE OR OTHER
  * DEALINGS IN THIS SOFTWARE WITHOUT PRIOR WRITTEN AUTHORIZATION FROM
  * TAJ - Société d'avocats.
- */
-
-package com.TAJ.SuperCSVFile.Accounting
+ */ package com.TAJ.SuperCSVFile.Accounting
 
 import akka.actor.{ Props, ActorSystem, Actor }
 import com.TAJ.SuperCSVFile.ActorMessages._
