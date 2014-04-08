@@ -42,6 +42,7 @@ import scala.collection.mutable.ArrayBuffer
 import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.ActorLife.RegisterMe
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
+import java.util.regex.Pattern
 
 object ExecuteCommandLine extends Logging {
   /**
@@ -88,7 +89,7 @@ object ExecuteCommandLine extends Logging {
         val replacedSplitter: String = tmpSplitter match {
           case "TAB"   ⇒ "\t"
           case "SPACE" ⇒ " "
-          case c       ⇒ c
+          case c       ⇒ Pattern.quote(c)
         }
         (replacedSplitter, FileTools.columnCount(path, replacedSplitter, encoding))
       case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
@@ -105,7 +106,7 @@ object ExecuteCommandLine extends Logging {
     actionColumnSize match {
       case Some(true) ⇒
         val lines = Source.fromFile(path, encoding).getLines()
-        val titles = if (includeTitles && lines.hasNext) lines.next().split(s"\\Q$splitter\\E").toList.some else None
+        val titles = if (includeTitles && lines.hasNext) lines.next().split(splitter).toList.some else None
         val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
         listOfWorkers += computer
         reaper ! RegisterMe(computer.actor)

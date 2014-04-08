@@ -33,6 +33,7 @@ import scala.io.Source
 import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
 import com.typesafe.scalalogging.slf4j.Logging
+import java.util.regex.Pattern
 
 /**
  * Operation related to the count of columns in a text file.
@@ -69,9 +70,11 @@ object FileTools extends Logging {
       .filter { case (tuple, tupleFrequency) ⇒ tupleFrequency == max } // keep only the most frequent Tuple in the entire file.
       .maxBy(_._1._2) // choose the Character which has the highest frequency per line.
 
+    val delimiterEscaped = Pattern.quote(delimiter.toString)
+
     logger.debug(s"*** The character the most recurrent is [$delimiter] and its frequency per line is equal to $frequency. It appears in $max lines. ***")
 
-    (delimiter.toString, frequency + 1) // +1 because there is always one column more than quantity of delimiters.
+    (delimiterEscaped, frequency + 1) // +1 because there is always one column more than quantity of delimiters.
   }
 
   /**
@@ -82,13 +85,12 @@ object FileTools extends Logging {
    * @return the number of columns in the text file.
    */
   def columnCount(path: String, splitter: String, encoding: String): Int = {
-    val splitterWithEscapedChar = s"\\Q$splitter\\E"
     val buffer = Source.fromFile(path, encoding)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)
       .toList
-      .groupBy(line ⇒ line.split(splitterWithEscapedChar).size)
+      .groupBy(line ⇒ line.split(splitter).size)
       .map {
         case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
       }

@@ -30,8 +30,11 @@
 package com.TAJ.SuperCSVFile.test
 
 import java.io.File
+import java.util.regex.Pattern
 
-case class TestContainer(name: String, numberOfColumns: Int, columnCountWithTitles: List[Int], columnCountWithoutTitles: List[Int], splitter: String, encoding: String, numberOfLines: Long)
+case class TestContainer(name: String, numberOfColumns: Int, columnCountWithTitles: List[Int], columnCountWithoutTitles: List[Int], private val _splitter: String, encoding: String, numberOfLines: Long) {
+  val splitter = Pattern.quote(_splitter)
+}
 
 object DataToTest {
   val testResourcesFolder = s".${File.separator}src${File.separator}test${File.separator}resources${File.separator}"

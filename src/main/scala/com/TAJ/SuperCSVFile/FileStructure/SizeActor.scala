@@ -86,21 +86,21 @@ trait SizeComputation extends Logging {
 
   def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: Seq[Int]): (Seq[Int], Seq[(Int, String)]) = {
     if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
-    val escapeRegexSplitter = s"\\Q$splitter\\E"
 
     val (correctSizeLines, notCorrectSizeLines) =
       listToAnalyze
-        .map(_.split(escapeRegexSplitter, -1)) // transform the line in Array of columns
+        .map(_.split(splitter, -1)) // transform the line in Array of columns
         .zipWithIndex
         .partition { case (line, index) ⇒ line.size == columnQuantity }
 
-    val correctLines = correctSizeLines
-      .map { case (line, index) ⇒ line }
-      .map(_.map(_.size).toSeq) // Change to a list of size of columns
-      .foldLeft(emptyList)(mBiggestColumns) // Mix the best results
+    val correctLines =
+      correctSizeLines
+        .map { case (line, index) ⇒ line }
+        .map(_.map(_.size).toSeq) // Change to a list of size of columns
+        .foldLeft(emptyList)(mBiggestColumns) // Mix the best results
 
     val wrongLines = notCorrectSizeLines
-      .map { case (lines, index) ⇒ (index, lines.mkString(escapeRegexSplitter)) }
+      .map { case (lines, index) ⇒ (index, lines.mkString(splitter)) }
 
     (correctLines, wrongLines)
   }
