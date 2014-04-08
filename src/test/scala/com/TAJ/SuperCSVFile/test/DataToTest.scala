@@ -33,7 +33,7 @@ import java.io.File
 import java.util.regex.Pattern
 
 case class TestContainer(name: String, numberOfColumns: Int, columnCountWithTitles: List[Int], columnCountWithoutTitles: List[Int], private val _splitter: String, encoding: String, numberOfLines: Long) {
-  val splitter = Pattern.quote(_splitter)
+  val splitter = Pattern.quote(_splitter) // escape special characters (in particular pipe (|))
 }
 
 object DataToTest {

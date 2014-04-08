@@ -70,7 +70,7 @@ object FileTools extends Logging {
       .filter { case (tuple, tupleFrequency) ⇒ tupleFrequency == max } // keep only the most frequent Tuple in the entire file.
       .maxBy(_._1._2) // choose the Character which has the highest frequency per line.
 
-    val delimiterEscaped = Pattern.quote(delimiter.toString)
+    val delimiterEscaped = Pattern.quote(delimiter.toString) // escape special characters (in particular pipe (|))
 
     logger.debug(s"*** The character the most recurrent is [$delimiter] and its frequency per line is equal to $frequency. It appears in $max lines. ***")
 

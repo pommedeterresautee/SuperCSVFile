@@ -89,7 +89,7 @@ object ExecuteCommandLine extends Logging {
         val replacedSplitter: String = tmpSplitter match {
           case "TAB"   ⇒ "\t"
           case "SPACE" ⇒ " "
-          case c       ⇒ Pattern.quote(c)
+          case c       ⇒ Pattern.quote(c) // escape special characters (in particular pipe (|))
         }
         (replacedSplitter, FileTools.columnCount(path, replacedSplitter, encoding))
       case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
