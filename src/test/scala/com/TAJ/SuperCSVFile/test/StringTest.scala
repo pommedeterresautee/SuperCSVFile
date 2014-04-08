@@ -55,6 +55,11 @@ object StringTest extends TestTrait {
         val result = FileTools.removeEscapeChar("\\Q|\\E")
         result should be(Some("|"))
       }
+
+      "Extraction of TAB char" in {
+        val result = FileTools.removeEscapeChar("\\Q\t\\E")
+        result should be(Some("\t"))
+      }
     }
   }
 }
