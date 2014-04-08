@@ -32,7 +32,7 @@ package com.TAJ.SuperCSVFile.test
 import java.io.File
 import com.TAJ.SuperCSVFile.FileStructure.FileTools
 
-object EncodingTest extends TestTrait {
+object StringTest extends TestTrait {
   val test: ((String, File, String)) ⇒ Unit = {
     case (name, file, encoding) ⇒
       s"We will evaluate the encoding of the file $name." should {
@@ -41,5 +41,20 @@ object EncodingTest extends TestTrait {
           encoding should equal(encoding)
         }
       }
+  }
+
+  def extractionOfEscapeCharacters() {
+    "Test the extraction of escape characters from a String (\\Q.*\\E)" must {
+
+      "Extraction of toto" in {
+        val result = FileTools.removeEscapeChar("\\Qtoto\\E")
+        result should be(Some("toto"))
+      }
+
+      "Extraction of |" in {
+        val result = FileTools.removeEscapeChar("\\Q|\\E")
+        result should be(Some("|"))
+      }
+    }
   }
 }

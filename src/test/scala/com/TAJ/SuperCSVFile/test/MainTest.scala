@@ -36,11 +36,11 @@ import java.io.File
 /**
  * These tests are related to the count of columns in a text file.
  */
-class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSizeTests) with TestTrait {
+class MainTest extends Suites(TestOnSizeColumnComparator, StringTest, ColumnSizeTests) with TestTrait {
 
   Seq(semicolon, semicolon_with_title, tab, pipe)
     .map(fileToTest ⇒ (fileToTest.name, new File(encodedFileFolder, fileToTest.name), fileToTest.encoding))
-    .foreach(EncodingTest.test)
+    .foreach(StringTest.test)
 
   Seq(semicolon, semicolon_with_title, tab, pipe, utf8, fake_utf8)
     .map(fileToTest ⇒
@@ -66,4 +66,6 @@ class MainTest extends Suites(TestOnSizeColumnComparator, EncodingTest, ColumnSi
       .zipWithIndex
       .foreach(t ⇒ TestOnSizeColumnComparator.bestSize)
   }
+
+  StringTest.extractionOfEscapeCharacters()
 }

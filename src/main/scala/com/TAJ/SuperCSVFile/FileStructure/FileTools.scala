@@ -78,6 +78,22 @@ object FileTools extends Logging {
   }
 
   /**
+   * Remove escape characters from the provided String.
+   * @param text String with escape characters (\Q.*\E)
+   * @return an Option[String] without special character.
+   */
+  def removeEscapeChar(text: String): Option[String] = {
+    val pattern = """\\Q(.*)\\E""".r
+    try {
+      val pattern(removedChar: String) = text
+      Some(removedChar)
+    }
+    catch {
+      case e: Exception ⇒ None
+    }
+  }
+
+  /**
    * Count the number of columns in a text file.
    * @param path path to the file to study.
    * @param splitter String used to limit the columns.
