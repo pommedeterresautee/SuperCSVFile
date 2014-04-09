@@ -30,7 +30,6 @@
 package com.TAJ.SuperCSVFile.FileStructure
 
 import akka.actor._
-import akka.testkit.TestProbe
 import scala.reflect.io.{ File, Path }
 import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.ActorContainer
@@ -55,9 +54,9 @@ object LineCounterActor {
 
 object LineCounterActorTest {
 
-  def apply(testActor: TestProbe, output: Option[String])(implicit system: ActorSystem): ActorContainer = {
+  def apply(testActor: ActorRef, output: Option[String])(implicit system: ActorSystem): ActorContainer = {
     val actorTrait = new LineCounterActorComponent with ResultLineCounterActorComponent {
-      override val resultActor = testActor.ref
+      override val resultActor = testActor
       override val linesActor = system.actorOf(Props(new LineCounterActor()), name = "CounterLineActor")
     }
     ActorContainer(actorTrait.linesActor, isRooter = false)

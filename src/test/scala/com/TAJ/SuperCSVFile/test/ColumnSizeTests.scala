@@ -82,7 +82,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
           f ⇒
             implicit val system = f.system
             val linesTestActor: TestProbe = TestProbe()
-            val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
+            val listOfWorkers = List(LineCounterActorTest(linesTestActor.ref, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, numberOfLinesPerMessage = 2, dropFirsLines = None, limitNumberOfLinesToRead = None)
             distributor ! RequestMoreWork()
             val time = FiniteDuration(10000, SECONDS)
@@ -106,7 +106,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
           f ⇒
             implicit val system = f.system
             val linesTestActor: TestProbe = TestProbe()
-            val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
+            val listOfWorkers = List(LineCounterActorTest(linesTestActor.ref, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = 1.some, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = None)
             distributor ! RequestMoreWork()
             // -1 because we remove one line for the tittles
@@ -117,7 +117,7 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
           f ⇒
             implicit val system = f.system
             val linesTestActor: TestProbe = TestProbe()
-            val listOfWorkers = List(LineCounterActorTest(linesTestActor, None))
+            val listOfWorkers = List(LineCounterActorTest(linesTestActor.ref, None))
             val distributor = DistributorTest(file, encoding, listOfWorkers, dropFirsLines = 1.some, numberOfLinesPerMessage = 2, limitNumberOfLinesToRead = 5.some)
             distributor ! RequestMoreWork()
             // use min in case the file is too small.
