@@ -7,18 +7,22 @@ import scala.annotation.tailrec
  */
 object CSVParser extends App {
 
+  def parseLines(linesToProcess: Seq[String], delimiter: Char, quote: Char): Seq[Seq[String]] = {
+    parseLines(linesToProcess, Seq(), delimiter, quote)
+  }
+
   @tailrec
-  def parseLines(linesToProcess: Seq[String], linesProcessed: Seq[Seq[String]]): Seq[Seq[String]] = {
+  private def parseLines(linesToProcess: Seq[String], linesProcessed: Seq[Seq[String]], delimiter: Char, quote: Char): Seq[Seq[String]] = {
     linesToProcess match {
       case Nil ⇒ linesProcessed
       case head :: tail ⇒
-        val line = parseLine(head, Seq(), Seq(), ',', '"')
-        parseLines(tail, linesProcessed :+ line)
+        val line = parseLine(head, Seq(), Seq(), delimiter, quote)
+        parseLines(tail, linesProcessed :+ line, delimiter, quote)
     }
   }
 
   @tailrec
-  def parseLine(toProcess: Seq[Char], currentWord: Seq[Char], parsedLine: Seq[String], delimiter: Char, quote: Char): Seq[String] = {
+  private def parseLine(toProcess: Seq[Char], currentWord: Seq[Char], parsedLine: Seq[String], delimiter: Char, quote: Char): Seq[String] = {
     toProcess match {
       case Nil ⇒ parsedLine :+ currentWord.mkString
       case Seq(delimiterChar, quoteChar, then, after, tail @ _*) if (delimiterChar == delimiter && quoteChar == quote && then != quote) ||
@@ -36,7 +40,7 @@ object CSVParser extends App {
   }
 
   @tailrec
-  def parseQuote(toProcess: Seq[Char], quotePart: Seq[Char], delimiter: Char, quote: Char): (String, String) = {
+  private def parseQuote(toProcess: Seq[Char], quotePart: Seq[Char], delimiter: Char, quote: Char): (String, String) = {
     toProcess match {
       case Nil ⇒ (quotePart.mkString, "")
       case Seq(head, next, tail @ _*) if head == quote && next == quote ⇒ // double quote -> remove one quote
@@ -52,6 +56,6 @@ object CSVParser extends App {
 
   val chars = Seq("line 1 - field 1,line 1 - field 2,line 1 - field 3,line 1 - field 4,\"block1,block2\"", "line 2 - field 1,hihi,koko,kiki")
 
-  println(parseLines(chars, Seq()).map(_.mkString("\n")))
+  println(parseLines(chars, ',', '"')(0).mkString("\n"))
 
 }
