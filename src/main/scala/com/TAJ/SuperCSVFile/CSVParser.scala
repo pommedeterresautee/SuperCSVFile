@@ -3,7 +3,9 @@ package com.TAJ.SuperCSVFile
 import scala.annotation.tailrec
 
 /**
- * Parse CSV file.
+ * Parse CSV file:
+ * - replace double quotes by simple one
+ * - don't interpret delimiter inside quoted field
  */
 object CSVParser extends App {
 
@@ -11,6 +13,14 @@ object CSVParser extends App {
     parseLines(linesToProcess, Seq(), delimiter, quote)
   }
 
+  /**
+   * Parse a group of lines.
+   * @param linesToProcess the original String to process
+   * @param linesProcessed result storage
+   * @param delimiter character used to separate fields
+   * @param quote character used to stop interpretation
+   * @return a Sequence of Sequence of fields content
+   */
   @tailrec
   private def parseLines(linesToProcess: Seq[String], linesProcessed: Seq[Seq[String]], delimiter: Char, quote: Char): Seq[Seq[String]] = {
     linesToProcess match {
@@ -21,6 +31,9 @@ object CSVParser extends App {
     }
   }
 
+  /**
+   * Parse one line to extract each field.
+   */
   @tailrec
   private def parseLine(toProcess: Seq[Char], currentWord: Seq[Char], parsedLine: Seq[String], delimiter: Char, quote: Char): Seq[String] = {
     toProcess match {
@@ -39,6 +52,9 @@ object CSVParser extends App {
     }
   }
 
+  /**
+   * Parse a quote (to use inside a quoted field only).
+   */
   @tailrec
   private def parseQuote(toProcess: Seq[Char], quotePart: Seq[Char], delimiter: Char, quote: Char): (String, String) = {
     toProcess match {
