@@ -12,24 +12,20 @@ object CSVParser extends App {
     linesToProcess match {
       case Nil ⇒ linesProcessed
       case head :: tail ⇒
-        val line = parseLine(head, Seq(), Seq(), ',', '"') match {
-          case (result, Nil)       ⇒ result
-          case (result, toProcess) ⇒ ???
-          //            val (good, toFinish) = parseQuotes(toProcess, Seq(), ',', '"')
-          //            val remainingLines = toFinish.toString().split("\n").toSeq
-          //            val result = parseLines(remainingLines, Seq())
-          //            val t = good:+result
-        }
+        val line = parseLine(head, Seq(), Seq(), ',', '"')
         parseLines(tail, linesProcessed :+ line)
     }
   }
 
   @tailrec
-  def parseLine(toProcess: Seq[Char], currentWord: Seq[Char], parsedLine: Seq[String], delimiter: Char, quote: Char): (Seq[String], Seq[Char]) = {
+  def parseLine(toProcess: Seq[Char], currentWord: Seq[Char], parsedLine: Seq[String], delimiter: Char, quote: Char): Seq[String] = {
     toProcess match {
-      case Nil ⇒ (parsedLine :+ currentWord.mkString, Nil)
-      case Seq(head, next, then, after, tail @ _*) if (head == delimiter && next == quote && then != quote) ||
-        (head == delimiter && next == quote && then == quote && after == quote) ⇒ (parsedLine :+ currentWord.mkString, toProcess)
+      case Nil ⇒ parsedLine :+ currentWord.mkString
+      case Seq(delimiterChar, quoteChar, then, after, tail @ _*) if (delimiterChar == delimiter && quoteChar == quote && then != quote) ||
+        (delimiterChar == delimiter && quoteChar == quote && then == quote && after == quote) ⇒
+        val (quotedField, stillToProcess) = parseQuote(then +: after +: tail, Seq(), delimiter, quote)
+        (parsedLine :+ currentWord.mkString, toProcess)
+        parseLine(stillToProcess, Seq(), parsedLine :+ currentWord.mkString :+ quotedField.mkString, delimiter, quote)
       case Seq(head, next, tail @ _*) if head == quote && next == quote ⇒
         parseLine(tail, currentWord :+ head, parsedLine, delimiter, quote)
       case Seq(head, tail @ _*) if head == delimiter ⇒
@@ -40,26 +36,22 @@ object CSVParser extends App {
   }
 
   @tailrec
-  def parseQuotes(toProcess: Seq[Char], quotePart: Seq[Char], delimiter: Char, quote: Char): (Seq[Char], Seq[Char]) = {
+  def parseQuote(toProcess: Seq[Char], quotePart: Seq[Char], delimiter: Char, quote: Char): (String, String) = {
     toProcess match {
-      case Nil ⇒ (Seq(), Nil)
-      case Seq(head, next, tail @ _*) if head == quote && next == quote ⇒
-        parseQuotes(tail, quotePart :+ head, delimiter, quote)
-      case Seq(head, next, tail @ _*) if head == quote && next == delimiter ⇒
-        (quotePart, tail)
-      case Seq(head, tail @ _*) ⇒
-        parseQuotes(tail, quotePart :+ head, delimiter, quote)
+      case Nil ⇒ (quotePart.mkString, "")
+      case Seq(head, next, tail @ _*) if head == quote && next == quote ⇒ // double quote -> remove one quote
+        parseQuote(tail, quotePart :+ head, delimiter, quote)
+      case Seq(head, next, stillToProcess @ _*) if head == quote && next == delimiter ⇒ //end quote and not last element
+        (quotePart.mkString, stillToProcess.mkString)
+      case Seq(head) if head == quote ⇒ //end quote last element
+        (quotePart.mkString, "")
+      case Seq(head, tail @ _*) ⇒ // inside the quote
+        parseQuote(tail, quotePart :+ head, delimiter, quote)
     }
   }
 
-  val chars = Seq("toto, tata, tutu,haha, \"fckjdhsakfjhkjsdhf\"\"", "hoho,hihi,koko,kiki")
-  print(parseLines(chars, Seq()).mkString("\n"))
+  val chars = Seq("line 1 - field 1,line 1 - field 2,line 1 - field 3,line 1 - field 4,\"block1,block2\"", "line 2 - field 1,hihi,koko,kiki")
 
-  val test = """ceci, est, ""haha""
-               |et encore, fdsgf
-               |kldjask", tgjfdksglj
-             """.stripMargin
-
-  println(parseQuotes(test, Seq(), ',', '"'))
+  println(parseLines(chars, Seq()).map(_.mkString("\n")))
 
 }
