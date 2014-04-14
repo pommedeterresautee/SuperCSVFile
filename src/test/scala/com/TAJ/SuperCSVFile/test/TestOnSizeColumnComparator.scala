@@ -40,7 +40,7 @@ object TestOnSizeColumnComparator extends TestTrait with SizeComputation {
       }
   }
 
-  val bestSize: ((List[String], String, Int, List[Int]), Int) ⇒ Unit = {
+  val bestSize: ((List[String], Char, Int, List[Int]), Int) ⇒ Unit = {
     case (((listOfString, splitter, numberOfColumns, expectedResult), index)) ⇒
       s"Size evaluation of the group $index." in {
         val result = mGetBestFitSize(listOfString, splitter, numberOfColumns, List.fill(numberOfColumns)(0))

@@ -35,7 +35,7 @@ import com.TAJ.SuperCSVFile.ActorMessages._
 
 import com.TAJ.SuperCSVFile.ActorMessages.Lines
 import scala.Some
-import com.TAJ.SuperCSVFile.ActorContainer
+import com.TAJ.SuperCSVFile.{ CSVParser, ActorContainer }
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.typesafe.scalalogging.slf4j.Logging
 import scalaz._
@@ -50,7 +50,7 @@ case class ColumnSizes(lines: Seq[Int])
  * Init a real size actor.
  */
 object SizeActor {
-  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: String, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
+  def apply(output: Option[String], expectedColumnQuantity: Int, splitter: Char, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
     val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "AccumulatorActor")
@@ -66,7 +66,7 @@ object SizeActor {
  * Init an actor to test the column size computation.
  */
 object SizeActorInjectedResultActor {
-  def apply(injectedFinalResultActor: ActorRef, expectedColumnQuantity: Int, splitter: String)(implicit system: ActorSystem): (ActorContainer, ActorContainer) = {
+  def apply(injectedFinalResultActor: ActorRef, expectedColumnQuantity: Int, splitter: Char)(implicit system: ActorSystem): (ActorContainer, ActorContainer) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
     val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "TestAccumulatorActor")
@@ -84,12 +84,11 @@ object SizeActorInjectedResultActor {
 trait SizeComputation extends Logging {
   val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
 
-  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: String, columnQuantity: Int, emptyList: Seq[Int]): (Seq[Int], Seq[(Int, String)]) = {
+  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: Char, columnQuantity: Int, emptyList: Seq[Int]): Seq[Int] = {
     if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
-
-    val (correctSizeLines, notCorrectSizeLines) =
+    val (correctSizeLines, _) =
       listToAnalyze
-        .map(_.split(splitter, -1)) // transform the line in Array of columns
+        .map(CSVParser.parseLine(_, splitter, '"'))
         .zipWithIndex
         .partition { case (line, index) ⇒ line.size == columnQuantity }
 
@@ -98,11 +97,7 @@ trait SizeComputation extends Logging {
         .map { case (line, index) ⇒ line }
         .map(_.map(_.size).toSeq) // Change to a list of size of columns
         .foldLeft(emptyList)(mBiggestColumns) // Mix the best results
-
-    val wrongLines = notCorrectSizeLines
-      .map { case (lines, index) ⇒ (index, lines.mkString(splitter)) }
-
-    (correctLines, wrongLines)
+    correctLines
   }
 }
 
@@ -115,18 +110,17 @@ trait SizeActorTrait extends SizeComputation {
    * @param columnQuantity expected number of columns.
    * @param splitter char used to separate each column.
    */
-  class SizeActor(output: Option[String], columnQuantity: Int, splitter: String) extends Actor with Logging {
+  class SizeActor(output: Option[String], columnQuantity: Int, splitter: Char) extends Actor with Logging {
     val emptyList = List.fill(columnQuantity)(0)
     var counter = 0
 
     override def receive: Actor.Receive = {
       case Lines(listToAnalyze, index) ⇒
         counter += listToAnalyze.length
-
-        val (blockResult: Seq[Int], wrongLines: Seq[(Int, String)]) =
+        val blockResult: Seq[Int] =
           mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
         resultAccumulatorActor ! ColumnSizes(blockResult)
-        resultAccumulatorActor ! WrongLines(wrongLines)
+        //resultAccumulatorActor ! WrongLines(wrongLines)
         sender ! RequestMoreWork() // Ask for the next line
       case JobFinished() ⇒
         resultAccumulatorActor ! JobFinished()

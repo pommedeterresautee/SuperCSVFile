@@ -34,6 +34,7 @@ import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
 import com.typesafe.scalalogging.slf4j.Logging
 import java.util.regex.Pattern
+import com.TAJ.SuperCSVFile.CSVParser
 
 /**
  * Operation related to the count of columns in a text file.
@@ -48,7 +49,7 @@ object FileTools extends Logging {
    * @param encoding of the text file.
    * @return a Tuple with the delimiter and the number of columns found.
    */
-  def findColumnDelimiter(path: String, encoding: String): (String, Int) = {
+  def findColumnDelimiter(path: String, encoding: String): (Char, Int) = {
     val tupleList =
       Source.fromFile(path, encoding)
         .getLines()
@@ -70,11 +71,11 @@ object FileTools extends Logging {
       .filter { case (tuple, tupleFrequency) ⇒ tupleFrequency == max } // keep only the most frequent Tuple in the entire file.
       .maxBy(_._1._2) // choose the Character which has the highest frequency per line.
 
-    val delimiterEscaped = Pattern.quote(delimiter.toString) // escape special characters (in particular pipe (|))
+    //val delimiterEscaped = Pattern.quote(delimiter.toString) // escape special characters (in particular pipe (|))
 
     logger.debug(s"*** The character the most recurrent is [$delimiter] and its frequency per line is equal to $frequency. It appears in $max lines. ***")
 
-    (delimiterEscaped, frequency + 1) // +1 because there is always one column more than quantity of delimiters.
+    (delimiter, frequency + 1) // +1 because there is always one column more than quantity of delimiters.
   }
 
   /**
@@ -100,13 +101,13 @@ object FileTools extends Logging {
    * @param encoding encoding of the file
    * @return the number of columns in the text file.
    */
-  def columnCount(path: String, splitter: String, encoding: String): Int = {
+  def columnCount(path: String, splitter: Char, encoding: String): Int = {
     val buffer = Source.fromFile(path, encoding)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)
       .toList
-      .groupBy(line ⇒ line.split(splitter).size)
+      .groupBy(line ⇒ CSVParser.parseLine(line, splitter, '"').size)
       .map {
         case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
       }

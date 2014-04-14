@@ -37,7 +37,7 @@ import scalaz._
 import Scalaz._
 import com.TAJ.SuperCSVFile.Extractor.LineExtractorActor
 import akka.actor.ActorSystem
-import com.TAJ.SuperCSVFile.{ Reaper, Distributor, ActorContainer }
+import com.TAJ.SuperCSVFile.{ CSVParser, Reaper, Distributor, ActorContainer }
 import scala.collection.mutable.ArrayBuffer
 import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.ActorLife.RegisterMe
@@ -83,13 +83,13 @@ object ExecuteCommandLine extends Logging {
     val linesCount = opts.linesCount.get
     val outputLinesCount = opts.outputLinesCount.get
 
-    val (splitter, columnCount) = (opts.setSplitter.get, opts.columnCount.get) match {
+    val (splitter: Char, columnCount) = (opts.setSplitter.get, opts.columnCount.get) match {
       case (Some(tmpSplitter), Some(col)) ⇒ (tmpSplitter, col)
       case (Some(tmpSplitter), None) ⇒
-        val replacedSplitter: String = tmpSplitter match {
-          case "TAB"   ⇒ "\t"
-          case "SPACE" ⇒ " "
-          case c       ⇒ Pattern.quote(c) // escape special characters (in particular pipe (|))
+        val replacedSplitter: Char = tmpSplitter match {
+          case "TAB"   ⇒ '\t'
+          case "SPACE" ⇒ ' '
+          case c       ⇒ c.toCharArray.head // escape special characters (in particular pipe (|))
         }
         (replacedSplitter, FileTools.columnCount(path, replacedSplitter, encoding))
       case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
@@ -106,7 +106,7 @@ object ExecuteCommandLine extends Logging {
     actionColumnSize match {
       case Some(true) ⇒
         val lines = Source.fromFile(path, encoding).getLines()
-        val titles = if (includeTitles && lines.hasNext) lines.next().split(splitter).toList.some else None
+        val titles = if (includeTitles && lines.hasNext) CSVParser.parseLine(lines.next(), splitter, '"').toList.some else None
         val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
         listOfWorkers += computer
         reaper ! RegisterMe(computer.actor)
@@ -124,7 +124,7 @@ object ExecuteCommandLine extends Logging {
     }
 
     outputDelimiter match {
-      case Some(outputDelimiterPath) ⇒ scala.reflect.io.File(outputDelimiterPath).writeAll(splitter)
+      case Some(outputDelimiterPath) ⇒ scala.reflect.io.File(outputDelimiterPath).writeAll(splitter.toString)
       case None                      ⇒
     }
 

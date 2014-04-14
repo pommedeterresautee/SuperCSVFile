@@ -14,6 +14,19 @@ object CSVParser extends App {
   }
 
   /**
+   * Parse one line according to the RFC 4180.
+   * @param line String to process
+   * @param delimiter Character to use to delimit each field.
+   * @param quote Character to use for quoted fields as descriped by the CSV specification.
+   * @return the sequence of parsed fields.
+   */
+  def parseLine(line: String, delimiter: Char, quote: Char): Seq[String] = {
+    val t = if (line.contains("fdkfksjhf")) 1 else 2
+    line.split(delimiter)
+    //parseLine(line, Seq(), Seq(), delimiter, quote)
+  }
+
+  /**
    * Parse a group of lines.
    * @param linesToProcess the original String to process
    * @param linesProcessed result storage
@@ -26,7 +39,7 @@ object CSVParser extends App {
     linesToProcess match {
       case Nil ⇒ linesProcessed
       case head :: tail ⇒
-        val line = parseLine(head, Seq(), Seq(), delimiter, quote)
+        val line = parseLine(head, delimiter, quote)
         parseLines(tail, linesProcessed :+ line, delimiter, quote)
     }
   }
@@ -38,9 +51,9 @@ object CSVParser extends App {
   private def parseLine(toProcess: Seq[Char], currentWord: Seq[Char], parsedLine: Seq[String], delimiter: Char, quote: Char): Seq[String] = {
     toProcess match {
       case Nil ⇒ parsedLine :+ currentWord.mkString
-      case Seq(delimiterChar, quoteChar, then, after, tail @ _*) if (delimiterChar == delimiter && quoteChar == quote && then != quote) ||
-        (delimiterChar == delimiter && quoteChar == quote && then == quote && after == quote) ⇒
-        val (quotedField, stillToProcess) = parseQuote(then +: after +: tail, Seq(), delimiter, quote)
+      case Seq(delimiterChar, quoteChar, next, after, tail @ _*) if (delimiterChar == delimiter && quoteChar == quote && next != quote) ||
+        (delimiterChar == delimiter && quoteChar == quote && next == quote && after == quote) ⇒
+        val (quotedField, stillToProcess) = parseQuote(next +: after +: tail, Seq(), delimiter, quote)
         (parsedLine :+ currentWord.mkString, toProcess)
         parseLine(stillToProcess, Seq(), parsedLine :+ currentWord.mkString :+ quotedField.mkString, delimiter, quote)
       case Seq(head, next, tail @ _*) if head == quote && next == quote ⇒

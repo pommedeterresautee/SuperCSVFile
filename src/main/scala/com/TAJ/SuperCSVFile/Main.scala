@@ -44,11 +44,11 @@ object Main extends App {
 
   val fileUTF8 = "C:\\Users\\MBenesty\\Private\\GIT\\SuperCSVFile\\FEC_EXAMPLE\\FEC_UTF8_TAB.txt"
   val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
-  val argUTF8 = Array("--columnSize", fileUTF8, "--forceEncoding", "ISO-8859-1", "--excludeTitles")
+  val argUTF8 = Array("--columnSize", "--inputFile", fileUTF8, "--encoding", "ISO-8859-1", "--titlesExcluded", "--firstLine", "1")
   val arg = Array("--columnSize", file)
   val argExtract = Array("--inputFile", fileUTF8, "--linesCount", "--columnSize")
 
   val help = Array("--help")
 
-  ExecuteCommandLine(args)
+  ExecuteCommandLine(argUTF8)
 }

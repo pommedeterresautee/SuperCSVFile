@@ -44,7 +44,7 @@ import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 
 object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 
-  val test: ((File, String, String, String, Long, Int, scala.List[Int], scala.List[Int])) ⇒ Unit = {
+  val test: ((File, String, String, Char, Long, Int, scala.List[Int], scala.List[Int])) ⇒ Unit = {
     case (file, name, encoding, splitter, numberOfLines, numberOfColumns, columnCountWithTitles, columnCountWithoutTitles) ⇒
       s"We will evaluate the column sizes of the file $name." must {
 

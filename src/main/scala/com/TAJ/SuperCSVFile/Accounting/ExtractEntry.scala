@@ -31,22 +31,22 @@ import akka.actor.{ Props, ActorSystem, Actor }
 import com.TAJ.SuperCSVFile.ActorMessages._
 import com.TAJ.SuperCSVFile.ActorMessages.Lines
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
-import com.TAJ.SuperCSVFile.ActorContainer
+import com.TAJ.SuperCSVFile.{ CSVParser, ActorContainer }
 
 /**
  * Messages between Actors.
  */
 object ExtractEntry {
-  def apply(positions: EntryFieldPositions, splitter: String)(implicit system: ActorSystem): ActorContainer = ActorContainer(system.actorOf(Props(new ExtractEntry(positions, splitter)), name = "ExtractEntry"), isRooter = false)
+  def apply(positions: EntryFieldPositions, splitter: Char)(implicit system: ActorSystem): ActorContainer = ActorContainer(system.actorOf(Props(new ExtractEntry(positions, splitter)), name = "ExtractEntry"), isRooter = false)
 }
 
 /**
  * Extract entry from a provided String.
  */
-class ExtractEntry(positions: EntryFieldPositions, splitter: String) extends Actor {
+class ExtractEntry(positions: EntryFieldPositions, splitter: Char) extends Actor {
   override def receive: Actor.Receive = {
     case Lines(lines, index) ⇒
-      val entry: Seq[AccountEntry] = lines.map(_.split(splitter)).map(new AccountEntry(_, positions))
+      val entry: Seq[AccountEntry] = lines.map(CSVParser.parseLine(_, splitter, '"')).map(new AccountEntry(_, positions))
       println(s"received ${entry.size}")
       sender ! RequestMoreWork() // Ask for the next line
   }
