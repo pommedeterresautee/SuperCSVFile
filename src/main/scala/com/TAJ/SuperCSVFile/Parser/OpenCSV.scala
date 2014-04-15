@@ -46,25 +46,19 @@ import scala.collection.mutable.ArrayBuffer
  */
 case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
 
-  //  require(anyCharactersAreTheSame(), "Some or all of the parameters of the CSV parser are equal.")
+  require(!anyCharactersAreTheSame(), "Some or all of the parameters of the CSV parser are equal.")
 
   /**
    * The default separator to use if none is supplied to the constructor.
    */
   private val INITIAL_READ_SIZE: Int = 128
 
-  /**
-   * This is the "null" character - if a value is set to this then it is ignored.
-   * I.E. if the quote character is set to null then there is no quote character.
-   */
-  private val NULL_CHARACTER: Char = '\0'
-
   private def anyCharactersAreTheSame(): Boolean = {
+    val NULL_CHARACTER: Char = '\0'
+    def isSameCharacter(c1: Char, c2: Char): Boolean = {
+      c1 != NULL_CHARACTER && c1 == c2
+    }
     isSameCharacter(delimiter, quoteChar) || isSameCharacter(delimiter, escape) || isSameCharacter(quoteChar, escape)
-  }
-
-  private def isSameCharacter(c1: Char, c2: Char): Boolean = {
-    c1 != NULL_CHARACTER && c1 == c2
   }
 
   def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multi = true)
