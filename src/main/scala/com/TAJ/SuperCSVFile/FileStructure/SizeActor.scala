@@ -35,13 +35,14 @@ import com.TAJ.SuperCSVFile.ActorMessages._
 
 import com.TAJ.SuperCSVFile.ActorMessages.Lines
 import scala.Some
-import com.TAJ.SuperCSVFile.{ CSVParser, ActorContainer }
+import com.TAJ.SuperCSVFile.ActorContainer
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.typesafe.scalalogging.slf4j.Logging
 import scalaz._
 import Scalaz._
 import scala.collection.mutable.ArrayBuffer
 import scala.annotation.tailrec
+import com.TAJ.SuperCSVFile.Parser.OpenCSV
 
 case class WrongLines(lines: Seq[(Int, String)])
 case class ColumnSizes(lines: Seq[Int])
@@ -84,11 +85,11 @@ object SizeActorInjectedResultActor {
 trait SizeComputation extends Logging {
   val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
 
-  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: Char, columnQuantity: Int, emptyList: Seq[Int]): Seq[Int] = {
-    if (emptyList.size != columnQuantity) throw new IllegalArgumentException(s"Empty list size is ${emptyList.size} and column quantity provided is $columnQuantity")
+  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: Char, columnQuantity: Int): Seq[Int] = {
+
     val (correctSizeLines, _) =
       listToAnalyze
-        .map(CSVParser.parseLine(_, splitter, '"'))
+        .map(OpenCSV(delimiter = splitter).parseLine)
         .zipWithIndex
         .partition { case (line, index) ⇒ line.size == columnQuantity }
 
@@ -96,7 +97,7 @@ trait SizeComputation extends Logging {
       correctSizeLines
         .map { case (line, index) ⇒ line }
         .map(_.map(_.size).toSeq) // Change to a list of size of columns
-        .foldLeft(emptyList)(mBiggestColumns) // Mix the best results
+        .foldLeft(Seq.fill(columnQuantity)(0))(mBiggestColumns) // Mix the best results
     correctLines
   }
 }
@@ -111,14 +112,13 @@ trait SizeActorTrait extends SizeComputation {
    * @param splitter char used to separate each column.
    */
   class SizeActor(output: Option[String], columnQuantity: Int, splitter: Char) extends Actor with Logging {
-    val emptyList = List.fill(columnQuantity)(0)
     var counter = 0
 
     override def receive: Actor.Receive = {
       case Lines(listToAnalyze, index) ⇒
         counter += listToAnalyze.length
         val blockResult: Seq[Int] =
-          mGetBestFitSize(listToAnalyze, splitter, columnQuantity, emptyList)
+          mGetBestFitSize(listToAnalyze, splitter, columnQuantity)
         resultAccumulatorActor ! ColumnSizes(blockResult)
         //resultAccumulatorActor ! WrongLines(wrongLines)
         sender ! RequestMoreWork() // Ask for the next line
@@ -208,9 +208,9 @@ class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[Strin
         case (sizes, Some(titleList)) if sizes.size != titleList.size ⇒
           s"""The program has found a result equal to:
           ${sizes.mkString(";")}
-          However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns ${titleList.size}.
-          You should audit the result.
-          """"
+          However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns (${titleList.size}) listed here after:
+          ${titleList.mkString(";")}
+          You should audit the result.""""
         case (sizes, None) ⇒ sizes.mkString(";")
       }
 

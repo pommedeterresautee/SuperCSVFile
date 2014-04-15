@@ -33,8 +33,7 @@ import scala.io.Source
 import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
 import com.typesafe.scalalogging.slf4j.Logging
-import java.util.regex.Pattern
-import com.TAJ.SuperCSVFile.CSVParser
+import com.TAJ.SuperCSVFile.Parser.OpenCSV
 
 /**
  * Operation related to the count of columns in a text file.
@@ -107,7 +106,7 @@ object FileTools extends Logging {
       .getLines()
       .take(1000)
       .toList
-      .groupBy(line ⇒ CSVParser.parseLine(line, splitter, '"').size)
+      .groupBy(OpenCSV(delimiter = splitter).parseLine(_).size)
       .map {
         case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
       }

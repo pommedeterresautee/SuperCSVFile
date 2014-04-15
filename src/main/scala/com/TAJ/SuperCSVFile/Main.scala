@@ -47,8 +47,9 @@ object Main extends App {
   val argUTF8 = Array("--columnSize", "--inputFile", fileUTF8, "--encoding", "ISO-8859-1", "--titlesExcluded", "--firstLine", "1")
   val arg = Array("--columnSize", file)
   val argExtract = Array("--inputFile", fileUTF8, "--linesCount", "--columnSize")
-
   val help = Array("--help")
 
   ExecuteCommandLine(argUTF8)
+  //temps d execution 1mn 11s
+
 }

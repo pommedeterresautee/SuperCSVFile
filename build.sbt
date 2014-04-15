@@ -36,15 +36,13 @@ scalacOptions ++= Seq(
 scalariformSettings
 
 ScalariformKeys.preferences := ScalariformKeys.preferences.value
-  .setPreference(AlignSingleLineCaseStatements, true)
   .setPreference(DoubleIndentClassDeclaration, true)
   .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(AlignParameters, true)
   .setPreference(CompactControlReadability, true)
   .setPreference(IndentLocalDefs, true)
   .setPreference(PreserveDanglingCloseParenthesis, true)
   .setPreference(RewriteArrowSymbols, true)
-  .setPreference(DoubleIndentClassDeclaration, true)
-  .setPreference(PreserveDanglingCloseParenthesis, true)
   .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
 
 net.virtualvoid.sbt.graph.Plugin.graphSettings

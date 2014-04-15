@@ -37,12 +37,12 @@ import scalaz._
 import Scalaz._
 import com.TAJ.SuperCSVFile.Extractor.LineExtractorActor
 import akka.actor.ActorSystem
-import com.TAJ.SuperCSVFile.{ CSVParser, Reaper, Distributor, ActorContainer }
+import com.TAJ.SuperCSVFile.{ Reaper, Distributor, ActorContainer }
 import scala.collection.mutable.ArrayBuffer
 import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.ActorLife.RegisterMe
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
-import java.util.regex.Pattern
+import com.TAJ.SuperCSVFile.Parser.OpenCSV
 
 object ExecuteCommandLine extends Logging {
   /**
@@ -106,7 +106,7 @@ object ExecuteCommandLine extends Logging {
     actionColumnSize match {
       case Some(true) ⇒
         val lines = Source.fromFile(path, encoding).getLines()
-        val titles = if (includeTitles && lines.hasNext) CSVParser.parseLine(lines.next(), splitter, '"').toList.some else None
+        val titles = if (includeTitles && lines.hasNext) OpenCSV(delimiter = splitter).parseLine(lines.next()).toList.some else None
         val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
         listOfWorkers += computer
         reaper ! RegisterMe(computer.actor)
