@@ -54,9 +54,11 @@ object SizeActor {
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: Char, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
     val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
+      override val mColumnQuantity: Int = expectedColumnQuantity
+      override val mSplitter: Char = splitter
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "AccumulatorActor")
       override val finalResultActor = system.actorOf(Props(new ResultSizeColumnActor(output, titles)), "ResultSizeColumnActor")
-      override val sizeActor = system.actorOf(Props(new SizeActor(output, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(routeesQuantity)), name = "SizeActor")
+      override val sizeActor = system.actorOf(Props(new SizeActor(output)).withRouter(RoundRobinPool(routeesQuantity)), name = "SizeActor")
     }
 
     (ActorContainer(actorTrait.sizeActor, isRooter = true), actorTrait.resultAccumulatorActor, actorTrait.finalResultActor)
@@ -70,9 +72,11 @@ object SizeActorInjectedResultActor {
   def apply(injectedFinalResultActor: ActorRef, expectedColumnQuantity: Int, splitter: Char)(implicit system: ActorSystem): (ActorContainer, ActorContainer) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
     val actorTestTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
+      override val mColumnQuantity: Int = expectedColumnQuantity
+      override val mSplitter: Char = splitter
       override val resultAccumulatorActor = system.actorOf(Props(new AccumulatorActor(routeesQuantity)), "TestAccumulatorActor")
       override val finalResultActor = injectedFinalResultActor
-      override val sizeActor = system.actorOf(Props(new SizeActor(None, expectedColumnQuantity, splitter)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
+      override val sizeActor = system.actorOf(Props(new SizeActor(None)).withRouter(RoundRobinPool(Runtime.getRuntime.availableProcessors)), name = "TestSizeActor")
     }
 
     (ActorContainer(actorTestTrait.sizeActor, isRooter = true), ActorContainer(actorTestTrait.resultAccumulatorActor, isRooter = false))
@@ -85,19 +89,22 @@ object SizeActorInjectedResultActor {
 trait SizeComputation extends Logging {
   val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
 
-  def mGetBestFitSize(listToAnalyze: Seq[String], splitter: Char, columnQuantity: Int): Seq[Int] = {
+  val mSplitter: Char
+  val mColumnQuantity: Int
+  lazy val parser = OpenCSV(delimiter = mSplitter)
 
+  def mGetBestFitSize(listToAnalyze: Seq[String]): Seq[Int] = {
     val (correctSizeLines, _) =
       listToAnalyze
-        .map(OpenCSV(delimiter = splitter).parseLine)
+        .map(parser.parseLine)
         .zipWithIndex
-        .partition { case (line, index) ⇒ line.size == columnQuantity }
+        .partition { case (line, index) ⇒ line.size == mColumnQuantity }
 
     val correctLines =
       correctSizeLines
         .map { case (line, index) ⇒ line }
         .map(_.map(_.size).toSeq) // Change to a list of size of columns
-        .foldLeft(Seq.fill(columnQuantity)(0))(mBiggestColumns) // Mix the best results
+        .foldLeft(Seq.fill(mColumnQuantity)(0))(mBiggestColumns) // Mix the best results
     correctLines
   }
 }
@@ -108,17 +115,15 @@ trait SizeActorTrait extends SizeComputation {
 
   /**
    * Analyze each block of lines received and send back the best match of size of columns.
-   * @param columnQuantity expected number of columns.
-   * @param splitter char used to separate each column.
    */
-  class SizeActor(output: Option[String], columnQuantity: Int, splitter: Char) extends Actor with Logging {
+  class SizeActor(output: Option[String]) extends Actor with Logging {
     var counter = 0
 
     override def receive: Actor.Receive = {
       case Lines(listToAnalyze, index) ⇒
         counter += listToAnalyze.length
         val blockResult: Seq[Int] =
-          mGetBestFitSize(listToAnalyze, splitter, columnQuantity)
+          mGetBestFitSize(listToAnalyze)
         resultAccumulatorActor ! ColumnSizes(blockResult)
         //resultAccumulatorActor ! WrongLines(wrongLines)
         sender ! RequestMoreWork() // Ask for the next line

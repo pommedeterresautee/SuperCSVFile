@@ -31,11 +31,14 @@ package com.TAJ.SuperCSVFile.test
 
 import com.TAJ.SuperCSVFile.FileStructure.SizeComputation
 
-object TestOnSizeColumnComparator extends TestTrait with SizeComputation {
+object TestOnSizeColumnComparator extends TestTrait {
   val biggestList: ((List[Int], List[Int], List[Int])) ⇒ Unit = {
     case (list1, list2, goodResult) ⇒
       s"Get the biggest list between $list1 and $list2." in {
-        val splitterResult = mBiggestColumns(list1, list2)
+        val splitterResult = new SizeComputation {
+          override val mColumnQuantity: Int = 0
+          override val mSplitter: Char = ';'
+        }.mBiggestColumns(list1, list2)
         splitterResult shouldBe goodResult
       }
   }
@@ -43,7 +46,10 @@ object TestOnSizeColumnComparator extends TestTrait with SizeComputation {
   val bestSize: ((List[String], Char, Int, List[Int]), Int) ⇒ Unit = {
     case (((listOfString, splitter, numberOfColumns, expectedResult), index)) ⇒
       s"Size evaluation of the group $index." in {
-        val splitterResult = mGetBestFitSize(listOfString, splitter, numberOfColumns)
+        val splitterResult = new SizeComputation {
+          override val mColumnQuantity: Int = numberOfColumns
+          override val mSplitter: Char = splitter
+        }.mGetBestFitSize(listOfString)
         splitterResult shouldBe expectedResult
       }
   }
