@@ -44,6 +44,16 @@ object ParserTest extends TestTrait {
         val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine).toSeq
         parsedWithQuotes shouldBe Seq("test1", "test2", "test3;test3")
       }
+      "Test parser with a double quoted." in {
+        val quotedLine = """test1;test2;te""st3"""
+        val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine).toSeq
+        parsedWithQuotes shouldBe Seq("test1", "test2", "te\"st3")
+      }
+      "Test parser with a double quoted in quoted field." in {
+        val quotedLine = """test1;test2;"test3;te""st3""""
+        val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine)
+        parsedWithQuotes shouldBe Seq("test1", "test2", "test3;te\"st3")
+      }
       "Test parser with a quoted line and a break." in {
         val quotedLine =
           """test1;test2;"test3;
