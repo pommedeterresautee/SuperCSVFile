@@ -64,7 +64,7 @@ class MainTest extends Suites(TestOnSizeColumnComparator, StringTest, ColumnSize
     Seq((List("first|second|third", "fourth|five|six", "seven|eight|nine"), "|", 3, List(6, 6, 5)),
       (List("one;second;fourth", "one;five;two", "one;eight;nineteen"), ";", 3, List(3, 6, 8)))
       .zipWithIndex
-      .foreach(t ⇒ TestOnSizeColumnComparator.bestSize)
+      .foreach(_ ⇒ TestOnSizeColumnComparator.bestSize)
   }
 
   StringTest.extractionOfEscapeCharacters()

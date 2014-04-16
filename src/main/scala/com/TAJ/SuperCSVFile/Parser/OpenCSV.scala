@@ -45,8 +45,10 @@ import scala.collection.mutable.ArrayBuffer
  * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
 case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
-
   require(!anyCharactersAreTheSame(), "Some or all of the parameters of the CSV parser are equal.")
+
+  private var pending: Option[String] = None
+  private var inField: Boolean = false
 
   /**
    * The default separator to use if none is supplied to the constructor.
@@ -74,78 +76,77 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
    * @throws IOException if bad things happen during the read
    */
   private def parseLine(nextLine: String, multi: Boolean): Seq[String] = {
-    if (!multi && pending != null) {
-      pending = null
+    val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
+    val sb: StringBuilder = new StringBuilder(INITIAL_READ_SIZE)
+    var inQuotes: Boolean = false
+    var counter: Int = 0
+
+    if (!multi && pending.isDefined) {
+      pending = None
     }
     if (nextLine == null) {
-      if (pending != null) {
-        val s: String = pending
-        pending = null
+      if (pending.isDefined) {
+        val s: String = pending.get
+        pending = None
         return Array[String](s)
       }
       else {
         return null
       }
     }
-    val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
-    val sb: StringBuilder = new StringBuilder(INITIAL_READ_SIZE)
-    var inQuotes: Boolean = false
-    if (pending != null) {
-      sb.append(pending)
-      pending = null
+
+    if (pending.isDefined) {
+      sb.append(pending.get)
+      pending = None
       inQuotes = true
     }
-    {
-      var i: Int = 0
 
-      while (i < nextLine.length) {
-        {
-          val c: Char = nextLine.charAt(i)
-          if (c == escape) {
-            if (isNextCharacterEscapable(nextLine, inQuotes || inField, i)) {
-              sb.append(nextLine.charAt(i + 1))
-              i += 1
-            }
+    while (counter < nextLine.length) {
+      val char: Char = nextLine(counter)
+
+      char match {
+        case _ if char == escape ⇒
+          if (isNextCharacterEscapable(nextLine, inQuotes || inField, counter)) {
+            sb.append(nextLine(counter + 1))
+            counter += 1
           }
-          else if (c == quoteChar) {
-            if (isNextCharacterEscapedQuote(nextLine, inQuotes || inField, i)) {
-              sb.append(nextLine.charAt(i + 1))
-              i += 1
-            }
-            else {
-              if (!strictQuotes) {
-                if (i > 2 && nextLine.charAt(i - 1) != delimiter && nextLine.length > (i + 1) && nextLine.charAt(i + 1) != delimiter) {
-                  if (ignoreLeadingWhiteSpace && sb.length > 0 && isAllWhiteSpace(sb)) {
-                    sb.setLength(0)
-                  }
-                  else {
-                    sb.append(c)
-                  }
-                }
-              }
-              inQuotes = !inQuotes
-            }
-            inField = !inField
-          }
-          else if (c == delimiter && !inQuotes) {
-            tokensOnThisLine += sb.toString()
-            sb.setLength(0)
-            inField = false
+        case _ if char == quoteChar ⇒
+          if (isNextCharacterEscapedQuote(nextLine, inQuotes || inField, counter)) {
+            sb.append(nextLine(counter + 1))
+            counter += 1
           }
           else {
-            if (!strictQuotes || inQuotes) {
-              sb.append(c)
-              inField = true
+            if (!strictQuotes) {
+              if (counter > 2 && nextLine(counter - 1) != delimiter && nextLine.length > (counter + 1) && nextLine(counter + 1) != delimiter) {
+                if (ignoreLeadingWhiteSpace && sb.length > 0 && isAllWhiteSpace(sb)) {
+                  sb.setLength(0)
+                }
+                else {
+                  sb.append(char)
+                }
+              }
             }
+            inQuotes = !inQuotes
           }
-        }
-        i += 1; i - 1
+          inField = !inField
+
+        case _ if char == delimiter && !inQuotes ⇒
+          tokensOnThisLine += sb.toString()
+          sb.setLength(0)
+          inField = false
+        case _ ⇒
+          if (!strictQuotes || inQuotes) {
+            sb.append(char)
+            inField = true
+          }
       }
+      counter += 1
     }
+
     if (inQuotes) {
       if (multi) {
         sb.append("\n")
-        pending = sb.toString()
+        pending = Some(sb.toString())
         sb.clear()
       }
       else {
@@ -166,9 +167,7 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
    * @param i        current index in line
    * @return true if the following character is a quote
    */
-  private def isNextCharacterEscapedQuote(nextLine: String, inQuotes: Boolean, i: Int): Boolean = {
-    inQuotes && nextLine.length > (i + 1) && nextLine.charAt(i + 1) == quoteChar
-  }
+  private def isNextCharacterEscapedQuote(nextLine: String, inQuotes: Boolean, i: Int): Boolean = inQuotes && nextLine.length > (i + 1) && nextLine(i + 1) == quoteChar
 
   /**
    * precondition: the current character is an escape
@@ -178,9 +177,7 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
    * @param i        current index in line
    * @return true if the following character is a quote
    */
-  private def isNextCharacterEscapable(nextLine: String, inQuotes: Boolean, i: Int): Boolean = {
-    inQuotes && nextLine.length > (i + 1) && (nextLine.charAt(i + 1) == quoteChar || nextLine.charAt(i + 1) == this.escape)
-  }
+  private def isNextCharacterEscapable(nextLine: String, inQuotes: Boolean, i: Int): Boolean = inQuotes && nextLine.length > (i + 1) && (nextLine(i + 1) == quoteChar || nextLine(i + 1) == escape)
 
   /**
    * precondition: sb.length() > 0
@@ -189,7 +186,4 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
    * @return true if every character in the sequence is whitespace
    */
   private def isAllWhiteSpace(sb: CharSequence): Boolean = sb.toString.toCharArray.forall(!Character.isWhitespace(_))
-
-  private var pending: String = null
-  private var inField: Boolean = false
 }
