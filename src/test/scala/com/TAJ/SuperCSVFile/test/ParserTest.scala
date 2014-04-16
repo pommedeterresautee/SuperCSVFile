@@ -55,6 +55,26 @@ object ParserTest extends TestTrait {
             case (parsed, solution) ⇒ parsed shouldBe solution
           }
       }
+      "Test with a complex sequence." in {
+        val text = Seq("John,Doe,120 jefferson st.,Riverside, NJ, 08076",
+          "Jack,McGinnis,220 hobo Av.,Phila, PA,09119",
+          "\"John \"\"Da Man\"\"\",Repici,120 Jefferson St.,Riverside, NJ,08075",
+          "Stephen,Tyler,\"7452 Terrace \"\"At the Plaza\"\" road\",SomeTown,SD, 91234,Blankman,,SomeTown, SD, 00298",
+          "\"Joan \"\"the bone\"\", Anne\",Jet,\"9th, at Terrace plc\",Desert City,CO,00123")
+
+        val result = Seq(
+          Seq("John", "Doe", "120 jefferson st.", "Riverside", " NJ", " 08076"),
+          Seq("Jack", "McGinnis", "220 hobo Av.", "Phila", " PA", "09119"),
+          Seq("John \"Da Man\"", "Repici", "120 Jefferson St.", "Riverside", " NJ", "08075"),
+          Seq("Stephen", "Tyler", "7452 Terrace \"At the Plaza\" road", "SomeTown", "SD", " 91234"),
+          Seq("Blankman", "", "SomeTown", " SD", " 00298"),
+          Seq("Joan \"the bone\", Anne", "Jet", "9th, at Terrace plc", "Desert City", "CO", "00123")
+        ).flatMap(l ⇒ l)
+
+        val parsed = text.flatMap(OpenCSV(delimiter = ',').parseLine)
+
+        parsed zip result foreach { case (computed, solution) ⇒ computed shouldBe solution }
+      }
     }
   }
 }

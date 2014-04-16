@@ -149,7 +149,7 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
         sb.clear()
       }
       else {
-        throw new IOException("Un-terminated quoted field at end of CSV line")
+        throw new IOException(s"Un-terminated quoted field at end of CSV line:\n${sb.toString()}")
       }
     }
     if (sb != null) {
