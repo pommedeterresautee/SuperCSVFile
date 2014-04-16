@@ -55,9 +55,9 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
 
   private def anyCharactersAreTheSame(): Boolean = {
     val NULL_CHARACTER: Char = '\0'
-    def isSameCharacter(c1: Char, c2: Char): Boolean = {
-      c1 != NULL_CHARACTER && c1 == c2
-    }
+      def isSameCharacter(c1: Char, c2: Char): Boolean = {
+        c1 != NULL_CHARACTER && c1 == c2
+      }
     isSameCharacter(delimiter, quoteChar) || isSameCharacter(delimiter, escape) || isSameCharacter(quoteChar, escape)
   }
 
