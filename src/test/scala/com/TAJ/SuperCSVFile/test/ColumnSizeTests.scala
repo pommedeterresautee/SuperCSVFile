@@ -41,13 +41,14 @@ import scala.concurrent.duration
 import scala.Some
 import com.TAJ.SuperCSVFile.FileStructure.ColumnSizes
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
+import com.TAJ.SuperCSVFile.Parser.OpenCSV
 
 object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 
   val test: ((File, String, String, Char, Long, Int, scala.List[Int], scala.List[Int])) ⇒ Unit = {
     case (file, name, encoding, splitter, numberOfLines, numberOfColumns, columnCountWithTitles, columnCountWithoutTitles) ⇒
-      s"We will evaluate the column sizes of the file $name." must {
 
+      s"We will evaluate the number of columns in the file $name." must {
         s"METHOD 1 - The number of columns should be $numberOfColumns" in {
           f ⇒
             val result = FileTools.columnCount(file.getAbsolutePath, splitter, encoding)
@@ -62,6 +63,20 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
             resultColumns should be(numberOfColumns)
             resultSplitter should be(splitter)
         }
+      }
+
+      s"We will test the OpenCSV parser for the file $name." must {
+        val lines = io.Source.fromFile(file, encoding).getLines().toSeq
+        lines.size shouldBe numberOfLines // check we have correctly read the file. +1 because we remove the first one (may contain a title)
+        val parsedLines = lines.map(OpenCSV(delimiter = splitter).parseLine)
+        withClue(
+          s"""File $name has failed, it should have $numberOfColumns columns.
+          |${parsedLines.map(_.size).mkString(";")}""".stripMargin) {
+            parsedLines.drop(1).forall(_.size == numberOfColumns) shouldBe true
+          }
+      }
+
+      s"We will evaluate the best column sizes of the file $name." must {
 
         "The best size of columns including titles will be computed." in {
           f ⇒
