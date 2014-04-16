@@ -50,18 +50,7 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
   private var pending: Option[String] = None
   private var inField: Boolean = false
 
-  /**
-   * The default separator to use if none is supplied to the constructor.
-   */
-  private val INITIAL_READ_SIZE: Int = 128
-
-  private def anyCharactersAreTheSame(): Boolean = {
-    val NULL_CHARACTER: Char = '\0'
-      def isSameCharacter(c1: Char, c2: Char): Boolean = {
-        c1 != NULL_CHARACTER && c1 == c2
-      }
-    isSameCharacter(delimiter, quoteChar) || isSameCharacter(delimiter, escape) || isSameCharacter(quoteChar, escape)
-  }
+  private def anyCharactersAreTheSame(): Boolean = delimiter == quoteChar || delimiter == escape || quoteChar == escape
 
   def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multi = true)
 
@@ -77,28 +66,33 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
    */
   private def parseLine(nextLine: String, multi: Boolean): Seq[String] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
-    val sb: StringBuilder = new StringBuilder(INITIAL_READ_SIZE)
+    val sb: StringBuilder = new StringBuilder(128)
     var inQuotes: Boolean = false
     var counter: Int = 0
+
+      def isThereMoreChar: Boolean = (inQuotes || inField) && nextLine.length > (counter + 1)
+
+      def isNextCharacterEscapedQuote: Boolean = isThereMoreChar && nextLine(counter + 1) == quoteChar
+
+      def isNextCharacterEscapable: Boolean = isThereMoreChar && (nextLine(counter + 1) == quoteChar || nextLine(counter + 1) == escape)
 
     if (!multi && pending.isDefined) {
       pending = None
     }
+
     if (nextLine == null) {
-      if (pending.isDefined) {
-        val s: String = pending.get
-        pending = None
-        return Array[String](s)
-      }
-      else {
-        return null
+      pending match {
+        case Some(s) ⇒ return Seq[String](s)
+        case None    ⇒ return null
       }
     }
 
-    if (pending.isDefined) {
-      sb.append(pending.get)
-      pending = None
-      inQuotes = true
+    pending match {
+      case Some(s) ⇒
+        sb.append(s)
+        pending = None
+        inQuotes = true
+      case _ ⇒
     }
 
     while (counter < nextLine.length) {
@@ -106,19 +100,19 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
 
       char match {
         case _ if char == escape ⇒
-          if (isNextCharacterEscapable(nextLine, inQuotes || inField, counter)) {
+          if (isNextCharacterEscapable) {
             sb.append(nextLine(counter + 1))
             counter += 1
           }
         case _ if char == quoteChar ⇒
-          if (isNextCharacterEscapedQuote(nextLine, inQuotes || inField, counter)) {
+          if (isNextCharacterEscapedQuote) {
             sb.append(nextLine(counter + 1))
             counter += 1
           }
           else {
             if (!strictQuotes) {
               if (counter > 2 && nextLine(counter - 1) != delimiter && nextLine.length > (counter + 1) && nextLine(counter + 1) != delimiter) {
-                if (ignoreLeadingWhiteSpace && sb.length > 0 && isAllWhiteSpace(sb)) {
+                if (ignoreLeadingWhiteSpace && sb.toArray.forall(Character.isWhitespace)) {
                   sb.setLength(0)
                 }
                 else {
@@ -158,32 +152,4 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
     }
     tokensOnThisLine.toSeq
   }
-
-  /**
-   * precondition: the current character is a quote or an escape
-   *
-   * @param nextLine the current line
-   * @param inQuotes true if the current context is quoted
-   * @param i        current index in line
-   * @return true if the following character is a quote
-   */
-  private def isNextCharacterEscapedQuote(nextLine: String, inQuotes: Boolean, i: Int): Boolean = inQuotes && nextLine.length > (i + 1) && nextLine(i + 1) == quoteChar
-
-  /**
-   * precondition: the current character is an escape
-   *
-   * @param nextLine the current line
-   * @param inQuotes true if the current context is quoted
-   * @param i        current index in line
-   * @return true if the following character is a quote
-   */
-  private def isNextCharacterEscapable(nextLine: String, inQuotes: Boolean, i: Int): Boolean = inQuotes && nextLine.length > (i + 1) && (nextLine(i + 1) == quoteChar || nextLine(i + 1) == escape)
-
-  /**
-   * precondition: sb.length() > 0
-   *
-   * @param sb A sequence of characters to examine
-   * @return true if every character in the sequence is whitespace
-   */
-  private def isAllWhiteSpace(sb: CharSequence): Boolean = sb.toString.toCharArray.forall(!Character.isWhitespace(_))
 }
