@@ -40,17 +40,17 @@ import scala.collection.mutable.ArrayBuffer
  *
  * @param delimiter               the delimiter to use for separating entries
  * @param quoteChar               the character to use for quoted elements
- * @param escape                  the character to use for escaping a separator or quote
+ * @param escapeChar                  the character to use for escaping a separator or quote
  * @param strictQuotes            if true, characters outside the quotes are ignored
  * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
-case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
+case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
   require(!anyCharactersAreTheSame(), "Some or all of the parameters of the CSV parser are equal.")
 
   private var pending: Option[String] = None
   private var inField: Boolean = false
 
-  private def anyCharactersAreTheSame(): Boolean = delimiter == quoteChar || delimiter == escape || quoteChar == escape
+  private def anyCharactersAreTheSame(): Boolean = delimiter == quoteChar || delimiter == escapeChar || quoteChar == escapeChar
 
   def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multi = true)
 
@@ -72,9 +72,11 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
 
       def isThereMoreChar: Boolean = (inQuotes || inField) && nextLine.length > (counter + 1)
 
-      def isNextCharacterEscapedQuote: Boolean = isThereMoreChar && nextLine(counter + 1) == quoteChar
+      def isNextCharacter(char: Char*): Boolean = char.exists(nextLine(counter + 1) ==)
 
-      def isNextCharacterEscapable: Boolean = isThereMoreChar && (nextLine(counter + 1) == quoteChar || nextLine(counter + 1) == escape)
+      def isNextCharacterEscapedQuote: Boolean = isThereMoreChar && isNextCharacter(quoteChar)
+
+      def isNextCharacterEscapable: Boolean = isThereMoreChar && isNextCharacter(quoteChar, escapeChar)
 
     if (!multi && pending.isDefined) {
       pending = None
@@ -99,15 +101,15 @@ case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escape: Char = 
       val char: Char = nextLine(counter)
 
       char match {
-        case _ if char == escape ⇒
+        case _ if char == escapeChar ⇒
           if (isNextCharacterEscapable) {
             sb.append(nextLine(counter + 1))
-            counter += 1
+            counter += 1 // Jump one char
           }
         case _ if char == quoteChar ⇒
           if (isNextCharacterEscapedQuote) {
             sb.append(nextLine(counter + 1))
-            counter += 1
+            counter += 1 // Jump one char
           }
           else {
             if (!strictQuotes) {

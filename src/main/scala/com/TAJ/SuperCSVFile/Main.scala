@@ -50,6 +50,4 @@ object Main extends App {
   val help = Array("--help")
 
   ExecuteCommandLine(argUTF8)
-  //temps d execution 1mn 11s
-
 }
