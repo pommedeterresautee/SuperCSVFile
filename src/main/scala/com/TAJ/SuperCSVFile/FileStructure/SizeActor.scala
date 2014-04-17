@@ -215,7 +215,7 @@ class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[Strin
           ${sizes.mkString(";")}
           However there is no match between the effective number of columns (${sizes.size}) and the expected number of columns (${titleList.size}) listed here after:
           ${titleList.mkString(";")}
-          You should audit the result.""""
+          You should audit the result."""
         case (sizes, None) ⇒ sizes.mkString(";")
       }
 

@@ -42,14 +42,13 @@ import scala.language.postfixOps
  * @param delimiterChar               the delimiter to use for separating entries
  * @param quoteChar               the character to use for quoted elements
  * @param escapeChar                  the character to use for escaping a separator or quote
- * @param strictQuotes            if true, characters outside the quotes are ignored
+ * @param ignoreCharOutsideQuotes            if true, characters outside the quotes are ignored
  * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
-case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
+case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', ignoreCharOutsideQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
   require(delimiterChar != quoteChar && delimiterChar != escapeChar && quoteChar != escapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$delimiterChar], quote [$quoteChar], escape [$escapeChar]).")
 
   private var pending: Option[String] = None
-  private var inField: Boolean = false
 
   def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multiLine = true)
 
@@ -66,12 +65,15 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
   private def parseLine(nextLine: String, multiLine: Boolean): Seq[String] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
-    var inQuotes: Boolean = false
+    var insideQuotedField: Boolean = false
+    var insideField: Boolean = false
     var position: Int = 0
 
       def isThereMoreChar: Boolean = nextLine.length > (position + 1)
 
-      def isThereMoreCharOrInQuoteOrInField: Boolean = (inQuotes || inField) && isThereMoreChar
+      def isTherePreviousChar: Boolean = position > 2
+
+      def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
       def isNextCharacter(char: Char*): Boolean = char.exists(nextLine(position + 1) ==)
 
@@ -79,18 +81,18 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
       pending = None
     }
 
-    if (nextLine == null) {
+    if (nextLine == null) { // current line is empty, get the pending token (may be end of file?)
       pending match {
         case Some(pendingToken) ⇒ return Seq[String](pendingToken)
         case None               ⇒ return null
       }
     }
 
-    pending match {
+    pending match { // get the pending token from the previous line parsing process
       case Some(pendingToken) ⇒
         currentToken.append(pendingToken)
         pending = None
-        inQuotes = true
+        insideQuotedField = true
       case _ ⇒
     }
 
@@ -98,53 +100,46 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
       val char: Char = nextLine(position)
 
       char match {
-        case _ if char == escapeChar ⇒
-          if (isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar, escapeChar)) {
-            currentToken.append(nextLine(position + 1))
-            position += 1 // Jump one char
+        case _ if char == escapeChar ⇒ // can be filtered in a Monad
+        //          if (isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar, escapeChar)) {
+        //            currentToken.append(nextLine(position + 1))
+        //            position += 1 // Jump one char
+        //          }
+        case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
+          currentToken.append(char) // add the quote char directly to the
+          position += 1 // Jump one char
+        case _ if char == quoteChar ⇒ // there is only ONE quote
+          if (!ignoreCharOutsideQuotes && isTherePreviousChar && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) { // not opening or closing quoted field
+            if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
+            else currentToken.append(char) // add the text to the current token
           }
-        case _ if char == quoteChar ⇒
-          if (isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar)) {
-            currentToken.append(nextLine(position + 1))
-            position += 1 // Jump one char
-          }
-          else {
-            if (!strictQuotes) {
-              if (position > 2 && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) {
-                if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
-                else currentToken.append(char)
-              }
-            }
-            inQuotes = !inQuotes
-          }
-          inField = !inField
-
-        case _ if char == delimiterChar && !inQuotes ⇒
+          insideQuotedField = !insideQuotedField // open and close the state in quote
+          insideField = !insideField // open and close the state in quote
+        case _ if char == delimiterChar && !insideQuotedField ⇒
           tokensOnThisLine += currentToken.toString()
           currentToken.setLength(0)
-          inField = false
+          insideField = false
         case _ ⇒
-          if (!strictQuotes || inQuotes) {
+          if (!ignoreCharOutsideQuotes || insideQuotedField) {
             currentToken.append(char)
-            inField = true
+            insideField = true
           }
       }
       position += 1
     }
 
-    if (inQuotes) {
+    if (insideQuotedField) {
       if (multiLine) {
         currentToken.append("\n")
         pending = Some(currentToken.toString())
         currentToken.clear()
       }
-      else {
+      else { // in quote and the line is finished
         throw new IOException(s"Un-terminated quoted field at end of CSV line:\n${currentToken.toString()}")
       }
     }
-    if (currentToken != null) {
-      tokensOnThisLine += currentToken.toString()
-    }
-    tokensOnThisLine.toSeq
+
+    tokensOnThisLine += currentToken.toString()
+    tokensOnThisLine
   }
 }
