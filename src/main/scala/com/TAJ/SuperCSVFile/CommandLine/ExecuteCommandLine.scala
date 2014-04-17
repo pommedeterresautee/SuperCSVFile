@@ -106,7 +106,7 @@ object ExecuteCommandLine extends Logging {
     actionColumnSize match {
       case Some(true) ⇒
         val lines = Source.fromFile(path, encoding).getLines()
-        val titles = if (includeTitles && lines.hasNext) OpenCSV(delimiter = splitter).parseLine(lines.next()).toList.some else None
+        val titles = if (includeTitles && lines.hasNext) OpenCSV(delimiterChar = splitter).parseLine(lines.next()).toList.some else None
         val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
         listOfWorkers += computer
         reaper ! RegisterMe(computer.actor)

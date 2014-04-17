@@ -91,7 +91,7 @@ trait SizeComputation extends Logging {
 
   val mSplitter: Char
   val mColumnQuantity: Int
-  lazy val parser = OpenCSV(delimiter = mSplitter)
+  lazy val parser = OpenCSV(delimiterChar = mSplitter)
 
   def mGetBestFitSize(listToAnalyze: Seq[String]): Seq[Int] = {
     val (correctSizeLines, _) =

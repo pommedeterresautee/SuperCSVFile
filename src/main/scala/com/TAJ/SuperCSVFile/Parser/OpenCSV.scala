@@ -31,6 +31,7 @@ package com.TAJ.SuperCSVFile.Parser
 
 import java.io.IOException
 import scala.collection.mutable.ArrayBuffer
+import scala.language.postfixOps
 
 /**
  * This block of code is inspired from OpenCSV library.
@@ -38,119 +39,111 @@ import scala.collection.mutable.ArrayBuffer
  * Constructs CSVReader with supplied separator and quote char.
  * Allows setting the "strict quotes" and "ignore leading whitespace" flags
  *
- * @param delimiter               the delimiter to use for separating entries
+ * @param delimiterChar               the delimiter to use for separating entries
  * @param quoteChar               the character to use for quoted elements
  * @param escapeChar                  the character to use for escaping a separator or quote
  * @param strictQuotes            if true, characters outside the quotes are ignored
  * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
-case class OpenCSV(delimiter: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
-  require(!anyCharactersAreTheSame(), "Some or all of the parameters of the CSV parser are equal.")
+case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', strictQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
+  require(delimiterChar != quoteChar && delimiterChar != escapeChar && quoteChar != escapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$delimiterChar], quote [$quoteChar], escape [$escapeChar]).")
 
   private var pending: Option[String] = None
   private var inField: Boolean = false
 
-  private def anyCharactersAreTheSame(): Boolean = delimiter == quoteChar || delimiter == escapeChar || quoteChar == escapeChar
+  def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multiLine = true)
 
-  def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multi = true)
-
-  def parseLine(nextLine: String): Seq[String] = parseLine(nextLine, multi = false)
+  def parseLine(nextLine: String): Seq[String] = parseLine(nextLine, multiLine = false)
 
   /**
    * Parses an incoming String and returns an array of elements.
    *
    * @param nextLine the string to parse
-   * @param multi true if we are parsing multiple raw lines for the same CSV line
+   * @param multiLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
    * @throws IOException if bad things happen during the read
    */
-  private def parseLine(nextLine: String, multi: Boolean): Seq[String] = {
+  private def parseLine(nextLine: String, multiLine: Boolean): Seq[String] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
-    val sb: StringBuilder = new StringBuilder(128)
+    val currentToken: StringBuilder = new StringBuilder(128)
     var inQuotes: Boolean = false
-    var counter: Int = 0
+    var position: Int = 0
 
-      def isThereMoreChar: Boolean = (inQuotes || inField) && nextLine.length > (counter + 1)
+      def isThereMoreChar: Boolean = nextLine.length > (position + 1)
 
-      def isNextCharacter(char: Char*): Boolean = char.exists(nextLine(counter + 1) ==)
+      def isThereMoreCharOrInQuoteOrInField: Boolean = (inQuotes || inField) && isThereMoreChar
 
-      def isNextCharacterEscapedQuote: Boolean = isThereMoreChar && isNextCharacter(quoteChar)
+      def isNextCharacter(char: Char*): Boolean = char.exists(nextLine(position + 1) ==)
 
-      def isNextCharacterEscapable: Boolean = isThereMoreChar && isNextCharacter(quoteChar, escapeChar)
-
-    if (!multi && pending.isDefined) {
+    if (!multiLine && pending.isDefined) {
       pending = None
     }
 
     if (nextLine == null) {
       pending match {
-        case Some(s) ⇒ return Seq[String](s)
-        case None    ⇒ return null
+        case Some(pendingToken) ⇒ return Seq[String](pendingToken)
+        case None               ⇒ return null
       }
     }
 
     pending match {
-      case Some(s) ⇒
-        sb.append(s)
+      case Some(pendingToken) ⇒
+        currentToken.append(pendingToken)
         pending = None
         inQuotes = true
       case _ ⇒
     }
 
-    while (counter < nextLine.length) {
-      val char: Char = nextLine(counter)
+    while (position < nextLine.length) {
+      val char: Char = nextLine(position)
 
       char match {
         case _ if char == escapeChar ⇒
-          if (isNextCharacterEscapable) {
-            sb.append(nextLine(counter + 1))
-            counter += 1 // Jump one char
+          if (isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar, escapeChar)) {
+            currentToken.append(nextLine(position + 1))
+            position += 1 // Jump one char
           }
         case _ if char == quoteChar ⇒
-          if (isNextCharacterEscapedQuote) {
-            sb.append(nextLine(counter + 1))
-            counter += 1 // Jump one char
+          if (isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar)) {
+            currentToken.append(nextLine(position + 1))
+            position += 1 // Jump one char
           }
           else {
             if (!strictQuotes) {
-              if (counter > 2 && nextLine(counter - 1) != delimiter && nextLine.length > (counter + 1) && nextLine(counter + 1) != delimiter) {
-                if (ignoreLeadingWhiteSpace && sb.toArray.forall(Character.isWhitespace)) {
-                  sb.setLength(0)
-                }
-                else {
-                  sb.append(char)
-                }
+              if (position > 2 && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) {
+                if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
+                else currentToken.append(char)
               }
             }
             inQuotes = !inQuotes
           }
           inField = !inField
 
-        case _ if char == delimiter && !inQuotes ⇒
-          tokensOnThisLine += sb.toString()
-          sb.setLength(0)
+        case _ if char == delimiterChar && !inQuotes ⇒
+          tokensOnThisLine += currentToken.toString()
+          currentToken.setLength(0)
           inField = false
         case _ ⇒
           if (!strictQuotes || inQuotes) {
-            sb.append(char)
+            currentToken.append(char)
             inField = true
           }
       }
-      counter += 1
+      position += 1
     }
 
     if (inQuotes) {
-      if (multi) {
-        sb.append("\n")
-        pending = Some(sb.toString())
-        sb.clear()
+      if (multiLine) {
+        currentToken.append("\n")
+        pending = Some(currentToken.toString())
+        currentToken.clear()
       }
       else {
-        throw new IOException(s"Un-terminated quoted field at end of CSV line:\n${sb.toString()}")
+        throw new IOException(s"Un-terminated quoted field at end of CSV line:\n${currentToken.toString()}")
       }
     }
-    if (sb != null) {
-      tokensOnThisLine += sb.toString()
+    if (currentToken != null) {
+      tokensOnThisLine += currentToken.toString()
     }
     tokensOnThisLine.toSeq
   }

@@ -106,7 +106,7 @@ object FileTools extends Logging {
       .getLines()
       .take(1000)
       .toList
-      .groupBy(OpenCSV(delimiter = splitter).parseLine(_).size)
+      .groupBy(OpenCSV(delimiterChar = splitter).parseLine(_).size)
       .map {
         case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
       }

@@ -36,29 +36,29 @@ object ParserTest extends TestTrait {
     "We will evaluate OpenCSV parser" should {
       "Test parser with a simple line." in {
         val simpleLine = """test1;test2;test3"""
-        val parsed = OpenCSV(delimiter = ';').parseLine(simpleLine).toSeq
+        val parsed = OpenCSV(delimiterChar = ';').parseLine(simpleLine).toSeq
         parsed shouldBe Seq("test1", "test2", "test3")
       }
       "Test parser with a quoted line." in {
         val quotedLine = """test1;test2;"test3;test3""""
-        val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine).toSeq
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine).toSeq
         parsedWithQuotes shouldBe Seq("test1", "test2", "test3;test3")
       }
       "Test parser with a double quoted." in {
         val quotedLine = """test1;test2;te""st3"""
-        val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine).toSeq
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine).toSeq
         parsedWithQuotes shouldBe Seq("test1", "test2", "te\"st3")
       }
       "Test parser with a double quoted in quoted field." in {
         val quotedLine = """test1;test2;"test3;te""st3""""
-        val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine)
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
         parsedWithQuotes shouldBe Seq("test1", "test2", "test3;te\"st3")
       }
       "Test parser with a quoted line and a break." in {
         val quotedLine =
           """test1;test2;"test3;
             |test3"""".stripMargin
-        val parsedWithQuotes = OpenCSV(delimiter = ';').parseLine(quotedLine)
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
         parsedWithQuotes zip List("test1", "test2",
           """test3;
             |test3""".stripMargin) foreach {
@@ -81,7 +81,7 @@ object ParserTest extends TestTrait {
           Seq("Joan \"the bone\", Anne", "Jet", "9th, at Terrace plc", "Desert City", "CO", "00123")
         ).flatMap(l ⇒ l)
 
-        val parsed = text.flatMap(OpenCSV(delimiter = ',').parseLine)
+        val parsed = text.flatMap(OpenCSV(delimiterChar = ',').parseLine)
 
         parsed zip result foreach { case (computed, solution) ⇒ computed shouldBe solution }
       }

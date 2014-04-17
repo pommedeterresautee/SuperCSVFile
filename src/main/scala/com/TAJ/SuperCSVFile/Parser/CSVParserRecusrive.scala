@@ -50,7 +50,7 @@ object CSVParserRecusrive extends App {
    * @return the sequence of parsed fields.
    */
   def parsseLine(line: String, delimiter: Char, quote: Char): Seq[String] = {
-    OpenCSV(delimiter = delimiter).parseLine(line)
+    OpenCSV(delimiterChar = delimiter).parseLine(line)
     line.split(delimiter)
     //parseLine(line, Seq(), Seq(), delimiter, quote)
   }
