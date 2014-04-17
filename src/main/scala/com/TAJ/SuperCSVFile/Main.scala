@@ -30,7 +30,7 @@
 package com.TAJ.SuperCSVFile
 
 import java.io.File
-import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
+import com.TAJ.SuperCSVFile.Parser.OpenCSV
 
 /**
  * Main entry in the program.
@@ -42,12 +42,16 @@ object Main extends App {
 
   val file: String = encodedFileFolder + "airports.csv"
 
+  val linux = "/home/geantvert/SCC324_319472775FEC20121231.txt"
   val fileUTF8 = "C:\\Users\\MBenesty\\Private\\GIT\\SuperCSVFile\\FEC_EXAMPLE\\FEC_UTF8_TAB.txt"
   val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
-  val argUTF8 = Array("--columnSize", "--inputFile", fileUTF8, "--encoding", "ISO-8859-1", "--titlesExcluded", "--firstLine", "1")
+  val argUTF8 = Array("--columnSize", "--inputFile", linux, "--encoding", "ISO-8859-1", "--titlesExcluded", "--firstLine", "1")
   val arg = Array("--columnSize", file)
   val argExtract = Array("--inputFile", fileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  ExecuteCommandLine(argUTF8)
+  //  ExecuteCommandLine(argUTF8)
+  val quotedLine = "test1;test2;\"\"\"\test3;test3\"\"\""
+  val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
+  println(parsedWithQuotes)
 }

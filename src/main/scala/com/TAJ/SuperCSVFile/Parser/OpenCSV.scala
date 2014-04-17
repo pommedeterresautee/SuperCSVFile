@@ -29,9 +29,9 @@
 
 package com.TAJ.SuperCSVFile.Parser
 
-import java.io.IOException
 import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
+import scalaz._
 
 /**
  * This block of code is inspired from OpenCSV library.
@@ -50,9 +50,9 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
 
   private var pending: Option[String] = None
 
-  def parseLineMulti(nextLine: String): Seq[String] = parseLine(nextLine, multiLine = true)
+  def parseLineMulti(nextLine: String): Validation[Seq[String], Seq[String]] = parseLine(nextLine, multiLine = true)
 
-  def parseLine(nextLine: String): Seq[String] = parseLine(nextLine, multiLine = false)
+  def parseLine(nextLine: String): Validation[Seq[String], Seq[String]] = parseLine(nextLine, multiLine = false)
 
   /**
    * Parses an incoming String and returns an array of elements.
@@ -62,7 +62,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
    * @return the comma-tokenized list of elements, or null if nextLine is null
    * @throws IOException if bad things happen during the read
    */
-  private def parseLine(nextLine: String, multiLine: Boolean): Seq[String] = {
+  private def parseLine(nextLine: String, multiLine: Boolean): Validation[Seq[String], Seq[String]] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -72,6 +72,8 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
       def isThereMoreChar: Boolean = nextLine.length > (position + 1)
 
       def isTherePreviousChar: Boolean = position > 2
+
+      def isPreviousAddedCharAQuote: Boolean = currentToken.length > 0 && currentToken(currentToken.length - 2) == quoteChar
 
       def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
@@ -83,7 +85,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
 
     if (nextLine == null) { // current line is empty, get the pending token (may be end of file?)
       pending match {
-        case Some(pendingToken) ⇒ return Seq[String](pendingToken)
+        case Some(pendingToken) ⇒ return Success(Seq[String](pendingToken))
         case None               ⇒ return null
       }
     }
@@ -106,14 +108,17 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         //            position += 1 // Jump one char
         //          }
         case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
+          println(s"enter1 for $char - size $position")
           currentToken.append(char) // add the quote char directly to the
           position += 1 // Jump one char
         case _ if char == quoteChar ⇒ // there is only ONE quote
+          println(s"enter2 for $char - size $position")
+          insideQuotedField = !insideQuotedField
           if (!ignoreCharOutsideQuotes && isTherePreviousChar && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) { // not opening or closing quoted field
+            println(s"enter3")
             if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
             else currentToken.append(char) // add the text to the current token
           }
-          insideQuotedField = !insideQuotedField // open and close the state in quote
           insideField = !insideField // open and close the state in quote
         case _ if char == delimiterChar && !insideQuotedField ⇒
           tokensOnThisLine += currentToken.toString()
@@ -135,11 +140,12 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         currentToken.clear()
       }
       else { // in quote and the line is finished
-        throw new IOException(s"Un-terminated quoted field at end of CSV line:\n${currentToken.toString()}")
+        tokensOnThisLine += currentToken.toString()
+        return Failure(tokensOnThisLine)
       }
     }
 
     tokensOnThisLine += currentToken.toString()
-    tokensOnThisLine
+    Success(tokensOnThisLine)
   }
 }
