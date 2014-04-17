@@ -72,7 +72,7 @@ object ParserTest extends TestTrait {
         parsedWithQuotes shouldBe Failure(Seq("test1", "test2", "test3;test3"))
       }
       "Test parser with three quotes sequence." in {
-        val quotedLine = "test1;test2;\"\"\"\test3;test3\"\"\""
+        val quotedLine = "test1;test2;\"\"\"test3;test3\"\"\""
         val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
         parsedWithQuotes shouldBe Success(Seq("test1", "test2", "\"test3;test3\""))
       }

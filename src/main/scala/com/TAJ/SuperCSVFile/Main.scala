@@ -30,7 +30,7 @@
 package com.TAJ.SuperCSVFile
 
 import java.io.File
-import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
 
 /**
  * Main entry in the program.
@@ -50,8 +50,5 @@ object Main extends App {
   val argExtract = Array("--inputFile", fileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  //  ExecuteCommandLine(argUTF8)
-  val quotedLine = "test1;test2;\"\"\"\test3;test3\"\"\""
-  val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
-  println(parsedWithQuotes)
+  ExecuteCommandLine(argUTF8)
 }
