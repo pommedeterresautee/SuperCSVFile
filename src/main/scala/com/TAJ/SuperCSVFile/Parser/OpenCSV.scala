@@ -108,11 +108,9 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         //            position += 1 // Jump one char
         //          }
         case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
-          println(s"enter1 for $char - size $position")
           currentToken.append(char) // add the quote char directly to the
           position += 1 // Jump one char
         case _ if char == quoteChar ⇒ // there is only ONE quote
-          println(s"enter2 for $char - size $position")
           insideQuotedField = !insideQuotedField
           if (!ignoreCharOutsideQuotes && isTherePreviousChar && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) { // not opening or closing quoted field
             println(s"enter3")
