@@ -113,7 +113,6 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         case _ if char == quoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
           if (!ignoreCharOutsideQuotes && isTherePreviousChar && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) { // not opening or closing quoted field
-            println(s"enter3")
             if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
             else currentToken.append(char) // add the text to the current token
           }
