@@ -103,8 +103,9 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
       case _ ⇒
     }
 
+    var char: Char = ' '
     while (position < nextLine.length) {
-      val char: Char = nextLine(position)
+      char = nextLine(position)
 
       char match {
         case _ if char == escapeChar ⇒ // can be filtered in a Monad
