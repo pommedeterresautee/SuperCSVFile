@@ -97,6 +97,7 @@ trait SizeComputation extends Logging {
     val (correctSizeLines, _) =
       listToAnalyze
         .map(parser.parseLine)
+        .map(_.getOrElse(Seq()))
         .zipWithIndex
         .partition { case (line, index) ⇒ line.size == mColumnQuantity }
 

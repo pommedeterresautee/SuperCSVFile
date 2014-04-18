@@ -30,40 +30,51 @@
 package com.TAJ.SuperCSVFile.test
 
 import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import scalaz._
 
 object ParserTest extends TestTrait {
   val test: Unit = {
     "We will evaluate OpenCSV parser" should {
       "Test parser with a simple line." in {
         val simpleLine = """test1;test2;test3"""
-        val parsed = OpenCSV(delimiterChar = ';').parseLine(simpleLine).toSeq
-        parsed shouldBe Seq("test1", "test2", "test3")
+        val parsed = OpenCSV(delimiterChar = ';').parseLine(simpleLine)
+        parsed shouldBe Success(Seq("test1", "test2", "test3"))
       }
       "Test parser with a quoted line." in {
         val quotedLine = """test1;test2;"test3;test3""""
-        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine).toSeq
-        parsedWithQuotes shouldBe Seq("test1", "test2", "test3;test3")
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
+        parsedWithQuotes shouldBe Success(Seq("test1", "test2", "test3;test3"))
       }
       "Test parser with a double quoted." in {
-        val quotedLine = """test1;test2;te""st3"""
-        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine).toSeq
-        parsedWithQuotes shouldBe Seq("test1", "test2", "te\"st3")
+        val quotedLine = """test1;test2;te""st4"""
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
+        parsedWithQuotes shouldBe Success(Seq("test1", "test2", "te\"st4"))
       }
       "Test parser with a double quoted in quoted field." in {
         val quotedLine = """test1;test2;"test3;te""st3""""
         val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
-        parsedWithQuotes shouldBe Seq("test1", "test2", "test3;te\"st3")
+        parsedWithQuotes shouldBe Success(Seq("test1", "test2", "test3;te\"st3"))
       }
       "Test parser with a quoted line and a break." in {
         val quotedLine =
           """test1;test2;"test3;
             |test3"""".stripMargin
         val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
-        parsedWithQuotes zip List("test1", "test2",
+        parsedWithQuotes.getOrElse(Seq()) zip List("test1", "test2",
           """test3;
             |test3""".stripMargin) foreach {
             case (parsed, solution) ⇒ parsed shouldBe solution
           }
+      }
+      "Test parser with a wrongly constructed sequence." in {
+        val quotedLine = "test1;test2;\"test3;test3"
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
+        parsedWithQuotes shouldBe Failure(Seq("test1", "test2", "test3;test3"))
+      }
+      "Test parser with three quotes sequence." in {
+        val quotedLine = "test1;test2;\"\"\"test3;test3\"\"\""
+        val parsedWithQuotes = OpenCSV(delimiterChar = ';').parseLine(quotedLine)
+        parsedWithQuotes shouldBe Success(Seq("test1", "test2", "\"test3;test3\""))
       }
       "Test with a complex sequence." in {
         val text = Seq("John,Doe,120 jefferson st.,Riverside, NJ, 08076",
@@ -81,9 +92,13 @@ object ParserTest extends TestTrait {
           Seq("Joan \"the bone\", Anne", "Jet", "9th, at Terrace plc", "Desert City", "CO", "00123")
         ).flatMap(l ⇒ l)
 
-        val parsed = text.flatMap(OpenCSV(delimiterChar = ',').parseLine)
-
-        parsed zip result foreach { case (computed, solution) ⇒ computed shouldBe solution }
+        val parsed = text.flatMap(OpenCSV(delimiterChar = ',').parseLine(_).getOrElse(Seq("Failllllllluuuuuuurrrrreeeeeee")))
+        withClue(s"The parsed list is:\n${parsed.mkString(";")} instead of:\n${result.mkString(";")}") {
+          parsed zip result foreach {
+            case (computed, solution) ⇒
+              computed shouldBe solution
+          }
+        }
       }
     }
   }
