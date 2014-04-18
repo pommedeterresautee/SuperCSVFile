@@ -111,9 +111,4 @@ object CSVParserRecusrive extends App {
         parseQuote(tail, quotePart :+ head, delimiter, quote)
     }
   }
-
-  val chars = Seq("line 1 - field 1,line 1 - field 2,line 1 - field 3,line 1 - field 4,\"block1,block2\"", "line 2 - field 1,hihi,koko,kiki")
-
-  println(parseLines(chars, ',', '"')(0).mkString("\n"))
-
 }

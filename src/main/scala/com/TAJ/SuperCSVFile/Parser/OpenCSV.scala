@@ -33,6 +33,10 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
 import scalaz._
 
+sealed trait CSVParser
+case class Pending(result: Validation[Seq[String], Seq[String]], pendingLine: String) extends CSVParser
+case class Parsed(result: Validation[Seq[String], Seq[String]]) extends CSVParser
+
 /**
  * This block of code is inspired from OpenCSV library.
  *
@@ -68,12 +72,13 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
     var insideQuotedField: Boolean = false
     var insideField: Boolean = false
     var position: Int = 0
+    var previousCharWasQuoteChar = false
 
       def isThereMoreChar: Boolean = nextLine.length > (position + 1)
 
       def isTherePreviousChar: Boolean = position > 2
 
-      def isPreviousAddedCharAQuote: Boolean = currentToken.length > 0 && currentToken(currentToken.length - 2) == quoteChar
+      def isPreviousAddedCharAQuote: Boolean = currentToken.length > 1 && currentToken(currentToken.length - 2) == quoteChar
 
       def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
@@ -103,13 +108,11 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
 
       char match {
         case _ if char == escapeChar ⇒ // can be filtered in a Monad
-        //          if (isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar, escapeChar)) {
-        //            currentToken.append(nextLine(position + 1))
-        //            position += 1 // Jump one char
-        //          }
-        case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
+        case _ if previousCharWasQuoteChar ⇒
+          previousCharWasQuoteChar = false
           currentToken.append(char) // add the quote char directly to the
-          position += 1 // Jump one char
+        case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
+          previousCharWasQuoteChar = true
         case _ if char == quoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
           if (!ignoreCharOutsideQuotes && isTherePreviousChar && nextLine(position - 1) != delimiterChar && isThereMoreChar && nextLine(position + 1) != delimiterChar) { // not opening or closing quoted field
