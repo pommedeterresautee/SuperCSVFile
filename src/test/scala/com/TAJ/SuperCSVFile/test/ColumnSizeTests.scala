@@ -68,7 +68,8 @@ object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
       s"We will test the OpenCSV parser for the file $name." must {
         val lines = io.Source.fromFile(file, encoding).getLines().toSeq
         lines.size shouldBe numberOfLines // check we have correctly read the file. +1 because we remove the first one (may contain a title)
-        val parsedLines = lines.map(OpenCSV(delimiterChar = splitter).parseLine(_).getOrElse(Seq()))
+        val parser = OpenCSV(delimiterChar = splitter)
+        val parsedLines = lines.map(parser.parseLine(_).getOrElse(Seq()))
         withClue(
           s"""File $name has failed, it should have $numberOfColumns columns.
           |${parsedLines.map(_.size).mkString(";")}""".stripMargin) {

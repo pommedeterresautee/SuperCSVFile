@@ -34,6 +34,8 @@ import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
 import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import scalaz.Scalaz
+import Scalaz._
 
 /**
  * Operation related to the count of columns in a text file.
@@ -86,7 +88,7 @@ object FileTools extends Logging {
     val pattern = """\\Q(.*)\\E""".r
     try {
       val pattern(removedChar: String) = text
-      Some(removedChar)
+      removedChar.some
     }
     catch {
       case e: Exception ⇒ None
@@ -102,11 +104,12 @@ object FileTools extends Logging {
    */
   def columnCount(path: String, splitter: Char, encoding: String): Int = {
     val buffer = Source.fromFile(path, encoding)
+    val parser = OpenCSV(delimiterChar = splitter)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)
       .toList
-      .groupBy(OpenCSV(delimiterChar = splitter).parseLine(_).getOrElse(Seq()).size)
+      .groupBy(parser.parseLine(_).getOrElse(Seq()).size)
       .map {
         case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
       }
