@@ -51,4 +51,7 @@ object Main extends App {
   val help = Array("--help")
 
   ExecuteCommandLine(argUTF8)
+
+  //  val path = "/home/geantvert/test.csv"
+  //  CSVIterator(path, delimiterChar = ';').foreach(t ⇒ println(t))
 }
