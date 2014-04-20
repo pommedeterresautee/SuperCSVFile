@@ -67,9 +67,10 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
    * @return the comma-tokenized list of elements, or null if nextLine is null
    * @throws IOException if bad things happen during the read
    */
-  private def parseLine(currentLine: String, multiLine: Boolean): Validation[Seq[String], Seq[String]] = {
+  private def parseLine(currentLine: Seq[Char], multiLine: Boolean): Validation[Seq[String], Seq[String]] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
+    val nullChar = '\u0000'
     var insideQuotedField: Boolean = false
     var insideField: Boolean = false
     var position: Int = 0
@@ -98,49 +99,43 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         insideQuotedField = true
     }
 
-    while (position < currentLine.length) {
-      val char = currentLine(position)
-
+    for (char ← currentLine) {
       char match {
-        case _ if char == escapeChar ⇒ // can be filtered in a Monad
-        case _ if previousCharWasQuoteChar ⇒
-          previousCharWasQuoteChar = false
-          currentToken += char // add the quote char directly to the
-        case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
+        case _ if char == quoteChar && !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
           previousCharWasQuoteChar = true
-        case _ if char == quoteChar ⇒ // there is only ONE quote
+        case _ if char == quoteChar && !previousCharWasQuoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
           if (!ignoreCharOutsideQuotes && isNextToDelimiterChar) { // not opening or closing quoted field
-            if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
-            else currentToken.append(char) // add the text to the current token
+            if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace))
+              currentToken clear () // remove current built token if only made of spaces
+            else currentToken += char // add the text to the current token
           }
           insideField = !insideField // open and close the state in quote
         case _ if char == delimiterChar && !insideQuotedField ⇒
           tokensOnThisLine += currentToken.toString()
-          currentToken.setLength(0)
+          currentToken clear ()
           insideField = false
-        case _ ⇒
-          if (!ignoreCharOutsideQuotes || insideQuotedField) {
-            currentToken += char
-            insideField = true
-          }
+        case _ if char != escapeChar && (!ignoreCharOutsideQuotes || insideQuotedField) ⇒ // don't take escape char
+          previousCharWasQuoteChar = false
+          currentToken += char
+          insideField = true
+        case _ ⇒ //escape char
       }
       position += 1
     }
 
-    if (insideQuotedField) {
-      if (multiLine) {
+    insideQuotedField match {
+      case true if multiLine ⇒ // in quote and the line is not finished
         currentToken ++= "\n"
         pending = currentToken.toString().some
-        currentToken.clear()
-      }
-      else { // in quote and the line is finished
         tokensOnThisLine += currentToken.toString()
-        return tokensOnThisLine.failure
-      }
+        tokensOnThisLine.success
+      case true ⇒ // in quote and the line is finished
+        tokensOnThisLine += currentToken.toString()
+        tokensOnThisLine.failure
+      case false ⇒
+        tokensOnThisLine += currentToken.toString()
+        tokensOnThisLine.success
     }
-
-    tokensOnThisLine += currentToken.toString()
-    tokensOnThisLine.success
   }
 }
