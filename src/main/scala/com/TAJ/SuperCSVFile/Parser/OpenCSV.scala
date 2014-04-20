@@ -79,7 +79,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
 
       def isTherePreviousChar: Boolean = position > 2
 
-      def isPreviousAddedCharAQuote: Boolean = currentToken.length > 1 && currentToken(currentToken.length - 2) == quoteChar
+      def isNextToDelimiterChar: Boolean = isTherePreviousChar && currentLine(position - 1) != delimiterChar && isThereMoreChar && currentLine(position + 1) != delimiterChar
 
       def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
@@ -93,7 +93,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
       // current line is empty, get the pending token (may be end of file?)
       case Some(pendingToken) if multiLine ⇒
         // get the pending token from the previous line parsing process
-        currentToken.append(pendingToken)
+        currentToken ++= pendingToken
         pending = None
         insideQuotedField = true
     }
@@ -105,12 +105,12 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         case _ if char == escapeChar ⇒ // can be filtered in a Monad
         case _ if previousCharWasQuoteChar ⇒
           previousCharWasQuoteChar = false
-          currentToken.append(char) // add the quote char directly to the
+          currentToken += char // add the quote char directly to the
         case _ if char == quoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
           previousCharWasQuoteChar = true
         case _ if char == quoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
-          if (!ignoreCharOutsideQuotes && isTherePreviousChar && currentLine(position - 1) != delimiterChar && isThereMoreChar && currentLine(position + 1) != delimiterChar) { // not opening or closing quoted field
+          if (!ignoreCharOutsideQuotes && isNextToDelimiterChar) { // not opening or closing quoted field
             if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) currentToken.clear()
             else currentToken.append(char) // add the text to the current token
           }
@@ -121,7 +121,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
           insideField = false
         case _ ⇒
           if (!ignoreCharOutsideQuotes || insideQuotedField) {
-            currentToken.append(char)
+            currentToken += char
             insideField = true
           }
       }
@@ -130,7 +130,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
 
     if (insideQuotedField) {
       if (multiLine) {
-        currentToken.append("\n")
+        currentToken ++= "\n"
         pending = currentToken.toString().some
         currentToken.clear()
       }
