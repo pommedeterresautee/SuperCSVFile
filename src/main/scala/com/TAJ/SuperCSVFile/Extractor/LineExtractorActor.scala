@@ -33,7 +33,7 @@ import akka.actor.{ PoisonPill, Props, ActorSystem, Actor }
 
 import com.TAJ.SuperCSVFile.ActorContainer
 import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines }
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.{ LazyLogging }
 import scala.reflect.io.Path
 
 object LineExtractorActor {
@@ -43,7 +43,7 @@ object LineExtractorActor {
 /**
  * Write the lines received in an output file.
  */
-class LineExtractorActor(outputFile: Option[String]) extends Actor with Logging {
+class LineExtractorActor(outputFile: Option[String]) extends Actor with LazyLogging {
 
   import scala.reflect.io.File
   override def receive: Receive = {

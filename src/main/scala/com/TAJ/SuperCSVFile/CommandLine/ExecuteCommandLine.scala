@@ -39,12 +39,12 @@ import com.TAJ.SuperCSVFile.Extractor.LineExtractorActor
 import akka.actor.ActorSystem
 import com.TAJ.SuperCSVFile.{ Reaper, Distributor, ActorContainer }
 import scala.collection.mutable.ArrayBuffer
-import com.typesafe.scalalogging.slf4j.Logging
 import com.TAJ.SuperCSVFile.ActorLife.RegisterMe
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.typesafe.scalalogging.slf4j.LazyLogging
 
-object ExecuteCommandLine extends Logging {
+object ExecuteCommandLine extends LazyLogging {
   /**
    * Take a parsed command line object and execute the correct methods.
    * @param args arguments sent by the user to the application.

@@ -32,7 +32,7 @@ package com.TAJ.SuperCSVFile.FileStructure
 import scala.io.Source
 import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.{ LazyLogging }
 import com.TAJ.SuperCSVFile.Parser.OpenCSV
 import scalaz.Scalaz
 import Scalaz._
@@ -40,7 +40,7 @@ import Scalaz._
 /**
  * Operation related to the count of columns in a text file.
  */
-object FileTools extends Logging {
+object FileTools extends LazyLogging {
 
   /**
    * <p>Find the delimiter and the number of columns based on the first 1000 lines.</p>

@@ -12,12 +12,12 @@ name := "SuperCSVFile"
 
 version := "1.0.5"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.0"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.2",
   "com.ibm.icu" % "icu4j" % "53.1",
-  "com.typesafe" %% "scalalogging-slf4j" % "1.1.0",
+  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.1",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.rogach" %% "scallop" % "0.9.5",

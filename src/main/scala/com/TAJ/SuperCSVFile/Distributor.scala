@@ -34,7 +34,7 @@ import akka.actor._
 import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines }
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.{ LazyLogging }
 import java.util.concurrent.TimeUnit
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
@@ -121,7 +121,7 @@ trait ComponentDistributor {
    * Read the file and send the work.
    * @param path path to the file to analyze.
    */
-  class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with Logging {
+  class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with LazyLogging {
 
     var thresholdJobWaiting = 200
     val fileSize = new File(path).length()

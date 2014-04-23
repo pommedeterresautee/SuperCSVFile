@@ -37,7 +37,7 @@ import com.TAJ.SuperCSVFile.ActorMessages.Lines
 import scala.Some
 import com.TAJ.SuperCSVFile.ActorContainer
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import scalaz._
 import Scalaz._
 import scala.collection.mutable.ArrayBuffer
@@ -86,7 +86,7 @@ object SizeActorInjectedResultActor {
 /**
  * Stores algorithms of column sizes computation.
  */
-trait SizeComputation extends Logging {
+trait SizeComputation extends LazyLogging {
   val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
 
   val mSplitter: Char
@@ -117,7 +117,7 @@ trait SizeActorTrait extends SizeComputation {
   /**
    * Analyze each block of lines received and send back the best match of size of columns.
    */
-  class SizeActor(output: Option[String]) extends Actor with Logging {
+  class SizeActor(output: Option[String]) extends Actor with LazyLogging {
     var counter = 0
 
     override def receive: Actor.Receive = {
@@ -148,7 +148,7 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
    * Receive the result of each analyze, choose the best result and at the end of the process, display the result, or save it to a file.
    * @param workerQuantity Number of workers.
    */
-  class AccumulatorActor(workerQuantity: Int) extends Actor with Logging {
+  class AccumulatorActor(workerQuantity: Int) extends Actor with LazyLogging {
     var bestSizes: Option[Seq[Int]] = None
     var workerFinished = 0
     val wrongSizeAccumulator: ArrayBuffer[(Int, String)] = ArrayBuffer()
@@ -199,7 +199,7 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
   }
 }
 
-class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[String]]) extends Actor with Logging {
+class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[String]]) extends Actor with LazyLogging {
 
   override def receive: Actor.Receive = {
     case ColumnSizes(bestSizes) ⇒

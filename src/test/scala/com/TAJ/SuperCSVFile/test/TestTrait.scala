@@ -30,7 +30,7 @@
 package com.TAJ.SuperCSVFile.test
 
 import org.scalatest._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.{ LazyLogging }
 import akka.testkit.{ TestKitBase, ImplicitSender }
 import akka.actor.ActorSystem
 import java.util.concurrent.atomic.AtomicInteger
@@ -43,7 +43,7 @@ private object TestSystemCounter {
   def nextSysId() = sysId.incrementAndGet()
 }
 
-trait TestCommonTrait extends ShouldMatchers with Logging
+trait TestCommonTrait extends ShouldMatchers with LazyLogging
 
 trait TestTrait extends WordSpecLike with TestCommonTrait
 

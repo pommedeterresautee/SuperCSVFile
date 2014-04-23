@@ -31,7 +31,7 @@ package com.TAJ.SuperCSVFile.FileStructure
 
 import akka.actor._
 import scala.reflect.io.{ File, Path }
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.{ LazyLogging }
 import com.TAJ.SuperCSVFile.ActorContainer
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.TAJ.SuperCSVFile.ActorMessages.JobFinished
@@ -63,7 +63,7 @@ object LineCounterActorTest {
   }
 }
 
-trait LineCounterActorComponent extends Logging {
+trait LineCounterActorComponent extends LazyLogging {
   self: ResultLineCounterActorComponent ⇒
   val linesActor: ActorRef
 

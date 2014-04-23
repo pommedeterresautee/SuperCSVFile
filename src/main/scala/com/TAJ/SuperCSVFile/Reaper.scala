@@ -30,7 +30,7 @@
 package com.TAJ.SuperCSVFile
 
 import akka.actor._
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.{ LazyLogging }
 
 import akka.actor.Terminated
 import scala.collection.mutable
@@ -59,7 +59,7 @@ object Reaper {
  * <p>Watch actor and kill them when the operation is finished.</p>
  * <p>Need to register your actor with the reaper by sending a {@code RegisterMe()} message.</p>
  */
-class Reaper() extends Actor with Logging {
+class Reaper() extends Actor with LazyLogging {
   val watched: mutable.Set[ActorRef] = mutable.Set()
 
   def receive = {
