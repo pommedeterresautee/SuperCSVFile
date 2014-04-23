@@ -67,10 +67,9 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
    * @return the comma-tokenized list of elements, or null if nextLine is null
    * @throws IOException if bad things happen during the read
    */
-  private def parseLine(currentLine: Seq[Char], multiLine: Boolean): Validation[Seq[String], Seq[String]] = {
+  private def parseLine(currentLine: String, multiLine: Boolean): Validation[Seq[String], Seq[String]] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
-    val nullChar = '\u0000'
     var insideQuotedField: Boolean = false
     var insideField: Boolean = false
     var position: Int = 0
@@ -99,7 +98,8 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
         insideQuotedField = true
     }
 
-    for (char ← currentLine) {
+    while (position < currentLine.length) {
+      val char = currentLine(position)
       char match {
         case _ if char == quoteChar && !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
           previousCharWasQuoteChar = true

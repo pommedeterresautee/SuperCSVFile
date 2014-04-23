@@ -65,6 +65,8 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
+incOptions := incOptions.value.withNameHashing(nameHashing = true)
+
 assemblySettings
 
 jarName in assembly := { s"${name.value}_v${version.value}.jar" }
