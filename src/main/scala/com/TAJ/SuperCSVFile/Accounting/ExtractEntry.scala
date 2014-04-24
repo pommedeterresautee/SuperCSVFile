@@ -47,7 +47,7 @@ object ExtractEntry {
 class ExtractEntry(positions: EntryFieldPositions, splitter: Char) extends Actor {
   override def receive: Actor.Receive = {
     case Lines(lines, index) ⇒
-      val parser = OpenCSV(delimiterChar = splitter)
+      val parser = OpenCSV(DelimiterChar = splitter)
       val entry: Seq[AccountEntry] = lines
         .map(parser.parseLine)
         .map(_.getOrElse(Seq()))

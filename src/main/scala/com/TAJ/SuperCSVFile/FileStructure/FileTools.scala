@@ -32,7 +32,7 @@ package com.TAJ.SuperCSVFile.FileStructure
 import scala.io.Source
 import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
-import com.typesafe.scalalogging.slf4j.{ LazyLogging }
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.TAJ.SuperCSVFile.Parser.OpenCSV
 import scalaz.Scalaz
 import Scalaz._
@@ -104,7 +104,7 @@ object FileTools extends LazyLogging {
    */
   def columnCount(path: String, splitter: Char, encoding: String): Int = {
     val buffer = Source.fromFile(path, encoding)
-    val parser = OpenCSV(delimiterChar = splitter)
+    val parser = OpenCSV(DelimiterChar = splitter)
     val (numberOfColumns, _) = buffer
       .getLines()
       .take(1000)

@@ -44,14 +44,14 @@ case class Parsed(result: Validation[Seq[String], Seq[String]]) extends CSVParse
  * Constructs CSVReader with supplied separator and quote char.
  * Allows setting the "strict quotes" and "ignore leading whitespace" flags
  *
- * @param delimiterChar               the delimiter to use for separating entries
- * @param quoteChar               the character to use for quoted elements
- * @param escapeChar                  the character to use for escaping a separator or quote
+ * @param DelimiterChar               the delimiter to use for separating entries
+ * @param QuoteChar               the character to use for quoted elements
+ * @param EscapeChar                  the character to use for escaping a separator or quote
  * @param ignoreCharOutsideQuotes            if true, characters outside the quotes are ignored
  * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
-case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', ignoreCharOutsideQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
-  require(delimiterChar != quoteChar && delimiterChar != escapeChar && quoteChar != escapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$delimiterChar], quote [$quoteChar], escape [$escapeChar]).")
+case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', ignoreCharOutsideQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
+  require(DelimiterChar != QuoteChar && DelimiterChar != EscapeChar && QuoteChar != EscapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$DelimiterChar], quote [$QuoteChar], escape [$EscapeChar]).")
 
   private var pending: Option[String] = None
 
@@ -79,7 +79,7 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
 
       def isTherePreviousChar: Boolean = position > 2
 
-      def isNextToDelimiterChar: Boolean = isTherePreviousChar && currentLine(position - 1) != delimiterChar && isThereMoreChar && currentLine(position + 1) != delimiterChar
+      def isNextToDelimiterChar: Boolean = isTherePreviousChar && currentLine(position - 1) != DelimiterChar && isThereMoreChar && currentLine(position + 1) != DelimiterChar
 
       def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
@@ -101,9 +101,9 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
     while (position < currentLine.length) {
       val char = currentLine(position)
       char match {
-        case _ if char == quoteChar && !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(quoteChar) ⇒ // the next char is a quote, so it is a double quote
+        case QuoteChar if !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(QuoteChar) ⇒ // the next char is a quote, so it is a double quote
           previousCharWasQuoteChar = true
-        case _ if char == quoteChar && !previousCharWasQuoteChar ⇒ // there is only ONE quote
+        case QuoteChar if !previousCharWasQuoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
           if (!ignoreCharOutsideQuotes && isNextToDelimiterChar) { // not opening or closing quoted field
             if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace))
@@ -111,15 +111,15 @@ case class OpenCSV(delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar:
             else currentToken += char // add the text to the current token
           }
           insideField = !insideField // open and close the state in quote
-        case _ if char == delimiterChar && !insideQuotedField ⇒
+        case DelimiterChar if !insideQuotedField ⇒
           tokensOnThisLine += currentToken.toString()
           currentToken clear ()
           insideField = false
-        case _ if char != escapeChar && (!ignoreCharOutsideQuotes || insideQuotedField) ⇒ // don't take escape char
+        case EscapeChar ⇒ // drop escape char
+        case _ if !ignoreCharOutsideQuotes || insideQuotedField ⇒
           previousCharWasQuoteChar = false
           currentToken += char
           insideField = true
-        case _ ⇒ //escape char
       }
       position += 1
     }
