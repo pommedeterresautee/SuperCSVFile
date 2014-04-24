@@ -69,5 +69,5 @@ class MainTest extends Suites(TestOnSizeColumnComparator, StringTest, ColumnSize
 
   StringTest.extractionOfEscapeCharacters()
 
-  ParserTest.test
+  ParserTest.test()
 }

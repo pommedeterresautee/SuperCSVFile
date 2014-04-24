@@ -33,7 +33,7 @@ import com.TAJ.SuperCSVFile.Parser.OpenCSV
 import scalaz._
 
 object ParserTest extends TestTrait {
-  val test: Unit = {
+  def test(): Unit = {
     "We will evaluate OpenCSV parser" should {
       "Test parser with a simple line." in {
         val simpleLine = """test1;test2;test3"""

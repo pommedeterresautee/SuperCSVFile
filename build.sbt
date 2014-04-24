@@ -31,7 +31,13 @@ scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
   "-feature",
-  "-language:reflectiveCalls"
+  "-language:reflectiveCalls",
+  "-Ywarn-dead-code",
+  "-Ywarn-inaccessible",
+  "-Ywarn-nullary-unit",
+  "-Ywarn-nullary-override",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-value-discard"
 )
 
 scalariformSettings
