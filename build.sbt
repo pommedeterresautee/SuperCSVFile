@@ -17,13 +17,13 @@ scalaVersion := "2.11.0"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.2",
   "com.ibm.icu" % "icu4j" % "53.1",
-  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.1",
+  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.rogach" %% "scallop" % "0.9.5",
   "net.sf.opencsv" % "opencsv" % "2.3",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.3" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.4" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
 
