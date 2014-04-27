@@ -57,8 +57,6 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
 
   type StateParsing[A] = (Option[A], ParserResult[A])
 
-  def parseLineMulti(nextLine: String, pending: Option[String]): StateParsing[String] = parseLine(nextLine, pending, hasOneMoreLine = true)
-
   def parseLine(nextLine: String): ParserResult[String] = {
     val (_, result) = parseLine(nextLine, None, hasOneMoreLine = false)
     result
