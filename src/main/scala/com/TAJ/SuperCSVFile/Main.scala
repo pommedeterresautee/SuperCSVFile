@@ -53,22 +53,17 @@ object Main extends App {
 
   //  ExecuteCommandLine(args)
 
-  val toParse = """test;"test2
-                  |seconde ligne
+  val toParse = """test;test2
+                  |"seconde ligne
                   |troisieme ligne
-                  |quatrieme ligne";test3
+                  |quatrieme ligne;test3
     |encore;deux;etTrois
-    |fmklsgnal;fnghka
-    |ckdnsklgfasg;fnsdkjagf
-  """.stripMargin.split('\n').toIterator
+    |fmklsgnal;fnghka"
+    |
+    |ckdnsklgfasg;fnsdkjagf""".stripMargin.split('\n').toIterator
 
   val parser = OpenCSV(DelimiterChar = ';')
   val par = ParserIterator(parser, toParse)
-  //  par.readNext.mkString("|")
-  //  par.readNext.mkString("|")
-  //  par.readNext.mkString("|")
-  println("un:" + par.readNext.mkString("|"))
-  println("deux:" + par.readNext.mkString("|"))
-  println("trois:" + par.readNext.mkString("|"))
+  par.zipWithIndex.foreach { case (line, index) ⇒ println(index + 1 + ": [" + line.mkString("|") + "]") }
 
 }

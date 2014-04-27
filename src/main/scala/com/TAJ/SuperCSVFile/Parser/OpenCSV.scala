@@ -55,23 +55,23 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
 
   type ParserResult[A] = Validation[Seq[A], Seq[A]]
 
-  private var pending: Option[String] = None
+  type StateParsing[A] = (Option[A], ParserResult[A])
 
-  def hasPartialReading: Boolean = pending.size > 0
+  def parseLineMulti(nextLine: String, pending: Option[String]): StateParsing[String] = parseLine(nextLine, pending, hasOneMoreLine = true)
 
-  def parseLineMulti(nextLine: String): ParserResult[String] = parseLine(nextLine, multiLine = true)
-
-  def parseLine(nextLine: String): ParserResult[String] = parseLine(nextLine, multiLine = false)
+  def parseLine(nextLine: String): ParserResult[String] = {
+    val (_, result) = parseLine(nextLine, None, hasOneMoreLine = false)
+    result
+  }
 
   /**
    * Parses an incoming String and returns an array of elements.
    *
    * @param currentLine the string to parse
-   * @param multiLine true if we are parsing multiple raw lines for the same CSV line
+   * @param hasOneMoreLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
-   * @throws IOException if bad things happen during the read
    */
-  private def parseLine(currentLine: String, multiLine: Boolean): ParserResult[String] = {
+  def parseLine(currentLine: String, previousPending: Option[String], hasOneMoreLine: Boolean): StateParsing[String] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -89,17 +89,14 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
 
       def isNextCharacter(char: Char*): Boolean = char.exists(currentLine(position + 1) ==)
 
-    pending match {
-      case None if currentLine == null                            ⇒ return null
-      case None                                                   ⇒
-      case Some(pendingToken) if !multiLine                       ⇒ pending = None
-      case Some(pendingToken) if multiLine && currentLine == null ⇒ return Seq[String](pendingToken).failure
-      // current line is empty, get the pending token (may be end of file?)
-      case Some(pendingToken) if multiLine ⇒
+    previousPending match {
+      case Some(pendingToken) if hasOneMoreLine && currentLine == null ⇒ return (None, Seq[String](pendingToken).failure)
+      case Some(pendingToken) ⇒
         // get the pending token from the previous line parsing process
         currentToken ++= pendingToken
-        pending = None
         insideQuotedField = true
+      // current line is empty, get the pending token (may be end of file?)
+      case _ ⇒
     }
 
     while (position < currentLine.length) {
@@ -129,16 +126,15 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
     }
 
     insideQuotedField match {
-      case true if multiLine ⇒ // in quote and the line is not finished
+      case true if hasOneMoreLine ⇒ // in quote and the line is not finished
         currentToken ++= "\n"
-        pending = currentToken.toString().some
-        tokensOnThisLine.success
+        (currentToken.toString().some, tokensOnThisLine.success)
       case true ⇒ // in quote and there is no more content to add
         tokensOnThisLine += currentToken.toString()
-        tokensOnThisLine.failure
+        (None, tokensOnThisLine.failure)
       case false ⇒ // not in quoted field
         tokensOnThisLine += currentToken.toString()
-        tokensOnThisLine.success
+        (None, tokensOnThisLine.success)
     }
   }
 }
