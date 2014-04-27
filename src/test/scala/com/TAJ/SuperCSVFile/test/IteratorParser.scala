@@ -23,7 +23,7 @@ object IteratorParser extends TestTrait {
                         |fmklsgnal;fnghka""".stripMargin), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
         val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse)
+        val par = ParserIterator(parser, toParse, None)
         val result = par.toList
         result shouldBe expected
       }
@@ -48,7 +48,7 @@ object IteratorParser extends TestTrait {
                   |ckdnsklgfasg;fnsdkjagf""".stripMargin))
 
         val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse)
+        val par = ParserIterator(parser, toParse, None)
         val result = par.toList
         result shouldBe expected
       }
