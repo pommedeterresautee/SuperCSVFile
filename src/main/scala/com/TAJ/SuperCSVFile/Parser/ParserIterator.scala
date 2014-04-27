@@ -1,12 +1,12 @@
 package com.TAJ.SuperCSVFile.Parser
 
 import scala.collection.mutable.ArrayBuffer
-import scalaz.{ Success, Failure }
+import scalaz._
 
 case class ParserIterator(parser: OpenCSV, lines: Iterator[String]) extends Iterator[Seq[String]] {
 
   private def readNext: Seq[String] = {
-    val result: ArrayBuffer[String] = ArrayBuffer()
+    var result: Seq[String] = Seq()
     var pending: Option[String] = None
     do {
       Option(lines.next()) match {
