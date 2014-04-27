@@ -51,19 +51,5 @@ object Main extends App {
   val argExtract = Array("--inputFile", windowsFileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  //  ExecuteCommandLine(args)
-
-  val toParse = """test;test2
-                  |"seconde ligne
-                  |troisieme ligne
-                  |quatrieme ligne;test3
-    |encore;deux;etTrois
-    |fmklsgnal;fnghka"
-    |
-    |ckdnsklgfasg;fnsdkjagf""".stripMargin.split('\n').toIterator
-
-  val parser = OpenCSV(DelimiterChar = ';')
-  val par = ParserIterator(parser, toParse)
-  par.zipWithIndex.foreach { case (line, index) ⇒ println(index + 1 + ": [" + line.mkString("|") + "]") }
-
+  ExecuteCommandLine(args)
 }

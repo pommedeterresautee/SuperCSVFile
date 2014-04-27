@@ -1,6 +1,5 @@
 package com.TAJ.SuperCSVFile.Parser
 
-import scala.collection.mutable.ArrayBuffer
 import scalaz._
 
 case class ParserIterator(parser: OpenCSV, lines: Iterator[String]) extends Iterator[Seq[String]] {
@@ -21,7 +20,6 @@ case class ParserIterator(parser: OpenCSV, lines: Iterator[String]) extends Iter
           }
       }
     } while (pending.isDefined && hasNext) // restart if pending
-
     result
   }
 
