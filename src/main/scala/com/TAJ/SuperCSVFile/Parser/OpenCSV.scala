@@ -50,14 +50,18 @@ case class Parsed(result: Validation[Seq[String], Seq[String]]) extends CSVParse
  * @param ignoreCharOutsideQuotes            if true, characters outside the quotes are ignored
  * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
-case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', ignoreCharOutsideQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) {
+case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar: Char = '"', private val EscapeChar: Char = '\\', private val ignoreCharOutsideQuotes: Boolean = false, private val ignoreLeadingWhiteSpace: Boolean = true) {
   require(DelimiterChar != QuoteChar && DelimiterChar != EscapeChar && QuoteChar != EscapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$DelimiterChar], quote [$QuoteChar], escape [$EscapeChar]).")
+
+  type ParserResult[A] = Validation[Seq[A], Seq[A]]
 
   private var pending: Option[String] = None
 
-  def parseLineMulti(nextLine: String): Validation[Seq[String], Seq[String]] = parseLine(nextLine, multiLine = true)
+  def hasPartialReading: Boolean = pending.size > 0
 
-  def parseLine(nextLine: String): Validation[Seq[String], Seq[String]] = parseLine(nextLine, multiLine = false)
+  def parseLineMulti(nextLine: String): ParserResult[String] = parseLine(nextLine, multiLine = true)
+
+  def parseLine(nextLine: String): ParserResult[String] = parseLine(nextLine, multiLine = false)
 
   /**
    * Parses an incoming String and returns an array of elements.
@@ -67,7 +71,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
    * @return the comma-tokenized list of elements, or null if nextLine is null
    * @throws IOException if bad things happen during the read
    */
-  private def parseLine(currentLine: String, multiLine: Boolean): Validation[Seq[String], Seq[String]] = {
+  private def parseLine(currentLine: String, multiLine: Boolean): ParserResult[String] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -89,7 +93,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
       case None if currentLine == null                            ⇒ return null
       case None                                                   ⇒
       case Some(pendingToken) if !multiLine                       ⇒ pending = None
-      case Some(pendingToken) if multiLine && currentLine == null ⇒ return Seq[String](pendingToken).success
+      case Some(pendingToken) if multiLine && currentLine == null ⇒ return Seq[String](pendingToken).failure
       // current line is empty, get the pending token (may be end of file?)
       case Some(pendingToken) if multiLine ⇒
         // get the pending token from the previous line parsing process
@@ -128,12 +132,11 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
       case true if multiLine ⇒ // in quote and the line is not finished
         currentToken ++= "\n"
         pending = currentToken.toString().some
-        tokensOnThisLine += currentToken.toString()
         tokensOnThisLine.success
-      case true ⇒ // in quote and the line is finished
+      case true ⇒ // in quote and there is no more content to add
         tokensOnThisLine += currentToken.toString()
         tokensOnThisLine.failure
-      case false ⇒
+      case false ⇒ // not in quoted field
         tokensOnThisLine += currentToken.toString()
         tokensOnThisLine.success
     }

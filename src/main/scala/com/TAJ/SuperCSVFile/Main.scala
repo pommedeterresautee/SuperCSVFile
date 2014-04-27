@@ -31,6 +31,7 @@ package com.TAJ.SuperCSVFile
 
 import java.io.File
 import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
+import com.TAJ.SuperCSVFile.Parser.{ ParserIterator, OpenCSV }
 
 /**
  * Main entry in the program.
@@ -50,8 +51,24 @@ object Main extends App {
   val argExtract = Array("--inputFile", windowsFileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  ExecuteCommandLine(argUTF8)
+  //  ExecuteCommandLine(args)
 
-  //  val path = "/home/geantvert/test.csv"
-  //  CSVIterator(path, delimiterChar = ';').foreach(t ⇒ println(t))
+  val toParse = """test;"test2
+                  |seconde ligne
+                  |troisieme ligne
+                  |quatrieme ligne";test3
+    |encore;deux;etTrois
+    |fmklsgnal;fnghka
+    |ckdnsklgfasg;fnsdkjagf
+  """.stripMargin.split('\n').toIterator
+
+  val parser = OpenCSV(DelimiterChar = ';')
+  val par = ParserIterator(parser, toParse)
+  //  par.readNext.mkString("|")
+  //  par.readNext.mkString("|")
+  //  par.readNext.mkString("|")
+  println("un:" + par.readNext.mkString("|"))
+  println("deux:" + par.readNext.mkString("|"))
+  println("trois:" + par.readNext.mkString("|"))
+
 }

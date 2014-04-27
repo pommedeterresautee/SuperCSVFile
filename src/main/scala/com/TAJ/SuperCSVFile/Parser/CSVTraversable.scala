@@ -1,8 +1,9 @@
 package com.TAJ.SuperCSVFile.Parser
 
 import scalaz.Validation
+import scala.collection.mutable.ArrayBuffer
 
-case class CSVIterator(filePath: String, delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', ignoreCharOutsideQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) extends Traversable[Validation[Seq[String], Seq[String]]] {
+case class CSVTraversable(filePath: String, delimiterChar: Char = ',', quoteChar: Char = '"', escapeChar: Char = '\\', ignoreCharOutsideQuotes: Boolean = false, ignoreLeadingWhiteSpace: Boolean = true) extends Traversable[Validation[Seq[String], Seq[String]]] {
 
   private val source = io.Source.fromFile(filePath).getLines()
 

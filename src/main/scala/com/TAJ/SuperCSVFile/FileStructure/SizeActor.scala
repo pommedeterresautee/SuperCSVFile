@@ -51,6 +51,7 @@ case class ColumnSizes(lines: Seq[Int])
  * Init a real size actor.
  */
 object SizeActor {
+
   def apply(output: Option[String], expectedColumnQuantity: Int, splitter: Char, titles: Option[Seq[String]])(implicit system: ActorSystem): (ActorContainer, ActorRef, ActorRef) = {
     val routeesQuantity = Runtime.getRuntime.availableProcessors
     val actorTrait = new SizeActorTrait with AccumulatorSizeActorTrait {
@@ -87,7 +88,7 @@ object SizeActorInjectedResultActor {
  * Stores algorithms of column sizes computation.
  */
 trait SizeComputation extends LazyLogging {
-  val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map (tuple ⇒ tuple._1 max tuple._2)
+  val mBiggestColumns: (Seq[Int], Seq[Int]) ⇒ Seq[Int] = (first, second) ⇒ first zip second map { case (a, b) ⇒ a max b }
 
   val mSplitter: Char
   val mColumnQuantity: Int
