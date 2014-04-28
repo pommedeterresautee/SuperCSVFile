@@ -54,7 +54,7 @@ case class ParserIterator(parser: OpenCSV, lines: Iterator[String], limit: Optio
           result ++= failedLine.tail
           LineStack ++= lineParsed.tail
         case (parsedPending, Success(lineParsed)) if remaining == 0 ⇒
-          parsedPending.getOrElse("").split(eol, 0).toList match {
+          parsedPending.getOrElse("").split(eol, -1).toList match {
             case head :: tail if head == "" ⇒ result = lineParsed
             case head :: tail ⇒
               result = lineParsed :+ head
