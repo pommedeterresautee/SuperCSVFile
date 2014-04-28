@@ -57,6 +57,8 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
 
   type StateParsing[A] = (Option[A], ParserResult[A])
 
+  val eol = System.getProperty("line.separator")
+
   def parseLine(nextLine: String): ParserResult[String] = {
     val (_, result) = parseLine(nextLine, None, hasOneMoreLine = false)
     result
@@ -125,7 +127,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
 
     insideQuotedField match {
       case true if hasOneMoreLine ⇒ // in quote and the line is not finished
-        currentToken ++= "\n"
+        currentToken ++= eol
         (currentToken.toString().some, tokensOnThisLine.success)
       case true ⇒ // in quote and there is no more content to add
         tokensOnThisLine += currentToken.toString()

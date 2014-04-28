@@ -201,6 +201,7 @@ trait AccumulatorSizeActorTrait extends SizeComputation {
 }
 
 class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[String]]) extends Actor with LazyLogging {
+  val eol = System.getProperty("line.separator")
 
   override def receive: Actor.Receive = {
     case ColumnSizes(bestSizes) ⇒
@@ -211,7 +212,7 @@ class ResultSizeColumnActor(outputFile: Option[String], titles: Option[Seq[Strin
             .map {
               case (title, size) ⇒ s"$title;$size"
             }
-            .mkString("\n")
+            .mkString(eol)
         case (sizes, Some(titleList)) if sizes.size != titleList.size ⇒
           s"""The program has found a result equal to:
           ${sizes.mkString(";")}

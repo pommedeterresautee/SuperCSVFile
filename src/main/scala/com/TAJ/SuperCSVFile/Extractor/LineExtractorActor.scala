@@ -33,7 +33,7 @@ import akka.actor.{ PoisonPill, Props, ActorSystem, Actor }
 
 import com.TAJ.SuperCSVFile.ActorContainer
 import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines }
-import com.typesafe.scalalogging.slf4j.{ LazyLogging }
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import scala.reflect.io.Path
 
 object LineExtractorActor {
@@ -44,6 +44,7 @@ object LineExtractorActor {
  * Write the lines received in an output file.
  */
 class LineExtractorActor(outputFile: Option[String]) extends Actor with LazyLogging {
+  val eol = System.getProperty("line.separator")
 
   import scala.reflect.io.File
   override def receive: Receive = {
@@ -51,10 +52,10 @@ class LineExtractorActor(outputFile: Option[String]) extends Actor with LazyLogg
       logger.debug(s"Received ${lines.size} lines.")
       outputFile match {
         case Some(filePath) if Path(filePath).isFile ⇒
-          File(filePath).appendAll(lines.mkString("\n"))
+          File(filePath).appendAll(lines.mkString(eol))
         case Some(filePath) if !Path(filePath).isFile ⇒
           throw new IllegalArgumentException(s"Path provided is not a file: $filePath")
-        case None ⇒ println(lines.mkString("\n"))
+        case None ⇒ println(lines.mkString(eol))
       }
       sender() ! RequestMoreWork()
     case JobFinished() ⇒
