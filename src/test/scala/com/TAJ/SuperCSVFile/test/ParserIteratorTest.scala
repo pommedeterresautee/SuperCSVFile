@@ -133,6 +133,17 @@ object ParserIteratorTest extends TestTrait {
 
         result shouldBe expected
       }
+
+      "with one quote in a single line" in {
+        val toParse = Seq("test;tes\"t2;test3").toIterator
+
+        val parser = OpenCSV(DelimiterChar = ';')
+        val par = ParserIterator(parser, toParse, Some(3))
+        val result = par.toList
+        val expected = List(List("test", "test2;test3"))
+
+        result shouldBe expected
+      }
     }
   }
 }
