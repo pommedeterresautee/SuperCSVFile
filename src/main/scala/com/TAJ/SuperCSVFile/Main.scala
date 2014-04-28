@@ -30,7 +30,6 @@
 package com.TAJ.SuperCSVFile
 
 import java.io.File
-import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
 import com.TAJ.SuperCSVFile.Parser.{ ParserIterator, OpenCSV }
 
 /**
@@ -52,6 +51,7 @@ object Main extends App {
   val help = Array("--help")
 
   //  ExecuteCommandLine(args)
+  val eol = System.getProperty("line.separator")
   val toParse = """test;test2
                 |"seconde ligne
                 |troisieme ligne"
@@ -59,7 +59,7 @@ object Main extends App {
                 |encore;deux;etTrois
                 |fmklsgnal;fnghka
                 |
-                |ckdnsklgfasg;fnsdkjagf""".stripMargin.split('\n').toIterator
+                |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
   val parser = OpenCSV(DelimiterChar = ';')
   val par = ParserIterator(parser, toParse)
