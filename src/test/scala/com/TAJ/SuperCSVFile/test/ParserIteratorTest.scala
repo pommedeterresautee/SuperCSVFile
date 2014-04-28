@@ -29,7 +29,7 @@
 
 package com.TAJ.SuperCSVFile.test
 
-import com.TAJ.SuperCSVFile.Parser.{ ParserIterator, OpenCSV }
+import com.TAJ.SuperCSVFile.Parser.ParserIterator
 import scala.collection.mutable.ArrayBuffer
 
 object ParserIteratorTest extends TestTrait {
@@ -53,8 +53,7 @@ object ParserIteratorTest extends TestTrait {
                         |encore;deux;etTrois
                         |fmklsgnal;fnghka""".stripMargin), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse, None)
+        val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = None)
         val result = par.toList
         result shouldBe expected
       }
@@ -72,9 +71,9 @@ object ParserIteratorTest extends TestTrait {
 
         val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse, None)
+        val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = None)
         val result = par.toList
+
         result shouldBe expected
       }
 
@@ -88,8 +87,7 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse, Some(1))
+        val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = None)
         val result = par.toList
 
         val expected = List(List("test", "test2"), ArrayBuffer("""seconde ligne
@@ -108,8 +106,7 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse, Some(1))
+        val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = None)
         val result = par.toList
         val expected = List(List("test", "test2"), ArrayBuffer("seconde ligne"), List("troisieme ligne"), ArrayBuffer("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
@@ -126,8 +123,7 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse, Some(3))
+        val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = Some(3))
         val result = par.toList
         val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
@@ -137,8 +133,7 @@ object ParserIteratorTest extends TestTrait {
       "with one quote in a single line" in {
         val toParse = Seq("test;tes\"t2;test3").toIterator
 
-        val parser = OpenCSV(DelimiterChar = ';')
-        val par = ParserIterator(parser, toParse, Some(3))
+        val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = Some(3))
         val result = par.toList
         val expected = List(List("test", "test2;test3"))
 

@@ -32,16 +32,27 @@ package com.TAJ.SuperCSVFile.Parser
 import scalaz._
 import scala.collection.mutable
 
-case class ParserIterator(parser: OpenCSV, lines: Iterator[String], limit: Option[Int] = Some(1)) extends Iterator[Seq[String]] {
+/**
+ * Provide an Iterator of String and get an Iterator of parsed CSV lines.
+ * @param parser
+ * @param lines
+ * @param limit
+ */
+case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true, lines: Iterator[String], limit: Option[Int] = Some(1)) extends Iterator[Seq[String]] {
   require(limit.getOrElse(1) >= 0 && limit.getOrElse(1) < 10000, "Limit of the Iterator should be > 0 and < 10 000 for memory reasons")
 
-  val eol = System.getProperty("line.separator")
+  private val eol = System.getProperty("line.separator")
+
+  private val parser = OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace)
 
   var LineStack: mutable.Stack[String] = mutable.Stack()
 
   override def hasNext: Boolean = lines.hasNext || LineStack.size > 0
 
   override def next(): Seq[String] = {
+
+      def getNextLine = if (LineStack.size > 0) LineStack.pop() else lines.next()
+
     var remaining = limit.getOrElse(1)
     var result: Seq[String] = Seq()
     var pending: Option[String] = None
@@ -69,6 +80,4 @@ case class ParserIterator(parser: OpenCSV, lines: Iterator[String], limit: Optio
     } while (pending.isDefined && hasNext && remaining >= 0) // restart if pending
     result
   }
-
-  private def getNextLine = if (LineStack.size > 0) LineStack.pop() else lines.next()
 }

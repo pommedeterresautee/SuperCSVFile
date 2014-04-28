@@ -43,14 +43,15 @@ case class Parsed(result: Validation[Seq[String], Seq[String]]) extends CSVParse
  *
  * Constructs CSVReader with supplied separator and quote char.
  * Allows setting the "strict quotes" and "ignore leading whitespace" flags
+ * Attention: don't use the same character for quoting text, for delimiting fields or to escape characters.
  *
  * @param DelimiterChar               the delimiter to use for separating entries
  * @param QuoteChar               the character to use for quoted elements
  * @param EscapeChar                  the character to use for escaping a separator or quote
- * @param ignoreCharOutsideQuotes            if true, characters outside the quotes are ignored
- * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
+ * @param IgnoreCharOutsideQuotes            if true, characters outside the quotes are ignored
+ * @param IgnoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
  */
-case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar: Char = '"', private val EscapeChar: Char = '\\', private val ignoreCharOutsideQuotes: Boolean = false, private val ignoreLeadingWhiteSpace: Boolean = true) {
+case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true) {
   require(DelimiterChar != QuoteChar && DelimiterChar != EscapeChar && QuoteChar != EscapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$DelimiterChar], quote [$QuoteChar], escape [$EscapeChar]).")
 
   type ParserResult[A] = Validation[Seq[A], Seq[A]]
@@ -106,7 +107,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
           previousCharWasQuoteChar = true
         case QuoteChar if !previousCharWasQuoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
-          if (!ignoreCharOutsideQuotes && isNextToDelimiterChar && ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) { // not opening or closing quoted field
+          if (!IgnoreCharOutsideQuotes && isNextToDelimiterChar && IgnoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace)) { // not opening or closing quoted field
             currentToken clear () // remove current built token if only made of spaces
           }
           insideField = !insideField // open and close the state in quote
@@ -115,7 +116,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
           currentToken clear ()
           insideField = false
         case EscapeChar ⇒ // drop escape char
-        case _ if !ignoreCharOutsideQuotes || insideQuotedField ⇒
+        case _ if !IgnoreCharOutsideQuotes || insideQuotedField ⇒
           previousCharWasQuoteChar = false
           currentToken += char
           insideField = true

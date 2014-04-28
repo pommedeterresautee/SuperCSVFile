@@ -58,8 +58,8 @@ object Main extends App {
                     |totototot
                     |""".stripMargin.split(eol, -1).toIterator
 
-  val parser = OpenCSV(DelimiterChar = ';')
-  val par = ParserIterator(parser, toParse, Some(1))
+  val parser = OpenCSV()
+  val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = Some(1))
   val result = par.toList
   //  println(result)
   result.zipWithIndex.foreach {
