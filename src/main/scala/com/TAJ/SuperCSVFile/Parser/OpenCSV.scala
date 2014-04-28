@@ -33,10 +33,11 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
 import scalaz._
 import Scalaz._
+import com.TAJ.SuperCSVFile.Parser.ParserType.{ StateParsing, ParserResult }
 
 sealed trait CSVParser
-case class Pending(result: Validation[Seq[String], Seq[String]], pendingLine: String) extends CSVParser
-case class Parsed(result: Validation[Seq[String], Seq[String]]) extends CSVParser
+case class Pending(result: ParserResult[String], pendingLine: String) extends CSVParser
+case class Parsed(result: ParserResult[String]) extends CSVParser
 
 /**
  * This block of code is inspired from OpenCSV library.
@@ -53,10 +54,6 @@ case class Parsed(result: Validation[Seq[String], Seq[String]]) extends CSVParse
  */
 case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true) {
   require(DelimiterChar != QuoteChar && DelimiterChar != EscapeChar && QuoteChar != EscapeChar, s"Some or all of the parameters of the CSV parser are equal (delimiter [$DelimiterChar], quote [$QuoteChar], escape [$EscapeChar]).")
-
-  type ParserResult[A] = Validation[Seq[A], Seq[A]]
-
-  type StateParsing[A] = (Option[A], ParserResult[A])
 
   val eol = System.getProperty("line.separator")
 
