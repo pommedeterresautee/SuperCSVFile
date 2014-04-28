@@ -51,20 +51,22 @@ object Main extends App {
   val help = Array("--help")
 
   //  ExecuteCommandLine(args)
+
   val eol = System.getProperty("line.separator")
   val toParse = """test;test2
-                |"seconde ligne
-                |troisieme ligne"
-                |quatrieme ligne;test3
-                |encore;deux;etTrois
-                |fmklsgnal;fnghka
-                |
-                |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
+                  |"seconde ligne
+                  |troisieme ligne
+                  |quatrieme ligne;test3"
+                  |encore;deux;etTrois
+                  |fmklsgnal;fnghka
+                  |
+                  |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
   val parser = OpenCSV(DelimiterChar = ';')
-  val par = ParserIterator(parser, toParse)
+  val par = ParserIterator(parser, toParse, Some(1))
   val result = par.toList
-  result.zipWithIndex.foreach {
-    case (line, index) ⇒ println(index + 1 + ": " + line)
-  }
+  println(result)
+  //  result.zipWithIndex.foreach {
+  //    case (line, index) ⇒ println(index + 1 + ": " + line)
+  //  }
 }

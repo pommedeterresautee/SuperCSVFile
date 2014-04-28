@@ -60,7 +60,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
   val eol = System.getProperty("line.separator")
 
   def parseLine(nextLine: String): ParserResult[String] = {
-    val (_, result) = parseLine(nextLine, None, hasOneMoreLine = false)
+    val (_, result) = parseLine(nextLine, None, MultiLine = false)
     result
   }
 
@@ -68,10 +68,10 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
    * Parses an incoming String and returns an array of elements.
    *
    * @param currentLine the string to parse
-   * @param hasOneMoreLine true if we are parsing multiple raw lines for the same CSV line
+   * @param MultiLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
    */
-  def parseLine(currentLine: String, previousPending: Option[String], hasOneMoreLine: Boolean): StateParsing[String] = {
+  def parseLine(currentLine: String, previousPending: Option[String], MultiLine: Boolean): StateParsing[String] = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -90,7 +90,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
       def isNextCharacter(char: Char*): Boolean = char.exists(currentLine(position + 1) ==)
 
     previousPending match {
-      case Some(pendingToken) if hasOneMoreLine && currentLine == null ⇒ return (None, Seq[String](pendingToken).failure)
+      case Some(pendingToken) if MultiLine && currentLine == null ⇒ return (None, Seq[String](pendingToken).failure)
       case Some(pendingToken) ⇒
         // get the pending token from the previous line parsing process
         currentToken ++= pendingToken
@@ -126,7 +126,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
     }
 
     insideQuotedField match {
-      case true if hasOneMoreLine ⇒ // in quote and the line is not finished
+      case true if MultiLine ⇒ // in quote and the line is not finished
         currentToken ++= eol
         (currentToken.toString().some, tokensOnThisLine.success)
       case true ⇒ // in quote and there is no more content to add

@@ -36,7 +36,7 @@ import java.io.File
 /**
  * These tests are related to the count of columns in a text file.
  */
-class MainTest extends Suites(TestOnSizeColumnComparator, StringTest, ColumnSizeTests, ParserTest, IteratorParser) with TestTrait {
+class MainTest extends Suites(TestOnSizeColumnComparator, StringTest, ColumnSizeTests, ParserTest, ParserIteratorTest) with TestTrait {
 
   Seq(semicolon, semicolon_with_title, tab, pipe)
     .map(fileToTest ⇒ (fileToTest.name, new File(encodedFileFolder, fileToTest.name), fileToTest.encoding))
@@ -71,5 +71,5 @@ class MainTest extends Suites(TestOnSizeColumnComparator, StringTest, ColumnSize
 
   ParserTest.test()
 
-  IteratorParser.test()
+  ParserIteratorTest.test()
 }
