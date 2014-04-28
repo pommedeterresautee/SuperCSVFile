@@ -30,7 +30,7 @@
 package com.TAJ.SuperCSVFile
 
 import java.io.File
-import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
+import com.TAJ.SuperCSVFile.Parser.{ ParserIterator, OpenCSV }
 
 /**
  * Main entry in the program.
@@ -50,19 +50,19 @@ object Main extends App {
   val argExtract = Array("--inputFile", windowsFileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  ExecuteCommandLine(args)
+  //  ExecuteCommandLine(args)
 
-  //  val eol = System.getProperty("line.separator")
-  //  val toParse = """quatrieme ligne;5252;5456;789;321;test"3
-  //                  |
-  //                  |totototot
-  //""".stripMargin.split(eol, 0).toIterator
-  //
-  //  val parser = OpenCSV(DelimiterChar = ';')
-  //  val par = ParserIterator(parser, toParse, Some(1))
-  //  val result = par.toList
-  //  //  println(result)
-  //  result.zipWithIndex.foreach {
-  //    case (line, index) ⇒ println(index + 1 + ": " + line)
-  //  }
+  val eol = System.getProperty("line.separator")
+  val toParse = """quatrieme ligne;5252;5456;789;321;test"3
+                    |
+                    |totototot
+                    |""".stripMargin.split(eol, -1).toIterator
+
+  val parser = OpenCSV(DelimiterChar = ';')
+  val par = ParserIterator(parser, toParse, Some(1))
+  val result = par.toList
+  //  println(result)
+  result.zipWithIndex.foreach {
+    case (line, index) ⇒ println(index + 1 + ": " + line)
+  }
 }

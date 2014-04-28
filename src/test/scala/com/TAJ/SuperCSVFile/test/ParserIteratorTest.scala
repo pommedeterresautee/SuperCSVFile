@@ -131,8 +131,7 @@ object ParserIteratorTest extends TestTrait {
         val result = par.toList
         val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        //TODO to reactivate
-        //        result shouldBe expected
+        result shouldBe expected
       }
     }
   }

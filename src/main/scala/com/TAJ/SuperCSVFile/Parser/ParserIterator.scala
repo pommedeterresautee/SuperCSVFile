@@ -49,11 +49,11 @@ case class ParserIterator(parser: OpenCSV, lines: Iterator[String], limit: Optio
       parser.parseLine(getNextLine, pending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
         case (_, Failure(failedLine)) ⇒
           pending = None
-          val lineParsed: Seq[String] = failedLine.head.split(eol, 0).toList
+          val lineParsed: Seq[String] = failedLine.head.split(eol, -1).toList
           result ++= Seq(lineParsed.head)
           result ++= failedLine.tail
-          LineStack ++= (lineParsed.tail)
-        case (parsedPending, Success(lineParsed: Seq[String])) if remaining == 0 ⇒
+          LineStack ++= lineParsed.tail
+        case (parsedPending, Success(lineParsed)) if remaining == 0 ⇒
           parsedPending.getOrElse("").split(eol, 0).toList match {
             case head :: tail if head == "" ⇒ result = lineParsed
             case head :: tail ⇒
@@ -61,7 +61,7 @@ case class ParserIterator(parser: OpenCSV, lines: Iterator[String], limit: Optio
               LineStack ++= tail
             case Nil ⇒ result = lineParsed
           }
-        case (parsedPending, Success(lineParsed: Seq[String])) ⇒
+        case (parsedPending, Success(lineParsed)) ⇒
           result ++= lineParsed
           pending = parsedPending
       }
@@ -70,9 +70,5 @@ case class ParserIterator(parser: OpenCSV, lines: Iterator[String], limit: Optio
     result
   }
 
-  private def getNextLine = if (LineStack.size > 0) LineStack.pop() else {
-    val res = lines.next()
-    println("next: [" + res + "]")
-    res
-  }
+  private def getNextLine = if (LineStack.size > 0) LineStack.pop() else lines.next()
 }
