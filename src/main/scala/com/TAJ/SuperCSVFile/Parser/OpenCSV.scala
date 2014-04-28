@@ -109,7 +109,7 @@ case class OpenCSV(private val DelimiterChar: Char = ',', private val QuoteChar:
           if (!ignoreCharOutsideQuotes && isNextToDelimiterChar) { // not opening or closing quoted field
             if (ignoreLeadingWhiteSpace && currentToken.toArray.forall(Character.isWhitespace))
               currentToken clear () // remove current built token if only made of spaces
-            else currentToken += char // add the text to the current token
+            //else currentToken += char // add the text to the current token
           }
           insideField = !insideField // open and close the state in quote
         case DelimiterChar if !insideQuotedField ⇒
