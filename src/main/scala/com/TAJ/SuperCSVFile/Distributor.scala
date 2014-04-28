@@ -34,7 +34,7 @@ import akka.actor._
 import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines }
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
-import com.typesafe.scalalogging.slf4j.{ LazyLogging }
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import java.util.concurrent.TimeUnit
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
@@ -80,7 +80,7 @@ trait DisplayProgress extends Progress {
       val timeUsed = System.currentTimeMillis() - startTime
       val timeRemaining = (remaining * timeUsed) / position
       val time = whatTimeIsIt(timeRemaining)
-      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${timeString(time)}))")
+      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${timeString(time)})")
     }
   }
 
