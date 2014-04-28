@@ -34,12 +34,17 @@ import scala.collection.mutable
 
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
- * @param parser
- * @param lines
- * @param limit
+ *
+ * @param DelimiterChar Delimit each field
+ * @param QuoteChar Avoid interpetration of the text inside a pair of this character
+ * @param EscapeChar Used to escape some characters
+ * @param IgnoreCharOutsideQuotes as indicated by the name
+ * @param IgnoreLeadingWhiteSpace as indicated by the name
+ * @param IterartorOfLines Iterator of string to parse
+ * @param BackParseLimit When in a quoted field, defines the number of line to look forward for the second quote.
  */
-case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true, lines: Iterator[String], limit: Option[Int] = Some(1)) extends Iterator[Seq[String]] {
-  require(limit.getOrElse(1) >= 0 && limit.getOrElse(1) < 10000, "Limit of the Iterator should be > 0 and < 10 000 for memory reasons")
+case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true, IterartorOfLines: Iterator[String], BackParseLimit: Option[Int] = Some(1)) extends Iterator[Seq[String]] {
+  require(BackParseLimit.getOrElse(1) >= 0 && BackParseLimit.getOrElse(1) < 10000, "Limit of the Iterator should be > 0 and < 10 000 for memory reasons")
 
   private val eol = System.getProperty("line.separator")
 
@@ -47,13 +52,13 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
   var LineStack: mutable.Stack[String] = mutable.Stack()
 
-  override def hasNext: Boolean = lines.hasNext || LineStack.size > 0
+  override def hasNext: Boolean = IterartorOfLines.hasNext || LineStack.size > 0
 
   override def next(): Seq[String] = {
 
-      def getNextLine = if (LineStack.size > 0) LineStack.pop() else lines.next()
+      def getNextLine = if (LineStack.size > 0) LineStack.pop() else IterartorOfLines.next()
 
-    var remaining = limit.getOrElse(1)
+    var remaining = BackParseLimit.getOrElse(1)
     var result: Seq[String] = Seq()
     var pending: Option[String] = None
     do {
@@ -76,7 +81,7 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
           result ++= lineParsed
           pending = parsedPending
       }
-      if (limit.isDefined) remaining -= 1
+      if (BackParseLimit.isDefined) remaining -= 1
     } while (pending.isDefined && hasNext && remaining >= 0) // restart if pending
     result
   }

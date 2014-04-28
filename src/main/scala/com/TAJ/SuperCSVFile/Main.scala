@@ -30,7 +30,8 @@
 package com.TAJ.SuperCSVFile
 
 import java.io.File
-import com.TAJ.SuperCSVFile.Parser.{ ParserIterator, OpenCSV }
+import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.TAJ.SuperCSVFile.CommandLine.ExecuteCommandLine
 
 /**
  * Main entry in the program.
@@ -46,23 +47,9 @@ object Main extends App {
   val windowsFileUTF8 = "C:\\Users\\MBenesty\\Private\\GIT\\SuperCSVFile\\FEC_EXAMPLE\\FEC_UTF8_TAB.txt"
   val file2UTF8 = encodedFileFolder + "utf8_file_bis.txt"
   val argUTF8 = Array("--columnSize", "--inputFile", windowsFileUTF8, "--encoding", "ISO-8859-1", "--titlesExcluded", "--firstLine", "1")
-  val arg = Array("--columnSize", file)
+  val arg = Array("--columnSize", windowsFileUTF8)
   val argExtract = Array("--inputFile", windowsFileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  //  ExecuteCommandLine(args)
-
-  val eol = System.getProperty("line.separator")
-  val toParse = """quatrieme ligne;5252;5456;789;321;test"3
-                    |
-                    |totototot
-                    |""".stripMargin.split(eol, -1).toIterator
-
-  val parser = OpenCSV()
-  val par = ParserIterator(DelimiterChar = ';', lines = toParse, limit = Some(1))
-  val result = par.toList
-  //  println(result)
-  result.zipWithIndex.foreach {
-    case (line, index) ⇒ println(index + 1 + ": " + line)
-  }
+  ExecuteCommandLine(argUTF8)
 }
