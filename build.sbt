@@ -36,7 +36,6 @@ scalacOptions ++= Seq(
   "-Ywarn-inaccessible",
   "-Ywarn-nullary-unit",
   "-Ywarn-nullary-override",
-  "-Ywarn-numeric-widen",
   "-Ywarn-value-discard"
 )
 
