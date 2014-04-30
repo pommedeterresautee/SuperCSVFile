@@ -51,14 +51,6 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
   val eol = System.getProperty("line.separator")
 
-  //  def parseLine(nextLine: String): Seq[String] = {
-  //    parseLine(nextLine, None, MultiLine = false) match {
-  //      case FailedParse(result)     ⇒ result
-  //      case SuccessParse(result)    ⇒ result
-  //      case PendingParse(_, result) ⇒ result
-  //    }
-  //  }
-
   /**
    * Parses an incoming String and returns an array of elements.
    *

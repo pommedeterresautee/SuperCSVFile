@@ -32,7 +32,7 @@ package com.TAJ.SuperCSVFile.Parser
 object ParserType {
 
   sealed abstract class ParserState(ParsedLine: Seq[String]) {
-    def get = ParsedLine
+    def getValue = ParsedLine
   }
   case class SuccessParse(ParsedLine: Seq[String]) extends ParserState(ParsedLine)
   case class FailedParse(ParsedLine: Seq[String]) extends ParserState(ParsedLine)
