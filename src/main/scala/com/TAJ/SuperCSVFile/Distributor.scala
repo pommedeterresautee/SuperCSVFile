@@ -35,7 +35,7 @@ import com.TAJ.SuperCSVFile.ActorMessages.{ JobFinished, RequestMoreWork, Lines 
 import akka.routing.Broadcast
 import java.io.{ FileInputStream, File }
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import java.util.concurrent.TimeUnit
+import org.joda.time.format.DateTimeFormat
 
 case class ActorContainer(actor: ActorRef, isRooter: Boolean)
 
@@ -68,9 +68,9 @@ trait Progress {
 }
 
 trait DisplayProgress extends Progress {
-  private case class TimeContainer(hours: Long, minutes: Long, seconds: Long)
   private var precedentPercentage = 0
   private val startTime = System.currentTimeMillis()
+  private val timeFormat = DateTimeFormat.forPattern("mm:ss")
 
   override def displayProgress(position: Long, fileSize: Long) {
     val currentPercent = (position * 100 / fileSize).toInt
@@ -79,30 +79,14 @@ trait DisplayProgress extends Progress {
       val remaining = fileSize - position
       val timeUsed = System.currentTimeMillis() - startTime
       val timeRemaining = (remaining * timeUsed) / position
-      val time = whatTimeIsIt(timeRemaining)
-      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${timeString(time)})")
+      print(s"\r[${"*" * (currentPercent / 5)}${" " * (20 - (currentPercent / 5))}] $currentPercent% (${timeFormat.print(timeRemaining)})")
     }
   }
 
   override def newLine() = print("\r")
   override def timeToReadFile() {
     val diff = System.currentTimeMillis() - startTime
-    val time = whatTimeIsIt(diff)
-    println(s"The file has been read in ${timeString(time)}")
-  }
-
-  private def timeString(time: TimeContainer): String = {
-    s"${time.hours}h ${time.minutes}m ${time.seconds}s"
-  }
-
-  private def whatTimeIsIt(timeDiff: Long): TimeContainer = {
-    var diff = timeDiff
-    val hours = TimeUnit.MILLISECONDS.toHours(diff)
-    diff = diff - (hours * 60 * 60 * 1000)
-    val min = TimeUnit.MILLISECONDS.toMinutes(diff)
-    diff = diff - (min * 60 * 1000)
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(diff)
-    TimeContainer(hours, min, seconds)
+    println(s"The file has been read in ${timeFormat.print(diff)}")
   }
 }
 
@@ -135,17 +119,14 @@ trait ComponentDistributor {
       }
     }
     val mLimitedIterator =
-      limitOfLinesRead
-        .map(
-          limit ⇒ mIterator
-            .zipWithIndex
-            .takeWhile {
-              case (read, index) ⇒ index <= limit
-            }
-            .map {
-              case (read, index) ⇒ read
-            })
-        .getOrElse(mIterator)
+      limitOfLinesRead.fold(mIterator)(limit ⇒ mIterator
+        .zipWithIndex
+        .takeWhile {
+          case (read, index) ⇒ index <= limit
+        }
+        .map {
+          case (read, index) ⇒ read
+        })
     val mSource = mLimitedIterator.grouped(numberOfLinesPerMessage).zipWithIndex
     var operationFinished = false
     var notFinishedWork = 1 // count the number of actors which are awaiting for more work. Start with one because we send RequestMoreWork() in the start case (count for one).

@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.rogach" %% "scallop" % "0.9.5",
   "net.sf.opencsv" % "opencsv" % "2.3",
+  "com.github.nscala-time" %% "nscala-time" % "1.0.0",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
   "org.scalatest" %% "scalatest" % "2.1.4" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
