@@ -106,7 +106,7 @@ object ExecuteCommandLine extends LazyLogging {
     actionColumnSize match {
       case Some(true) ⇒
         val lines = Source.fromFile(path, encoding).getLines()
-        val titles = if (includeTitles && lines.hasNext) OpenCSV(DelimiterChar = splitter).parseLine(lines.next()).getOrElse(Seq()).toList.some else None
+        val titles = if (includeTitles && lines.hasNext) OpenCSV(DelimiterChar = splitter).parseLine(lines.next()).toList.some else None
         val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
         listOfWorkers += computer
         reaper ! RegisterMe(computer.actor)

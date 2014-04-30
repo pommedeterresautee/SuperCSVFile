@@ -30,7 +30,9 @@
 package com.TAJ.SuperCSVFile.Parser
 
 import scalaz._
+import Scalaz._
 import scala.collection.mutable
+import com.TAJ.SuperCSVFile.Parser.ParserType._
 
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
@@ -60,29 +62,32 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
     var remaining = BackParseLimit.getOrElse(1)
     var result: Seq[String] = Seq()
-    var pending: Option[String] = None
+    var CurrentPending: Option[String] = None
     do {
-      parser.parseLine(getNextLine, pending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
-        case (_, Failure(failedLine)) ⇒
-          pending = None
+      parser.parseLine(getNextLine, CurrentPending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+        case FailedParse(failedLine) ⇒
+          CurrentPending = None
           val lineParsed: Seq[String] = failedLine.head.split(eol, -1).toList
           result ++= Seq(lineParsed.head)
           result ++= failedLine.tail
           LineStack ++= lineParsed.tail
-        case (parsedPending, Success(lineParsed)) if remaining == 0 ⇒
-          parsedPending.getOrElse("").split(eol, -1).toList match {
+        case SuccessParse(lineParsed) ⇒
+          CurrentPending = None
+          result = lineParsed
+        case PendingParse(parsedPending, lineParsed) if remaining == 0 ⇒
+          parsedPending.split(eol, -1).toList match {
             case head :: tail if head == "" ⇒ result = lineParsed
             case head :: tail ⇒
               result = lineParsed :+ head
               LineStack ++= tail
             case Nil ⇒ result = lineParsed
           }
-        case (parsedPending, Success(lineParsed)) ⇒
+        case PendingParse(parsedPending, lineParsed) ⇒
           result ++= lineParsed
-          pending = parsedPending
+          CurrentPending = parsedPending.some
       }
       if (BackParseLimit.isDefined) remaining -= 1
-    } while (pending.isDefined && hasNext && remaining >= 0) // restart if pending
+    } while (CurrentPending.isDefined && hasNext && remaining >= 0) // restart if pending
     result
   }
 }

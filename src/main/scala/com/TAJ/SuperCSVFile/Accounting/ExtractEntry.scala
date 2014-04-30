@@ -50,7 +50,6 @@ class ExtractEntry(positions: EntryFieldPositions, splitter: Char) extends Actor
       val parser = OpenCSV(DelimiterChar = splitter)
       val entry: Seq[AccountEntry] = lines
         .map(parser.parseLine)
-        .map(_.getOrElse(Seq()))
         .map(new AccountEntry(_, positions))
       println(s"received ${entry.size}")
       sender ! RequestMoreWork() // Ask for the next line

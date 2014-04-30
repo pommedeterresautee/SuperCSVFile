@@ -31,13 +31,7 @@ package com.TAJ.SuperCSVFile.Parser
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
-import scalaz._
-import Scalaz._
-import com.TAJ.SuperCSVFile.Parser.ParserType.{ StateParsing, ParserResult }
-
-sealed trait CSVParser
-case class Pending(result: ParserResult[String], pendingLine: String) extends CSVParser
-case class Parsed(result: ParserResult[String]) extends CSVParser
+import com.TAJ.SuperCSVFile.Parser.ParserType._
 
 /**
  * This block of code is inspired from OpenCSV library.
@@ -57,9 +51,12 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
   val eol = System.getProperty("line.separator")
 
-  def parseLine(nextLine: String): ParserResult[String] = {
-    val (_, result) = parseLine(nextLine, None, MultiLine = false)
-    result
+  def parseLine(nextLine: String): Seq[String] = {
+    parseLine(nextLine, None, MultiLine = false) match {
+      case FailedParse(result)     ⇒ result
+      case SuccessParse(result)    ⇒ result
+      case PendingParse(_, result) ⇒ result
+    }
   }
 
   /**
@@ -69,7 +66,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
    * @param MultiLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
    */
-  def parseLine(currentLine: String, previousPending: Option[String], MultiLine: Boolean): StateParsing[String] = {
+  def parseLine(currentLine: String, previousPending: Option[String], MultiLine: Boolean): ParserState = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -88,7 +85,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
       def isNextCharacter(char: Char*): Boolean = char.exists(currentLine(position + 1) ==)
 
     previousPending match {
-      case Some(pendingToken) if MultiLine && currentLine == null ⇒ return (None, Seq[String](pendingToken).failure)
+      case Some(pendingToken) if MultiLine && currentLine == null ⇒ return FailedParse(Seq[String](pendingToken))
       case Some(pendingToken) ⇒
         // get the pending token from the previous line parsing process
         currentToken ++= pendingToken
@@ -124,13 +121,13 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
     insideQuotedField match {
       case true if MultiLine ⇒ // in quote and the line is not finished
         currentToken ++= eol
-        (currentToken.toString().some, tokensOnThisLine.success)
+        PendingParse(currentToken.toString(), tokensOnThisLine)
       case true ⇒ // in quote and there is no more content to add
         tokensOnThisLine += currentToken.toString()
-        (None, tokensOnThisLine.failure)
+        FailedParse(tokensOnThisLine)
       case false ⇒ // not in quoted field
         tokensOnThisLine += currentToken.toString()
-        (None, tokensOnThisLine.success)
+        SuccessParse(tokensOnThisLine)
     }
   }
 }
