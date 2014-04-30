@@ -97,7 +97,7 @@ trait SizeComputation extends LazyLogging {
   def mGetBestFitSize(listToAnalyze: Seq[String]): Seq[Int] = {
     val (correctSizeLines, _) =
       listToAnalyze
-        .map(parser.parseLine)
+        .map(parser.parseLine(_).get)
         .zipWithIndex
         .partition { case (line, index) ⇒ line.size == mColumnQuantity }
 

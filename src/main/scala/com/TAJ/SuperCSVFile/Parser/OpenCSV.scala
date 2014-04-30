@@ -51,13 +51,13 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
   val eol = System.getProperty("line.separator")
 
-  def parseLine(nextLine: String): Seq[String] = {
-    parseLine(nextLine, None, MultiLine = false) match {
-      case FailedParse(result)     ⇒ result
-      case SuccessParse(result)    ⇒ result
-      case PendingParse(_, result) ⇒ result
-    }
-  }
+  //  def parseLine(nextLine: String): Seq[String] = {
+  //    parseLine(nextLine, None, MultiLine = false) match {
+  //      case FailedParse(result)     ⇒ result
+  //      case SuccessParse(result)    ⇒ result
+  //      case PendingParse(_, result) ⇒ result
+  //    }
+  //  }
 
   /**
    * Parses an incoming String and returns an array of elements.
@@ -66,7 +66,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
    * @param MultiLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
    */
-  def parseLine(currentLine: String, previousPending: Option[String], MultiLine: Boolean): ParserState = {
+  def parseLine(currentLine: String, previousPending: Option[String] = None, MultiLine: Boolean = false): ParserState = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
