@@ -68,9 +68,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
       def isThereMoreChar: Boolean = currentLine.length > (position + 1)
 
-      def isTherePreviousChar: Boolean = position > 2
-
-      def isNextToDelimiterChar: Boolean = isTherePreviousChar && currentLine(position - 1) != DelimiterChar && isThereMoreChar && currentLine(position + 1) != DelimiterChar
+      def isNextToDelimiterChar: Boolean = position > 0 && currentLine(position - 1) != DelimiterChar && isThereMoreChar && currentLine(position + 1) != DelimiterChar
 
       def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
