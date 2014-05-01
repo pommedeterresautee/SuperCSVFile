@@ -72,22 +72,19 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
       def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
 
-      def isNextCharacter(char: Char*): Boolean = char.exists(currentLine(position + 1) ==)
-
     previousPending match {
-      case Some(pendingToken) if MultiLine && currentLine == null ⇒ return FailedParse(Seq[String](pendingToken))
       case Some(pendingToken) ⇒
         // get the pending token from the previous line parsing process
         currentToken ++= pendingToken
         insideQuotedField = true
       // current line is empty, get the pending token (may be end of file?)
-      case _ ⇒
+      case None ⇒
     }
 
     while (position < currentLine.length) {
       val char = currentLine(position)
       char match {
-        case QuoteChar if !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && isNextCharacter(QuoteChar) ⇒ // the next char is a quote, so it is a double quote
+        case QuoteChar if !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && currentLine(position + 1) == QuoteChar ⇒ // the next char is a quote, so it is a double quote
           previousCharWasQuoteChar = true
         case QuoteChar if !previousCharWasQuoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField

@@ -65,12 +65,12 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
       @tailrec
       def parse(result: Seq[String]): Seq[String] = {
-        val currentresult = parser.parseLine(getNextLine, CurrentPending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
-          case FailedParse(failedLine) ⇒
+        val currentResult: Seq[String] = parser.parseLine(getNextLine, CurrentPending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+          case FailedParse(failedMultipleLine) ⇒
             CurrentPending = None
-            val lineParsed: Seq[String] = failedLine.head.split(eol, -1).toList
+            val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
             LineStack ++= lineParsed.tail
-            result ++ Seq(lineParsed.head) ++ failedLine.tail
+            (result :+ lineParsed.head) ++ failedMultipleLine.tail
           case SuccessParse(lineParsed) ⇒
             CurrentPending = None
             lineParsed
@@ -87,10 +87,8 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
         }
         if (BackParseLimit.isDefined) remaining -= 1
 
-        if (CurrentPending.isDefined && hasNext && remaining >= 0) {
-          parse(currentresult)
-        }
-        else currentresult
+        if (CurrentPending.isDefined && hasNext && remaining >= 0) parse(currentResult)
+        else currentResult
       }
 
     parse(Seq())
