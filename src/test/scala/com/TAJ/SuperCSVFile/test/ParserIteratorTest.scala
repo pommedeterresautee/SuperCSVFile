@@ -31,11 +31,11 @@ package com.TAJ.SuperCSVFile.test
 
 import com.TAJ.SuperCSVFile.Parser.ParserIterator
 import scala.collection.mutable.ArrayBuffer
-import com.TAJ.SuperCSVFile.Parser.ParserType.ParserState
+import com.TAJ.SuperCSVFile.Parser.ParserType.ParserValidation
 
 object ParserIteratorTest extends TestTrait {
 
-  def removeSuccessFail(list: Seq[ParserState]) = list.map(_.ParsedLine)
+  def removeSuccessFail(list: Seq[ParserValidation]) = list.map(_.ParsedLine)
 
   def test(): Unit = {
     val eol = System.getProperty("line.separator")
@@ -57,7 +57,7 @@ object ParserIteratorTest extends TestTrait {
                         |encore;deux;etTrois
                         |fmklsgnal;fnghka""".stripMargin), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = None)
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
         removeSuccessFail(result) shouldBe expected
       }
@@ -75,7 +75,7 @@ object ParserIteratorTest extends TestTrait {
 
         val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = None)
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
 
         removeSuccessFail(result) shouldBe expected
@@ -91,7 +91,7 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = None)
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
 
         val expected = List(List("test", "test2"), ArrayBuffer("""seconde ligne
@@ -110,7 +110,7 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = None)
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
         val expected = List(List("test", "test2"), ArrayBuffer("seconde ligne"), List("troisieme ligne"), ArrayBuffer("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
@@ -127,7 +127,7 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = Some(3))
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(3))
         val result = par.toList
         val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
@@ -137,7 +137,7 @@ object ParserIteratorTest extends TestTrait {
       "with one quote in a single line" in {
         val toParse = Seq("test;tes\"t2;test3").toIterator
 
-        val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = Some(3))
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(3))
         val result = par.toList
         val expected = List(List("test", "test2;test3"))
 

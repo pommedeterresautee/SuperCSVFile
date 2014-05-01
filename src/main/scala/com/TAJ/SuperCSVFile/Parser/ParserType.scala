@@ -29,9 +29,14 @@
 
 package com.TAJ.SuperCSVFile.Parser
 
+import scala.collection.mutable
+
 object ParserType {
 
-  sealed trait ParserState {
+  type StringStack = mutable.Stack[String]
+  type ParserState = (Iterator[String], StringStack)
+
+  sealed trait ParserValidation {
     val ParsedLine: Seq[String]
     val isSuccess: Boolean
     val isFail: Boolean
@@ -39,21 +44,21 @@ object ParserType {
     val PendingParsing: Option[String]
   }
 
-  case class SuccessParse(ParsedLine: Seq[String]) extends ParserState {
+  case class SuccessParsing(ParsedLine: Seq[String]) extends ParserValidation {
     val isSuccess = true
     val isFail = false
     val isPending = false
     val PendingParsing = None
   }
 
-  case class FailedParse(ParsedLine: Seq[String]) extends ParserState {
+  case class FailedParsing(ParsedLine: Seq[String]) extends ParserValidation {
     val isSuccess = false
     val isFail = true
     val isPending = false
     val PendingParsing = None
   }
 
-  case class PendingParse(CurrentToken: String, ParsedLine: Seq[String]) extends ParserState {
+  case class PendingParsing(CurrentToken: String, ParsedLine: Seq[String]) extends ParserValidation {
     val isSuccess = false
     val isFail = false
     val isPending = true
