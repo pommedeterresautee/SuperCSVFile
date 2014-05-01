@@ -33,6 +33,9 @@ import scala.collection.mutable
 import com.TAJ.SuperCSVFile.Parser.ParserType._
 import scala.annotation.tailrec
 
+import scalaz._
+import Scalaz._
+
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
  *
@@ -53,36 +56,40 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
   var LineStack: mutable.Stack[String] = mutable.Stack()
 
+  val decreaseUnit = Some(1)
+
   override def hasNext: Boolean = IterartorOfLines.hasNext || LineStack.size > 0
 
   override def next(): ParserState = {
-    var remaining = BackParseLimit.getOrElse(1)
-
-      def getNextLine = if (LineStack.size > 0) LineStack.pop() else IterartorOfLines.next()
 
       @tailrec
-      def parse(result: ParserState): ParserState = {
-        val currentResult: ParserState = parser.parseLine(getNextLine, result.PendingParsing, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+      def parse(result: ParserState, remaining: Option[Int]): ParserState = {
+        val nextLine = if (LineStack.size > 0) LineStack.pop() else IterartorOfLines.next()
+        val currentResult: ParserState = parser.parseLine(nextLine, result.PendingParsing, hasNext && !remaining.exists(_ < 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
           case FailedParse(failedMultipleLine) ⇒
             val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
             LineStack ++= lineParsed.tail
             FailedParse((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail)
           case line: SuccessParse ⇒ line
-          case PendingParse(parsedPending, lineParsed) if remaining == 0 ⇒
+          case PendingParse(parsedPending, lineParsed) if remaining contains 0 ⇒
             parsedPending.split(eol, -1).toList match {
               case head :: tail ⇒
                 LineStack ++= tail
                 FailedParse(lineParsed :+ head)
               case Nil ⇒ SuccessParse(lineParsed)
             }
-          case PendingParse(parsedPending, lineParsed) ⇒
-            PendingParse(parsedPending, result.ParsedLine ++ lineParsed)
+          case PendingParse(parsedPending, lineParsed) ⇒ PendingParse(parsedPending, result.ParsedLine ++ lineParsed)
         }
-        if (BackParseLimit.isDefined) remaining -= 1
 
-        if (currentResult.isPending && hasNext && remaining >= 0) parse(currentResult)
+        val newRemaining = (BackParseLimit |@| decreaseUnit) { _ - _ }
+
+        if (currentResult.isPending && hasNext && !newRemaining.exists(_ < 0)) parse(currentResult, newRemaining)
         else currentResult
       }
-    parse(SuccessParse(Seq()))
+    parse(SuccessParse(Seq()), BackParseLimit)
+  }
+
+  def something() = {
+    State { i: Int ⇒ (i, i) }
   }
 }
