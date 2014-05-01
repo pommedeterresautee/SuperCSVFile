@@ -29,8 +29,6 @@
 
 package com.TAJ.SuperCSVFile.Parser
 
-import scalaz._
-import Scalaz._
 import scala.collection.mutable
 import com.TAJ.SuperCSVFile.Parser.ParserType._
 import scala.annotation.tailrec
@@ -59,20 +57,17 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
   override def next(): ParserState = {
     var remaining = BackParseLimit.getOrElse(1)
-    var CurrentPending: Option[String] = None
 
       def getNextLine = if (LineStack.size > 0) LineStack.pop() else IterartorOfLines.next()
 
       @tailrec
       def parse(result: ParserState): ParserState = {
-        val currentResult: ParserState = parser.parseLine(getNextLine, CurrentPending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+        val currentResult: ParserState = parser.parseLine(getNextLine, result.PendingParsing, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
           case FailedParse(failedMultipleLine) ⇒
-            CurrentPending = None
             val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
             LineStack ++= lineParsed.tail
-            FailedParse((result.getValue :+ lineParsed.head) ++ failedMultipleLine.tail)
+            FailedParse((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail)
           case SuccessParse(lineParsed) ⇒
-            CurrentPending = None
             SuccessParse(lineParsed)
           case PendingParse(parsedPending, lineParsed) if remaining == 0 ⇒
             parsedPending.split(eol, -1).toList match {
@@ -82,15 +77,14 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
               case Nil ⇒ SuccessParse(lineParsed)
             }
           case PendingParse(parsedPending, lineParsed) ⇒
-            CurrentPending = parsedPending.some
-            PendingParse("", result.getValue ++ lineParsed)
+            PendingParse(parsedPending, result.ParsedLine ++ lineParsed)
         }
         if (BackParseLimit.isDefined) remaining -= 1
 
-        if (CurrentPending.isDefined && hasNext && remaining >= 0) parse(currentResult)
+        if (currentResult.isPending && hasNext && remaining >= 0) parse(currentResult)
         else currentResult
       }
 
-    parse(PendingParse("", Seq()))
+    parse(SuccessParse(Seq()))
   }
 }

@@ -109,7 +109,7 @@ object FileTools extends LazyLogging {
       .getLines()
       .take(1000)
       .toList
-      .groupBy(parser.parseLine(_).getValue.size)
+      .groupBy(parser.parseLine(_).ParsedLine.size)
       .map {
         case (numberOfTimes, listOfColumns) ⇒ (numberOfTimes, listOfColumns.size)
       }

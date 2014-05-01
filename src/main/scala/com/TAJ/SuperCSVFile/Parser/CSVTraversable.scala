@@ -38,7 +38,7 @@ case class CSVTraversable(filePath: String, delimiterChar: Char = ',', quoteChar
   override def foreach[U](f: (Seq[String]) ⇒ U): Unit = {
 
     while (source.hasNext) {
-      f(parser.parseLine(source.next()).getValue)
+      f(parser.parseLine(source.next()).ParsedLine)
     }
   }
 }

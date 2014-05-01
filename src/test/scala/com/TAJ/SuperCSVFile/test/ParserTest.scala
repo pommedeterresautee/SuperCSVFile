@@ -59,7 +59,7 @@ object ParserTest extends TestTrait {
         val quotedLine =
           """test1;test2;"test3;
             |test3"""".stripMargin
-        val parsedWithQuotes = OpenCSV(DelimiterChar = ';').parseLine(quotedLine).getValue
+        val parsedWithQuotes = OpenCSV(DelimiterChar = ';').parseLine(quotedLine).ParsedLine
         parsedWithQuotes zip List("test1", "test2",
           """test3;
             |test3""".stripMargin) foreach {
@@ -92,7 +92,7 @@ object ParserTest extends TestTrait {
           Seq("Joan \"the bone\", Anne", "Jet", "9th, at Terrace plc", "Desert City", "CO", "00123")
         ).flatMap(l ⇒ l)
 
-        val parsed = text.flatMap(OpenCSV(DelimiterChar = ',').parseLine(_).getValue)
+        val parsed = text.flatMap(OpenCSV(DelimiterChar = ',').parseLine(_).ParsedLine)
         withClue(s"The parsed list is:\n${parsed.mkString(";")} instead of:\n${result.mkString(";")}") {
           parsed zip result foreach {
             case (computed, solution) ⇒

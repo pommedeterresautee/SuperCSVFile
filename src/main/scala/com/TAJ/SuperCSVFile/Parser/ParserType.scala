@@ -33,27 +33,30 @@ object ParserType {
 
   sealed trait ParserState {
     val ParsedLine: Seq[String]
-    val isSuccess:Boolean
-    val isFail:Boolean
-    val isPending:Boolean
-    def getValue = ParsedLine
+    val isSuccess: Boolean
+    val isFail: Boolean
+    val isPending: Boolean
+    val PendingParsing: Option[String]
   }
 
   case class SuccessParse(ParsedLine: Seq[String]) extends ParserState {
     val isSuccess = true
     val isFail = false
     val isPending = false
+    val PendingParsing = None
   }
 
-  case class FailedParse(ParsedLine: Seq[String]) extends ParserState{
+  case class FailedParse(ParsedLine: Seq[String]) extends ParserState {
     val isSuccess = false
     val isFail = true
     val isPending = false
+    val PendingParsing = None
   }
 
-  case class PendingParse(CurrentToken: String, ParsedLine: Seq[String]) extends ParserState{
+  case class PendingParse(CurrentToken: String, ParsedLine: Seq[String]) extends ParserState {
     val isSuccess = false
     val isFail = false
     val isPending = true
+    val PendingParsing = Some(CurrentToken)
   }
 }
