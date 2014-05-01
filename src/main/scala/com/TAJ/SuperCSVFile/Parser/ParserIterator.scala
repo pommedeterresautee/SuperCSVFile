@@ -33,6 +33,7 @@ import scalaz._
 import Scalaz._
 import scala.collection.mutable
 import com.TAJ.SuperCSVFile.Parser.ParserType._
+import scala.annotation.tailrec
 
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
@@ -57,37 +58,41 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
   override def hasNext: Boolean = IterartorOfLines.hasNext || LineStack.size > 0
 
   override def next(): Seq[String] = {
+    var remaining = BackParseLimit.getOrElse(1)
+    var CurrentPending: Option[String] = None
 
       def getNextLine = if (LineStack.size > 0) LineStack.pop() else IterartorOfLines.next()
 
-    var remaining = BackParseLimit.getOrElse(1)
-    var result: Seq[String] = Seq()
-    var CurrentPending: Option[String] = None
-    do {
-      parser.parseLine(getNextLine, CurrentPending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
-        case FailedParse(failedLine) ⇒
-          CurrentPending = None
-          val lineParsed: Seq[String] = failedLine.head.split(eol, -1).toList
-          result ++= Seq(lineParsed.head)
-          result ++= failedLine.tail
-          LineStack ++= lineParsed.tail
-        case SuccessParse(lineParsed) ⇒
-          CurrentPending = None
-          result = lineParsed
-        case PendingParse(parsedPending, lineParsed) if remaining == 0 ⇒
-          parsedPending.split(eol, -1).toList match {
-            case head :: tail if head == "" ⇒ result = lineParsed
-            case head :: tail ⇒
-              result = lineParsed :+ head
-              LineStack ++= tail
-            case Nil ⇒ result = lineParsed
-          }
-        case PendingParse(parsedPending, lineParsed) ⇒
-          result ++= lineParsed
-          CurrentPending = parsedPending.some
+      @tailrec
+      def parse(result: Seq[String]): Seq[String] = {
+        val currentresult = parser.parseLine(getNextLine, CurrentPending, hasNext && remaining > 0 /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+          case FailedParse(failedLine) ⇒
+            CurrentPending = None
+            val lineParsed: Seq[String] = failedLine.head.split(eol, -1).toList
+            LineStack ++= lineParsed.tail
+            result ++ Seq(lineParsed.head) ++ failedLine.tail
+          case SuccessParse(lineParsed) ⇒
+            CurrentPending = None
+            lineParsed
+          case PendingParse(parsedPending, lineParsed) if remaining == 0 ⇒
+            parsedPending.split(eol, -1).toList match {
+              case head :: tail ⇒
+                LineStack ++= tail
+                lineParsed :+ head
+              case Nil ⇒ lineParsed
+            }
+          case PendingParse(parsedPending, lineParsed) ⇒
+            CurrentPending = parsedPending.some
+            result ++ lineParsed
+        }
+        if (BackParseLimit.isDefined) remaining -= 1
+
+        if (CurrentPending.isDefined && hasNext && remaining >= 0) {
+          parse(currentresult)
+        }
+        else currentresult
       }
-      if (BackParseLimit.isDefined) remaining -= 1
-    } while (CurrentPending.isDefined && hasNext && remaining >= 0) // restart if pending
-    result
+
+    parse(Seq())
   }
 }
