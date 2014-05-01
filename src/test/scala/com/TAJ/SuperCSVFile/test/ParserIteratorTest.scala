@@ -31,8 +31,12 @@ package com.TAJ.SuperCSVFile.test
 
 import com.TAJ.SuperCSVFile.Parser.ParserIterator
 import scala.collection.mutable.ArrayBuffer
+import com.TAJ.SuperCSVFile.Parser.ParserType.ParserState
 
 object ParserIteratorTest extends TestTrait {
+
+  def removeSuccessFail(list: Seq[ParserState]) = list.map(_.getValue)
+
   def test(): Unit = {
     val eol = System.getProperty("line.separator")
     "Test the iterator parser with" should {
@@ -55,7 +59,7 @@ object ParserIteratorTest extends TestTrait {
 
         val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
-        result shouldBe expected
+        removeSuccessFail(result) shouldBe expected
       }
 
       "with a not correctly built multiline entry without back parsing" in {
@@ -74,7 +78,7 @@ object ParserIteratorTest extends TestTrait {
         val par = ParserIterator(DelimiterChar = ';', IterartorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
 
-        result shouldBe expected
+        removeSuccessFail(result) shouldBe expected
       }
 
       "with a not correctly built multiline entry and a limit in back parsing not reached" in {
@@ -93,7 +97,7 @@ object ParserIteratorTest extends TestTrait {
         val expected = List(List("test", "test2"), ArrayBuffer("""seconde ligne
           |troisieme ligne""".stripMargin), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        result shouldBe expected
+        removeSuccessFail(result) shouldBe expected
       }
 
       "with a correctly built multiline entry and a limit in back parsing which is reached" in {
@@ -110,7 +114,7 @@ object ParserIteratorTest extends TestTrait {
         val result = par.toList
         val expected = List(List("test", "test2"), ArrayBuffer("seconde ligne"), List("troisieme ligne"), ArrayBuffer("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        result shouldBe expected
+        removeSuccessFail(result) shouldBe expected
       }
 
       "with one quote in a field and a limit in back parsing which is reached" in {
@@ -127,7 +131,7 @@ object ParserIteratorTest extends TestTrait {
         val result = par.toList
         val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
 
-        result shouldBe expected
+        removeSuccessFail(result) shouldBe expected
       }
 
       "with one quote in a single line" in {
@@ -137,7 +141,7 @@ object ParserIteratorTest extends TestTrait {
         val result = par.toList
         val expected = List(List("test", "test2;test3"))
 
-        result shouldBe expected
+        removeSuccessFail(result) shouldBe expected
       }
     }
   }

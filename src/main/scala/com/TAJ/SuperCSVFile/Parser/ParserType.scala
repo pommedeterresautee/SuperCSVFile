@@ -31,10 +31,29 @@ package com.TAJ.SuperCSVFile.Parser
 
 object ParserType {
 
-  sealed abstract class ParserState(ParsedLine: Seq[String]) {
+  sealed trait ParserState {
+    val ParsedLine: Seq[String]
+    val isSuccess:Boolean
+    val isFail:Boolean
+    val isPending:Boolean
     def getValue = ParsedLine
   }
-  case class SuccessParse(ParsedLine: Seq[String]) extends ParserState(ParsedLine)
-  case class FailedParse(ParsedLine: Seq[String]) extends ParserState(ParsedLine)
-  case class PendingParse(CurrentToken: String, ParsedLine: Seq[String]) extends ParserState(ParsedLine)
+
+  case class SuccessParse(ParsedLine: Seq[String]) extends ParserState {
+    val isSuccess = true
+    val isFail = false
+    val isPending = false
+  }
+
+  case class FailedParse(ParsedLine: Seq[String]) extends ParserState{
+    val isSuccess = false
+    val isFail = true
+    val isPending = false
+  }
+
+  case class PendingParse(CurrentToken: String, ParsedLine: Seq[String]) extends ParserState{
+    val isSuccess = false
+    val isFail = false
+    val isPending = true
+  }
 }
