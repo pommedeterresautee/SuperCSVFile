@@ -67,8 +67,7 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
             val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
             LineStack ++= lineParsed.tail
             FailedParse((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail)
-          case SuccessParse(lineParsed) ⇒
-            SuccessParse(lineParsed)
+          case line: SuccessParse ⇒ line
           case PendingParse(parsedPending, lineParsed) if remaining == 0 ⇒
             parsedPending.split(eol, -1).toList match {
               case head :: tail ⇒
@@ -84,7 +83,6 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
         if (currentResult.isPending && hasNext && remaining >= 0) parse(currentResult)
         else currentResult
       }
-
     parse(SuccessParse(Seq()))
   }
 }
