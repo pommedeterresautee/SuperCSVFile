@@ -33,9 +33,6 @@ import scala.collection.mutable
 import com.TAJ.SuperCSVFile.Parser.ParserType._
 import scala.annotation.tailrec
 
-import scalaz._
-import Scalaz._
-
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
  *
@@ -53,8 +50,6 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
   private val eol = System.getProperty("line.separator")
 
   private val parser = OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace)
-
-  val decreaseUnit = Some(1)
 
   var LineStack: StringStack = mutable.Stack()
 
@@ -78,8 +73,7 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
         }
       case PendingParsing(parsedPending, lineParsed) ⇒ PendingParsing(parsedPending, result.ParsedLine ++ lineParsed)
     }
-
-    val newRemaining = (BackParseLimit |@| decreaseUnit) { _ - _ }
+    val newRemaining = BackParseLimit.map(_ - 1)
 
     if (currentResult.isPending && hasNext && !newRemaining.exists(_ < 0)) parse(currentResult, newRemaining)
     else currentResult
