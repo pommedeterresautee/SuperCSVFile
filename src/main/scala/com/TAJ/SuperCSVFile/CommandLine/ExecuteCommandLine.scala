@@ -95,38 +95,30 @@ object ExecuteCommandLine extends LazyLogging {
       case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
     }
 
-    linesCount match {
-      case Some(true) ⇒
-        val actor = LineCounterActor(outputLinesCount)
-        listOfWorkers += actor
-        reaper ! RegisterMe(actor.actor)
-      case _ ⇒
+    linesCount.filter(identity) foreach { _ ⇒
+      val actor = LineCounterActor(outputLinesCount)
+      listOfWorkers += actor
+      reaper ! RegisterMe(actor.actor)
     }
 
-    actionColumnSize match {
-      case Some(true) ⇒
-        val lines = Source.fromFile(path, encoding).getLines()
-        val titles = if (includeTitles && lines.hasNext) OpenCSV(DelimiterChar = splitter).parseLine(lines.next()).ParsedLine.toList.some else None
-        val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
-        listOfWorkers += computer
-        reaper ! RegisterMe(computer.actor)
-        reaper ! RegisterMe(resultAccumulator)
-        reaper ! RegisterMe(finalResult)
-      case _ ⇒
+    actionColumnSize.filter(identity) foreach { _ ⇒
+      val lines = Source.fromFile(path, encoding).getLines()
+      val titles = if (includeTitles && lines.hasNext) OpenCSV(DelimiterChar = splitter).parseLine(lines.next()).ParsedLine.toList.some else None
+      val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
+      listOfWorkers += computer
+      reaper ! RegisterMe(computer.actor)
+      reaper ! RegisterMe(resultAccumulator)
+      reaper ! RegisterMe(finalResult)
+
     }
 
-    actionExtract match {
-      case Some(true) ⇒
-        val actor = LineExtractorActor(outputExtract)
-        listOfWorkers += actor
-        reaper ! RegisterMe(actor.actor)
-      case _ ⇒
+    actionExtract.filter(identity) foreach { _ ⇒
+      val actor = LineExtractorActor(outputExtract)
+      listOfWorkers += actor
+      reaper ! RegisterMe(actor.actor)
     }
 
-    outputDelimiter match {
-      case Some(outputDelimiterPath) ⇒ scala.reflect.io.File(outputDelimiterPath).writeAll(splitter.toString)
-      case None                      ⇒
-    }
+    outputDelimiter foreach {scala.reflect.io.File(_).writeAll(splitter.toString)}
 
     val distributor = Distributor(file, encoding, listOfWorkers.toList, startLine, limitNumberOfLinesToRead = endLine)
     reaper ! RegisterMe(distributor)
