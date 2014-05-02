@@ -108,7 +108,9 @@ case class StateParser(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeC
 
   val t = m1.run("hello")
 
-  val m2 = List("").traverseS(t ⇒ wordCountsForArticle(t))
+  val it = EphemeralStream.fromStream(List("").toStream)
+
+  val m2 = it.traverseS(t ⇒ wordCountsForArticle(t))
 
   val m = List("").traverseS(t ⇒ wordCountsForArticle(t))
 

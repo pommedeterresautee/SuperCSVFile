@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "net.sf.opencsv" % "opencsv" % "2.3",
   "com.github.nscala-time" %% "nscala-time" % "1.0.0",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.4" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.5" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
 

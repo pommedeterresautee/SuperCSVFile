@@ -74,10 +74,8 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
     previousPending match {
       case Some(pendingToken) ⇒
-        // get the pending token from the previous line parsing process
         currentToken ++= pendingToken
         insideQuotedField = true
-      // current line is empty, get the pending token (may be end of file?)
       case None ⇒
     }
 
