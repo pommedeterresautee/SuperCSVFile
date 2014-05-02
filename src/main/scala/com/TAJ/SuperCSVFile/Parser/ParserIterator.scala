@@ -58,7 +58,7 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
   @tailrec
   private def parse(result: ParserValidation, remaining: Option[Int]): ParserValidation = {
     val nextLine = if (!LineStack.isEmpty) LineStack.pop() else IteratorOfLines.next()
-    val currentResult: ParserValidation = parser.parseLine(nextLine, result.PendingParsing, hasNext && !remaining.exists(_ < 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+    val currentResult: ParserValidation = parser.parseLine(nextLine, result.PendingParsing, hasNext && remaining.forall(_ > 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
       case FailedParsing(failedMultipleLine) ⇒
         val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
         LineStack ++= lineParsed.tail
@@ -75,7 +75,7 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
     }
     val newRemaining = BackParseLimit.map(_ - 1)
 
-    if (currentResult.isPending && hasNext && !newRemaining.exists(_ < 0)) parse(currentResult, newRemaining)
+    if (currentResult.isPending && hasNext && newRemaining.forall(_ > 0)) parse(currentResult, newRemaining)
     else currentResult
   }
 
