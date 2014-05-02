@@ -67,20 +67,13 @@ object ExecuteCommandLine extends LazyLogging {
 
     val file = new File(path)
 
-    val actionColumnSize = opts.columnSize.get
     val encoding = opts.setEncoding.get.getOrElse(FileTools.detectEncoding(path))
     val outputColumnSize = opts.outputColumnSizes.get
     val includeTitles = opts.excludeTitles.get.getOrElse(false)
-
-    val actionExtract = opts.extract.get
     val outputExtract = opts.outputExtractLines.get
-
     val outputDelimiter = opts.outputDelimiter.get
-
     val startLine = opts.startLine.get
     val endLine = opts.lastLine.get
-
-    val linesCount = opts.linesCount.get
     val outputLinesCount = opts.outputLinesCount.get
 
     val (splitter: Char, columnCount) = (opts.setSplitter.get, opts.columnCount.get) match {
@@ -95,13 +88,13 @@ object ExecuteCommandLine extends LazyLogging {
       case _ ⇒ FileTools.findColumnDelimiter(path, encoding)
     }
 
-    linesCount.filter(identity) foreach { _ ⇒
+    opts.linesCount.get.filter(identity) foreach { _ ⇒
       val actor = LineCounterActor(outputLinesCount)
       listOfWorkers += actor
       reaper ! RegisterMe(actor.actor)
     }
 
-    actionColumnSize.filter(identity) foreach { _ ⇒
+    opts.columnSize.get.filter(identity) foreach { _ ⇒
       val lines = Source.fromFile(path, encoding).getLines()
       val titles = if (includeTitles && lines.hasNext) OpenCSV(DelimiterChar = splitter).parseLine(lines.next()).ParsedLine.toList.some else None
       val (computer, resultAccumulator, finalResult) = SizeActor(outputColumnSize, columnCount, splitter, titles)
@@ -112,13 +105,13 @@ object ExecuteCommandLine extends LazyLogging {
 
     }
 
-    actionExtract.filter(identity) foreach { _ ⇒
+    opts.extract.get.filter(identity) foreach { _ ⇒
       val actor = LineExtractorActor(outputExtract)
       listOfWorkers += actor
       reaper ! RegisterMe(actor.actor)
     }
 
-    outputDelimiter foreach {scala.reflect.io.File(_).writeAll(splitter.toString)}
+    outputDelimiter foreach (scala.reflect.io.File(_).writeAll(splitter.toString))
 
     val distributor = Distributor(file, encoding, listOfWorkers.toList, startLine, limitNumberOfLinesToRead = endLine)
     reaper ! RegisterMe(distributor)
