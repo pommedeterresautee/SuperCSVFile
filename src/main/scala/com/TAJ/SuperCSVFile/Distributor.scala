@@ -107,7 +107,7 @@ trait ComponentDistributor {
    */
   class Distributor(path: String, encoding: String, workers: List[ActorContainer], dropFirsLines: Option[Int], numberOfLinesPerMessage: Int, limitOfLinesRead: Option[Int]) extends Actor with LazyLogging {
 
-    var thresholdJobWaiting = 200
+    val thresholdJobWaiting = 500
     val fileSize = new File(path).length()
     val is = new FileInputStream(path)
     val channel = is.getChannel
