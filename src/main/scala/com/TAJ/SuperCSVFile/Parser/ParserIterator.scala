@@ -79,12 +79,11 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
         }
       case PendingLineParser(parsedPending, lineParsed) ⇒ PendingParser(parsedPending, result.ParsedLine ++ lineParsed, result.StartLine, getLineNumber)
     }
-    val newRemaining = BackParseLimit.map(_ - 1)
+    val newRemaining = remaining.map(_ - 1)
 
-    if (currentResult.isPending && hasNext && newRemaining.forall(_ > 0)) parse(currentResult, newRemaining)
+    if (currentResult.isPending && hasNext && newRemaining.forall(_ >= 0)) parse(currentResult, newRemaining)
     else currentResult
   }
 
   override def next(): ParserValidation = parse(SuccessParser(Seq(), getLineNumber + 1, getLineNumber + 1), BackParseLimit)
-
 }
