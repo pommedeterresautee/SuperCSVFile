@@ -32,36 +32,47 @@ package com.TAJ.SuperCSVFile.Parser
 import scala.collection.mutable
 
 object ParserType {
-
   type StringStack = mutable.Stack[String]
   type ParserState = (Iterator[String], StringStack)
 
-  sealed trait ParserValidation {
+  sealed trait LineParserValidation {
     val ParsedLine: Seq[String]
-    val isSuccess: Boolean
-    val isFail: Boolean
-    val isPending: Boolean
-    val PendingParsing: Option[String]
+    val isSuccess: Boolean = false
+    val isFail: Boolean = false
+    val isPending: Boolean = false
+    val PendingParsing: Option[String] = None
   }
 
-  case class SuccessParsing(ParsedLine: Seq[String]) extends ParserValidation {
-    val isSuccess = true
-    val isFail = false
-    val isPending = false
-    val PendingParsing = None
+  sealed trait ParserValidation extends LineParserValidation {
+    val StartLine: Int
+    val EndLine: Int
+    val RawString: Option[String] = None
   }
 
-  case class FailedParsing(ParsedLine: Seq[String]) extends ParserValidation {
-    val isSuccess = false
-    val isFail = true
-    val isPending = false
-    val PendingParsing = None
+  case class SuccessLineParser(ParsedLine: Seq[String]) extends LineParserValidation {
+    override val isSuccess = true
   }
 
-  case class PendingParsing(CurrentToken: String, ParsedLine: Seq[String]) extends ParserValidation {
-    val isSuccess = false
-    val isFail = false
-    val isPending = true
-    val PendingParsing = Some(CurrentToken)
+  case class FailedLineParser(ParsedLine: Seq[String]) extends LineParserValidation {
+    override val isFail = true
+  }
+
+  case class PendingLineParser(CurrentToken: String, ParsedLine: Seq[String]) extends LineParserValidation {
+    override val isPending = true
+    override val PendingParsing = Some(CurrentToken)
+  }
+
+  case class SuccessParser(ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserValidation {
+    override val isSuccess = true
+  }
+
+  case class FailedParser(ParsedLine: Seq[String], OriginalString: String, StartLine: Int, EndLine: Int) extends ParserValidation {
+    override val isFail = true
+    override val RawString = Some(OriginalString)
+  }
+
+  case class PendingParser(CurrentToken: String, ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserValidation {
+    override val isPending = true
+    override val PendingParsing = Some(CurrentToken)
   }
 }

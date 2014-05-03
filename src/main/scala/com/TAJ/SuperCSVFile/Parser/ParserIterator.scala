@@ -52,26 +52,32 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
   private val parser = OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace)
 
   var LineStack: StringStack = mutable.Stack()
+  var lineCounter = -1
+
+  private def getLineNumber = lineCounter - LineStack.size
 
   override def hasNext: Boolean = IteratorOfLines.hasNext || !LineStack.isEmpty
 
   @tailrec
   private def parse(result: ParserValidation, remaining: Option[Int]): ParserValidation = {
-    val nextLine = if (!LineStack.isEmpty) LineStack.pop() else IteratorOfLines.next()
+    val nextLine = if (!LineStack.isEmpty) LineStack.pop() else {
+      lineCounter += 1
+      IteratorOfLines.next()
+    }
     val currentResult: ParserValidation = parser.parseLine(nextLine, result.PendingParsing, hasNext && remaining.forall(_ > 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
-      case FailedParsing(failedMultipleLine) ⇒
+      case FailedLineParser(failedMultipleLine) ⇒
         val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
         LineStack ++= lineParsed.tail
-        FailedParsing((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail)
-      case line: SuccessParsing ⇒ line
-      case PendingParsing(parsedPending, lineParsed) if remaining contains 0 ⇒
+        FailedParser((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail, failedMultipleLine.head, result.StartLine, result.StartLine)
+      case SuccessLineParser(content) ⇒ SuccessParser(content, result.StartLine, getLineNumber)
+      case PendingLineParser(parsedPending, lineParsed) if remaining contains 0 ⇒
         parsedPending.split(eol, -1).toList match {
           case head :: tail ⇒
             LineStack ++= tail
-            FailedParsing(lineParsed :+ head)
-          case Nil ⇒ SuccessParsing(lineParsed)
+            FailedParser(lineParsed :+ head, parsedPending, result.StartLine, result.StartLine)
+          case Nil ⇒ SuccessParser(lineParsed, result.StartLine, getLineNumber)
         }
-      case PendingParsing(parsedPending, lineParsed) ⇒ PendingParsing(parsedPending, result.ParsedLine ++ lineParsed)
+      case PendingLineParser(parsedPending, lineParsed) ⇒ PendingParser(parsedPending, result.ParsedLine ++ lineParsed, result.StartLine, getLineNumber)
     }
     val newRemaining = BackParseLimit.map(_ - 1)
 
@@ -79,6 +85,6 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
     else currentResult
   }
 
-  override def next(): ParserValidation = parse(SuccessParsing(Seq()), BackParseLimit)
+  override def next(): ParserValidation = parse(SuccessParser(Seq(), getLineNumber + 1, getLineNumber + 1), BackParseLimit)
 
 }

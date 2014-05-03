@@ -58,7 +58,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
    * @param MultiLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
    */
-  def parseLine(currentLine: String, previousPending: Option[String] = None, MultiLine: Boolean = false): ParserValidation = {
+  def parseLine(currentLine: String, previousPending: Option[String] = None, MultiLine: Boolean = false): LineParserValidation = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -106,13 +106,13 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
     insideQuotedField match {
       case true if MultiLine ⇒ // in quote and the line is not finished
         currentToken ++= eol
-        PendingParsing(currentToken.toString(), tokensOnThisLine)
+        PendingLineParser(currentToken.toString(), tokensOnThisLine)
       case true ⇒ // in quote and there is no more content to add
         tokensOnThisLine += currentToken.toString()
-        FailedParsing(tokensOnThisLine)
+        FailedLineParser(tokensOnThisLine)
       case false ⇒ // not in quoted field
         tokensOnThisLine += currentToken.toString()
-        SuccessParsing(tokensOnThisLine)
+        SuccessLineParser(tokensOnThisLine)
     }
   }
 }

@@ -65,28 +65,28 @@ case class StateParser(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeC
     _ ← wordCounts(s)
   } yield ()
 
-  def whatever() = State[ParserState, ParserValidation] {
+  def whatever() = State[ParserState, LineParserValidation] {
     case (iterator, stack: mutable.Stack[String]) ⇒
       def hasNext: Boolean = iterator.hasNext || !stack.isEmpty
 
         @tailrec
-        def parse(result: ParserValidation, remaining: Option[Int]): (ParserValidation, StringStack) = {
+        def parse(result: LineParserValidation, remaining: Option[Int]): (LineParserValidation, StringStack) = {
           var stackk = stack
           val nextLine = if (!stack.isEmpty) stack.pop() else IteratorOfLines.next()
-          val currentResult: ParserValidation = parser.parseLine(nextLine, result.PendingParsing, hasNext && !remaining.exists(_ < 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
-            case FailedParsing(failedMultipleLine) ⇒
+          val currentResult: LineParserValidation = parser.parseLine(nextLine, result.PendingParsing, hasNext && !remaining.exists(_ < 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+            case FailedLineParser(failedMultipleLine) ⇒
               val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
               stackk ++= lineParsed.tail
-              FailedParsing((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail)
-            case line: SuccessParsing ⇒ line
-            case PendingParsing(parsedPending, lineParsed) if remaining contains 0 ⇒
+              FailedLineParser((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail)
+            case line: SuccessLineParser ⇒ line
+            case PendingLineParser(parsedPending, lineParsed) if remaining contains 0 ⇒
               parsedPending.split(eol, -1).toList match {
                 case head :: tail ⇒
                   stackk ++= tail
-                  FailedParsing(lineParsed :+ head)
-                case Nil ⇒ SuccessParsing(lineParsed)
+                  FailedLineParser(lineParsed :+ head)
+                case Nil ⇒ SuccessLineParser(lineParsed)
               }
-            case PendingParsing(parsedPending, lineParsed) ⇒ PendingParsing(parsedPending, result.ParsedLine ++ lineParsed)
+            case PendingLineParser(parsedPending, lineParsed) ⇒ PendingLineParser(parsedPending, result.ParsedLine ++ lineParsed)
           }
 
           val newRemaining = (BackParseLimit |@| decreaseUnit) { _ - _ }
@@ -95,7 +95,7 @@ case class StateParser(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeC
           else (currentResult, stackk)
         }
 
-      val (r, stackk) = parse(SuccessParsing(Seq()), BackParseLimit)
+      val (r, stackk) = parse(SuccessLineParser(Seq()), BackParseLimit)
 
       ((iterator, stackk), r)
   }
