@@ -51,18 +51,22 @@ object ParserIteratorTest extends TestTrait {
                         |
                         |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
 
-        val expected = List(List("test", "test2"), List("""seconde ligne
-                        |troisieme ligne
-                        |quatrieme ligne;test3
-                        |encore;deux;etTrois
-                        |fmklsgnal;fnghka""".stripMargin), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
+        val expected = List(
+          SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
+          SuccessParser(ArrayBuffer("""seconde ligne
+          |troisieme ligne
+          |quatrieme ligne;test3
+          |encore;deux;etTrois
+          |fmklsgnal;fnghka""".stripMargin), 1, 5),
+          SuccessParser(ArrayBuffer(""), 6, 6),
+          SuccessParser(ArrayBuffer("ckdnsklgfasg", "fnsdkjagf"), 7, 7))
 
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
-        removeSuccessFail(result) shouldBe expected
+        result shouldBe expected
       }
 
-      "with a not correctly built multiline entry without back parsing" in {
+      "with a not correctly built multi-line entry without back parsing" in {
 
         val toParse = """test;test2
                         |"seconde ligne
@@ -71,17 +75,28 @@ object ParserIteratorTest extends TestTrait {
                         |encore;deux;etTrois
                         |fmklsgnal;fnghka
                         |
-                        |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
+                        |ckdnsklgfasg;fnsdkjagf"""
+          .stripMargin
+          .split(eol)
+          .toIterator
 
-        val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
+        val expected = List(
+          SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
+          FailedParser(List("seconde ligne"), """"seconde ligne""", 1, 1),
+          SuccessParser(ArrayBuffer("troisieme ligne"), 2, 2),
+          SuccessParser(ArrayBuffer("quatrieme ligne", "test3"), 3, 3),
+          SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
+          SuccessParser(ArrayBuffer("fmklsgnal", "fnghka"), 5, 5),
+          SuccessParser(ArrayBuffer(""), 6, 6),
+          SuccessParser(ArrayBuffer("ckdnsklgfasg", "fnsdkjagf"), 7, 7))
 
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
 
-        removeSuccessFail(result) shouldBe expected
+        result shouldBe expected
       }
 
-      "with a not correctly built multiline entry and a limit in back parsing not reached" in {
+      "with a correctly built multiline entry without limit in back parsing" in {
         val toParse = """test;test2
                         |"seconde ligne
                         |troisieme ligne"
@@ -89,32 +104,52 @@ object ParserIteratorTest extends TestTrait {
                         |encore;deux;etTrois
                         |fmklsgnal;fnghka
                         |
-                        |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
+                        |ckdnsklgfasg;fnsdkjagf"""
+          .stripMargin
+          .split(eol)
+          .toIterator
 
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
         val result = par.toList
 
-        val expected = List(List("test", "test2"), ArrayBuffer("""seconde ligne
-          |troisieme ligne""".stripMargin), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
+        val expected = List(
+          SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
+          SuccessParser(ArrayBuffer("""seconde ligne
+          |troisieme ligne""".stripMargin), 1, 2),
+          SuccessParser(ArrayBuffer("quatrieme ligne", "test3"), 3, 3),
+          SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
+          SuccessParser(ArrayBuffer("fmklsgnal", "fnghka"), 5, 5),
+          SuccessParser(ArrayBuffer(""), 6, 6),
+          SuccessParser(ArrayBuffer("ckdnsklgfasg", "fnsdkjagf"), 7, 7))
 
-        removeSuccessFail(result) shouldBe expected
+        result shouldBe expected
       }
 
-      "with a correctly built multiline entry and a limit in back parsing which is reached" in {
+      "with a correctly built multi-line entry and a limit in back parsing which is not reached." in {
         val toParse = """test;test2
                         |"seconde ligne
                         |troisieme ligne
                         |quatrieme ligne;test3
                         |encore;deux;etTrois
                         |fmklsgnal;fnghka
-                        |
-                        |ckdnsklgfasg;fnsdkjagf""".stripMargin.split(eol).toIterator
+                        |"
+                        |ckdnsklgfasg;fnsdkjagf"""
+          .stripMargin
+          .split(eol)
+          .toIterator
 
-        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = None)
+        val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(2))
         val result = par.toList
-        val expected = List(List("test", "test2"), ArrayBuffer("seconde ligne"), List("troisieme ligne"), ArrayBuffer("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
+        val expected = List(SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
+          FailedParser(List("seconde ligne"), """"seconde ligne""", 1, 1),
+          SuccessParser(ArrayBuffer("troisieme ligne"), 2, 2),
+          SuccessParser(ArrayBuffer("quatrieme ligne", "test3"), 3, 3),
+          SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
+          SuccessParser(ArrayBuffer("fmklsgnal", "fnghka"), 5, 5),
+          FailedParser(List(""), "\"", 6, 6),
+          SuccessParser(ArrayBuffer("ckdnsklgfasg", "fnsdkjagf"), 7, 7))
 
-        removeSuccessFail(result) shouldBe expected
+        result shouldBe expected
       }
 
       "with one quote in a field and a limit in back parsing which is reached" in {
@@ -129,9 +164,17 @@ object ParserIteratorTest extends TestTrait {
 
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(3))
         val result = par.toList
-        val expected = List(List("test", "test2"), List("seconde ligne"), List("troisieme ligne"), List("quatrieme ligne", "test3"), List("encore", "deux", "etTrois"), List("fmklsgnal", "fnghka"), List(""), List("ckdnsklgfasg", "fnsdkjagf"))
+        val expected = List(
+          SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
+          SuccessParser(ArrayBuffer("seconde ligne"), 1, 1),
+          SuccessParser(ArrayBuffer("troisieme ligne"), 2, 2),
+          FailedParser(List("quatrieme ligne", "test3"), "quatrieme ligne;test\"3", 3, 3),
+          SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
+          SuccessParser(ArrayBuffer("fmklsgnal", "fnghka"), 5, 5),
+          SuccessParser(ArrayBuffer(""), 6, 6),
+          SuccessParser(ArrayBuffer("ckdnsklgfasg", "fnsdkjagf"), 7, 7))
 
-        removeSuccessFail(result) shouldBe expected
+        result shouldBe expected
       }
 
       "with one quote in a single line" in {
@@ -139,9 +182,10 @@ object ParserIteratorTest extends TestTrait {
 
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(3))
         val result = par.toList
-        val expected = List(List("test", "test2;test3"))
+        val expected =
+          List(FailedParser(List("test", "test2;test3"), "test;tes\"t2;test3", 0, 0))
 
-        removeSuccessFail(result) shouldBe expected
+        result shouldBe expected
       }
     }
   }

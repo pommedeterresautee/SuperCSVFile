@@ -59,16 +59,18 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
   override def hasNext: Boolean = IteratorOfLines.hasNext || !LineStack.isEmpty
 
   @tailrec
-  private def parse(result: ParserValidation, remaining: Option[Int]): ParserValidation = {
+  private def parse(result: ParserValidation, remaining: Option[Int], firstLineOfTheBlock: Option[String]): ParserValidation = {
     val nextLine = if (!LineStack.isEmpty) LineStack.pop() else {
       lineCounter += 1
       IteratorOfLines.next()
     }
+    val firstOriginalLineToSendNextRound = firstLineOfTheBlock orElse Some(nextLine)
+
     val currentResult: ParserValidation = parser.parseLine(nextLine, result.PendingParsing, hasNext && remaining.forall(_ > 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
       case FailedLineParser(failedMultipleLine) ⇒
         val lineParsed: Seq[String] = failedMultipleLine.head.split(eol, -1).toList
         LineStack ++= lineParsed.tail
-        FailedParser((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail, failedMultipleLine.head, result.StartLine, result.StartLine)
+        FailedParser((result.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail, firstOriginalLineToSendNextRound.get, result.StartLine, result.StartLine)
       case SuccessLineParser(content) ⇒ SuccessParser(content, result.StartLine, getLineNumber)
       case PendingLineParser(parsedPending, lineParsed) if remaining contains 0 ⇒
         parsedPending.split(eol, -1).toList match {
@@ -81,9 +83,9 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
     }
     val newRemaining = remaining.map(_ - 1)
 
-    if (currentResult.isPending && hasNext && newRemaining.forall(_ >= 0)) parse(currentResult, newRemaining)
+    if (currentResult.isPending && hasNext && newRemaining.forall(_ >= 0)) parse(currentResult, newRemaining, firstOriginalLineToSendNextRound)
     else currentResult
   }
 
-  override def next(): ParserValidation = parse(SuccessParser(Seq(), getLineNumber + 1, getLineNumber + 1), BackParseLimit)
+  override def next(): ParserValidation = parse(SuccessParser(Seq(), getLineNumber + 1, getLineNumber + 1), BackParseLimit, None)
 }
