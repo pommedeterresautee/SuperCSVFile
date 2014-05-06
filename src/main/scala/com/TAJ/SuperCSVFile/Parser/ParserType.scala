@@ -33,7 +33,12 @@ import scala.collection.mutable
 
 object ParserType {
   type StringStack = mutable.Stack[String]
-  type ParserState = (Iterator[String], StringStack)
+
+  case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String]) {
+    def getConsumedLine = Counter - stack.size
+  }
+
+  case class FixParserParameters(eol: String, csvParser: OpenCSV, hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String)
 
   sealed trait LineParserValidation {
     val ParsedLine: Seq[String]
@@ -43,7 +48,7 @@ object ParserType {
     val PendingParsing: Option[String] = None
   }
 
-  sealed trait ParserValidation extends LineParserValidation {
+  sealed trait ParserResult extends LineParserValidation {
     val StartLine: Int
     val EndLine: Int
     val RawString: Option[String] = None
@@ -62,16 +67,16 @@ object ParserType {
     override val PendingParsing = Some(CurrentToken)
   }
 
-  case class SuccessParser(ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserValidation {
+  case class SuccessParser(ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserResult {
     override val isSuccess = true
   }
 
-  case class FailedParser(ParsedLine: Seq[String], OriginalString: String, StartLine: Int, EndLine: Int) extends ParserValidation {
+  case class FailedParser(ParsedLine: Seq[String], OriginalString: String, StartLine: Int, EndLine: Int) extends ParserResult {
     override val isFail = true
     override val RawString = Some(OriginalString)
   }
 
-  case class PendingParser(CurrentToken: String, ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserValidation {
+  case class PendingParser(CurrentToken: String, ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserResult {
     override val isPending = true
     override val PendingParsing = Some(CurrentToken)
   }

@@ -35,7 +35,7 @@ import com.TAJ.SuperCSVFile.Parser.ParserType._
 
 object ParserIteratorTest extends TestTrait {
 
-  def removeSuccessFail(list: Seq[ParserValidation]) = list.map(_.ParsedLine)
+  def removeSuccessFail(list: Seq[ParserResult]) = list.map(_.ParsedLine)
 
   def test(): Unit = {
     val eol = System.getProperty("line.separator")
