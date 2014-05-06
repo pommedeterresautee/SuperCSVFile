@@ -34,7 +34,7 @@ import scala.collection.mutable
 object ParserType {
   type StringStack = mutable.Stack[String]
 
-  case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String]) {
+  case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String]) {
     def getConsumedLine = Counter - stack.size
   }
 
@@ -76,8 +76,10 @@ object ParserType {
     override val RawString = Some(OriginalString)
   }
 
-  case class PendingParser(CurrentToken: String, ParsedLine: Seq[String], StartLine: Int, EndLine: Int) extends ParserResult {
+  object PendingParser extends ParserResult {
     override val isPending = true
-    override val PendingParsing = Some(CurrentToken)
+    override val ParsedLine: Seq[String] = List.empty
+    override val StartLine: Int = 0
+    override val EndLine: Int = 0
   }
 }
