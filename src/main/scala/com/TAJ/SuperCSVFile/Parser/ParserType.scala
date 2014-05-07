@@ -34,15 +34,24 @@ import scala.collection.mutable
 object ParserType {
   type StringStack = mutable.Stack[String]
 
-  case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, hasSourceOneMoreLine: () ⇒ Boolean, getSourceNextLine: () ⇒ String) {
+  case class ParserState(counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], hasSourceOneMoreLine: () ⇒ Boolean, getSourceNextLine: () ⇒ String) {
     def hasNext = hasSourceOneMoreLine() || !stack.isEmpty
   }
 
   object ParserState {
-    def create(p: FixParserParameters, hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String): ParserState = ParserState(-1, Seq(), None, None, Seq(), p.BackParseLimit, 0, hasOneMoreLine, getNextLine)
-  }
+    def create(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit, hasOneMoreLine, getNextLine)
 
-  case class FixParserParameters(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int])
+    def generateNewState(newCounter: Int, newStack: Seq[String], newFirstLineOfTheBlock: Option[String], newPendingParsing: Option[String], newParsedLine: Seq[String], newRemaining: Option[Int], newStartLine: Int)(p: ParserState): ParserState = {
+      p.copy(counter = newCounter,
+        stack = newStack,
+        firstLineOfTheBlock = newFirstLineOfTheBlock,
+        PendingParsing = newPendingParsing,
+        ParsedLine = newParsedLine,
+        remaining = newRemaining,
+        StartLine = newStartLine
+      )
+    }
+  }
 
   sealed trait LineParserValidation {
     val ParsedLine: Seq[String]
