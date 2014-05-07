@@ -36,7 +36,9 @@ object ParserType {
 
   case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int)
 
-  case class FixParserParameters(eol: String, csvParser: OpenCSV, hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String, BackParseLimit: Option[Int])
+  case class FixParserParameters(eol: String, csvParser: OpenCSV, hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String, BackParseLimit: Option[Int]) {
+    val initialState: ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0)
+  }
 
   sealed trait LineParserValidation {
     val ParsedLine: Seq[String]

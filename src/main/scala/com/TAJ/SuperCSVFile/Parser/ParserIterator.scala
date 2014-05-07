@@ -45,14 +45,13 @@ import com.TAJ.SuperCSVFile.Parser.ParserType._
 case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true, IteratorOfLines: Iterator[String], BackParseLimit: Option[Int] = Some(1)) extends Iterator[ParserResult] {
   require(BackParseLimit.getOrElse(1) >= 0 && BackParseLimit.getOrElse(1) < 10000, "Limit of the Iterator should be > 0 and < 10 000 for memory reasons")
 
-  private var iteratorParserState: ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0)
-
   private val fixedParameters = FixParserParameters(System.getProperty("line.separator"),
     OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace),
     () ⇒ hasNext,
     () ⇒ IteratorOfLines.next(),
     BackParseLimit
   )
+  private var iteratorParserState: ParserState = fixedParameters.initialState
 
   override def hasNext: Boolean = IteratorOfLines.hasNext || !iteratorParserState.stack.isEmpty
 
