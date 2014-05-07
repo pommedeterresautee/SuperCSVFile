@@ -47,13 +47,11 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
   private val fixedParameters = FixParserParameters(System.getProperty("line.separator"),
     OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace),
-    () ⇒ hasNext,
-    () ⇒ IteratorOfLines.next(),
     BackParseLimit
   )
-  private var iteratorParserState: ParserState = fixedParameters.initialState
+  private var iteratorParserState: ParserState = ParserState.create(fixedParameters, () ⇒ IteratorOfLines.hasNext, () ⇒ IteratorOfLines.next())
 
-  override def hasNext: Boolean = IteratorOfLines.hasNext || !iteratorParserState.stack.isEmpty
+  override def hasNext: Boolean = iteratorParserState.hasNext
 
   override def next(): ParserResult = {
     val (newParserState, validation) = CSVParser.parse(fixedParameters, iteratorParserState)
