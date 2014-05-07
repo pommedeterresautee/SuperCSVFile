@@ -34,14 +34,14 @@ import scala.collection.mutable
 object ParserType {
   type StringStack = mutable.Stack[String]
 
-  case class ParserState(counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], hasSourceOneMoreLine: () ⇒ Boolean, getSourceNextLine: () ⇒ String) {
+  case class ParserState(counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], private val hasSourceOneMoreLine: () ⇒ Boolean, getSourceNextLine: () ⇒ String) {
     def hasNext = hasSourceOneMoreLine() || !stack.isEmpty
   }
 
   object ParserState {
-    def create(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit, hasOneMoreLine, getNextLine)
+    def createInitialState(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit, hasOneMoreLine, getNextLine)
 
-    def generateNewState(newCounter: Int, newStack: Seq[String], newFirstLineOfTheBlock: Option[String], newPendingParsing: Option[String], newParsedLine: Seq[String], newRemaining: Option[Int], newStartLine: Int)(p: ParserState): ParserState = {
+    def generateNewStateFromOld(newCounter: Int, newStack: Seq[String], newFirstLineOfTheBlock: Option[String], newPendingParsing: Option[String], newParsedLine: Seq[String], newRemaining: Option[Int], newStartLine: Int)(p: ParserState): ParserState = {
       p.copy(counter = newCounter,
         stack = newStack,
         firstLineOfTheBlock = newFirstLineOfTheBlock,

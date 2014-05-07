@@ -45,13 +45,13 @@ import com.TAJ.SuperCSVFile.Parser.ParserType._
 case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true, IteratorOfLines: Iterator[String], BackParseLimit: Option[Int] = Some(1)) extends Iterator[ParserResult] {
   require(BackParseLimit.getOrElse(1) >= 0 && BackParseLimit.getOrElse(1) < 10000, "Limit of the Iterator should be > 0 and < 10 000 for memory reasons")
 
-  private var iteratorParserState: ParserState = ParserState.create(System.getProperty("line.separator"), OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace), BackParseLimit, () ⇒ IteratorOfLines.hasNext, () ⇒ IteratorOfLines.next())
+  private var state: ParserState = ParserState.createInitialState(System.getProperty("line.separator"), OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace), BackParseLimit, () ⇒ IteratorOfLines.hasNext, () ⇒ IteratorOfLines.next())
 
-  override def hasNext: Boolean = iteratorParserState.hasNext
+  override def hasNext: Boolean = state.hasNext
 
   override def next(): ParserResult = {
-    val (newParserState, validation) = CSVParser.parse(iteratorParserState)
-    iteratorParserState = newParserState
+    val (newParserState, validation) = CSVParser.parse(state)
+    state = newParserState
     validation
   }
 }

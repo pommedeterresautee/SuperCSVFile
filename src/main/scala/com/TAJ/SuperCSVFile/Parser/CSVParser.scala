@@ -63,11 +63,11 @@ object CSVParser {
     }
     val newRemaining = parserState.remaining.map(_ - 1)
     if (pending.isDefined && parserState.hasNext && newRemaining.forall(_ >= 0)) {
-      val newState = ParserState.generateNewState(rawFileLineCounter, newStack, firstOriginalLineToSendNextRound, pending, parsedLine, newRemaining, parserState.StartLine)(parserState)
+      val newState = ParserState.generateNewStateFromOld(rawFileLineCounter, newStack, firstOriginalLineToSendNextRound, pending, parsedLine, newRemaining, parserState.StartLine)(parserState)
       parse(newState)
     }
     else {
-      val newState = ParserState.generateNewState(rawFileLineCounter, newStack, None, None, parsedLine, parserState.BackParseLimit, rawFileLineCounter - newStack.size + 1)(parserState)
+      val newState = ParserState.generateNewStateFromOld(rawFileLineCounter, newStack, None, None, parsedLine, parserState.BackParseLimit, rawFileLineCounter - newStack.size + 1)(parserState)
       (newState, currentResult)
     }
   }
