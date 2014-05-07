@@ -41,19 +41,19 @@ import com.TAJ.SuperCSVFile.Parser.ParserType.PendingLineParser
 object CSVParser {
 
   @tailrec
-  def parse(parserParameters: FixParserParameters, remaining: Option[Int], parserState: ParserState, firstLineOfTheBlock: Option[String], StartLine: Int): (ParserState, ParserResult) = {
+  def parse(parserParameters: FixParserParameters, parserState: ParserState, StartLine: Int): (ParserState, ParserResult) = {
     val (rawFileLineCounter, newLine, stack: List[String]) = parserState.stack match {
       case Nil          ⇒ (parserState.Counter + 1, parserParameters.getNextLine(), parserState.stack)
       case head :: tail ⇒ (parserState.Counter, head, tail)
     }
     val consumedLinesCounter = rawFileLineCounter - stack.size
-    val firstOriginalLineToSendNextRound = firstLineOfTheBlock orElse Some(newLine)
-    val (currentResult, newStack, pending, parsedLine) = parserParameters.csvParser.parseLine(newLine, parserState.PendingParsing, parserParameters.hasOneMoreLine() && remaining.forall(_ > 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+    val firstOriginalLineToSendNextRound = parserState.firstLineOfTheBlock orElse Some(newLine)
+    val (currentResult, newStack, pending, parsedLine) = parserParameters.csvParser.parseLine(newLine, parserState.PendingParsing, parserParameters.hasOneMoreLine() && parserState.remaining.forall(_ > 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
       case FailedLineParser(failedMultipleLine) ⇒
         val lineParsed: Seq[String] = failedMultipleLine.head.split(parserParameters.eol, -1).toList
         (FailedParser((parserState.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail, firstOriginalLineToSendNextRound.getOrElse("PARSING ERROR"), StartLine), stack ++ lineParsed.tail, None, List.empty)
       case SuccessLineParser(content) ⇒ (SuccessParser(content, StartLine, consumedLinesCounter), stack, None, List.empty)
-      case PendingLineParser(parsedPending, lineParsed) if remaining contains 0 ⇒
+      case PendingLineParser(parsedPending, lineParsed) if parserState.remaining contains 0 ⇒
         parsedPending.split(parserParameters.eol, -1).toList match {
           case head :: tail ⇒
             (FailedParser(lineParsed :+ head, parsedPending, StartLine), stack ++ tail, None, List.empty)
@@ -61,11 +61,11 @@ object CSVParser {
         }
       case PendingLineParser(parsedPending, lineParsed) ⇒ (PendingParser, stack, Some(parsedPending), parserState.ParsedLine ++ lineParsed)
     }
-    val newRemaining = remaining.map(_ - 1)
+    val newRemaining = parserState.remaining.map(_ - 1)
     if (pending.isDefined && parserParameters.hasOneMoreLine() && newRemaining.forall(_ >= 0)) {
-      val newState = ParserState(rawFileLineCounter, newStack, firstOriginalLineToSendNextRound, pending, parsedLine)
-      parse(parserParameters, newRemaining, newState, firstOriginalLineToSendNextRound, StartLine)
+      val newState = ParserState(rawFileLineCounter, newStack, firstOriginalLineToSendNextRound, pending, parsedLine, newRemaining)
+      parse(parserParameters, newState, StartLine)
     }
-    else (ParserState(rawFileLineCounter, newStack, None, None, parsedLine), currentResult)
+    else (ParserState(rawFileLineCounter, newStack, None, None, parsedLine, parserParameters.BackParseLimit), currentResult)
   }
 }

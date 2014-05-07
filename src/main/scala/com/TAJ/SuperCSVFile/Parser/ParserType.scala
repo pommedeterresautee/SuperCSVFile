@@ -34,11 +34,11 @@ import scala.collection.mutable
 object ParserType {
   type StringStack = mutable.Stack[String]
 
-  case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String]) {
+  case class ParserState(Counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int]) {
     def getConsumedLine = Counter - stack.size
   }
 
-  case class FixParserParameters(eol: String, csvParser: OpenCSV, hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String)
+  case class FixParserParameters(eol: String, csvParser: OpenCSV, hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String, BackParseLimit: Option[Int])
 
   sealed trait LineParserValidation {
     val ParsedLine: Seq[String]
