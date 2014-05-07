@@ -71,9 +71,10 @@ object ParserType {
     override val isSuccess = true
   }
 
-  case class FailedParser(ParsedLine: Seq[String], OriginalString: String, StartLine: Int, EndLine: Int) extends ParserResult {
+  case class FailedParser(ParsedLine: Seq[String], OriginalString: String, StartLine: Int) extends ParserResult {
     override val isFail = true
     override val RawString = Some(OriginalString)
+    override val EndLine: Int = StartLine
   }
 
   object PendingParser extends ParserResult {

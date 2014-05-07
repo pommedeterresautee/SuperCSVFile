@@ -82,7 +82,7 @@ object ParserIteratorTest extends TestTrait {
 
         val expected = List(
           SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
-          FailedParser(List("seconde ligne"), """"seconde ligne""", 1, 1),
+          FailedParser(List("seconde ligne"), """"seconde ligne""", 1),
           SuccessParser(ArrayBuffer("troisieme ligne"), 2, 2),
           SuccessParser(ArrayBuffer("quatrieme ligne", "test3"), 3, 3),
           SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
@@ -141,12 +141,12 @@ object ParserIteratorTest extends TestTrait {
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(2))
         val result = par.toList
         val expected = List(SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
-          FailedParser(List("seconde ligne"), """"seconde ligne""", 1, 1),
+          FailedParser(List("seconde ligne"), """"seconde ligne""", 1),
           SuccessParser(ArrayBuffer("troisieme ligne"), 2, 2),
           SuccessParser(ArrayBuffer("quatrieme ligne", "test3"), 3, 3),
           SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
           SuccessParser(ArrayBuffer("fmklsgnal", "fnghka"), 5, 5),
-          FailedParser(List(""), "\"", 6, 6),
+          FailedParser(List(""), "\"", 6),
           SuccessParser(ArrayBuffer("ckdnsklgfasg", "fnsdkjagf"), 7, 7))
 
         result shouldBe expected
@@ -168,7 +168,7 @@ object ParserIteratorTest extends TestTrait {
           SuccessParser(ArrayBuffer("test", "test2"), 0, 0),
           SuccessParser(ArrayBuffer("seconde ligne"), 1, 1),
           SuccessParser(ArrayBuffer("troisieme ligne"), 2, 2),
-          FailedParser(List("quatrieme ligne", "test3"), "quatrieme ligne;test\"3", 3, 3),
+          FailedParser(List("quatrieme ligne", "test3"), "quatrieme ligne;test\"3", 3),
           SuccessParser(ArrayBuffer("encore", "deux", "etTrois"), 4, 4),
           SuccessParser(ArrayBuffer("fmklsgnal", "fnghka"), 5, 5),
           SuccessParser(ArrayBuffer(""), 6, 6),
@@ -183,7 +183,7 @@ object ParserIteratorTest extends TestTrait {
         val par = ParserIterator(DelimiterChar = ';', IteratorOfLines = toParse, BackParseLimit = Some(3))
         val result = par.toList
         val expected =
-          List(FailedParser(List("test", "test2;test3"), "test;tes\"t2;test3", 0, 0))
+          List(FailedParser(List("test", "test2;test3"), "test;tes\"t2;test3", 0))
 
         result shouldBe expected
       }
