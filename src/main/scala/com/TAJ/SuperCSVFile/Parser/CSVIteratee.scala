@@ -59,8 +59,8 @@ object CSVIteratee extends App {
 
   def testest: IterateeT[String, IO, Seq[String]] = {
       def step(accumulator: Seq[String])(s: Input[String]): IterateeT[String, IO, Seq[String]] =
-        s(el = e ⇒ if (accumulator.size == 2) done(accumulator :+ e, eofInput)
-        else cont(step(accumulator :+ e)),
+        s(el = line ⇒ if (accumulator.size == 2) done(accumulator :+ line, eofInput)
+        else cont(step(accumulator :+ line)),
           empty = cont(step(accumulator)),
           eof = done(accumulator, eofInput)
         )
@@ -69,7 +69,7 @@ object CSVIteratee extends App {
 
   val i: Iterator[String] = io.Source.fromFile("./README.md").getLines()
   val e: EnumeratorT[String, IO] = enumIterator[String, IO](i)
-  val t = ((testest &= e).run.unsafePerformIO())
+  val t = (testest &= e).run.unsafePerformIO()
   println(t)
   ((head[String, IO] &= e).run.unsafePerformIO()) assert_=== Some("## Super CSV File ##")
 
