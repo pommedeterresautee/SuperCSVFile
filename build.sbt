@@ -10,7 +10,7 @@ import ReleaseStateTransformations._
 
 name := "SuperCSVFile"
 
-version := "1.0.6"
+version := "1.0.7"
 
 scalaVersion := "2.11.0"
 
@@ -20,10 +20,13 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
+  "org.scalaz" %% "scalaz-effect" % "7.0.6",
+  "org.scalaz" %% "scalaz-iteratee" % "7.0.6",
   "org.rogach" %% "scallop" % "0.9.5",
   "com.github.nscala-time" %% "nscala-time" % "1.0.0",
+  "com.chuusai" %% "shapeless" % "2.0.0",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.5" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.6" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
 
