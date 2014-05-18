@@ -31,13 +31,13 @@ package com.TAJ.SuperCSVFile.Parser
 
 import scala.collection.mutable
 
-object ParserType {
+object ParserTypes {
   type StringStack = mutable.Stack[String]
 
   case class ParserState(counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int])
 
   object ParserState {
-    def createInitialState(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int], hasOneMoreLine: () ⇒ Boolean, getNextLine: () ⇒ String): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit)
+    def createInitialState(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int]): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit)
 
     def updateState(newCounter: Int, newStack: Seq[String], newFirstLineOfTheBlock: Option[String], newPendingParsing: Option[String], newParsedLine: Seq[String], newRemaining: Option[Int], newStartLine: Int)(p: ParserState): ParserState = {
       p.copy(counter = newCounter,

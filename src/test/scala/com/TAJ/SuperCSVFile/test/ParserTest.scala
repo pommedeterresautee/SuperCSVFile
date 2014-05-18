@@ -30,7 +30,7 @@
 package com.TAJ.SuperCSVFile.test
 
 import com.TAJ.SuperCSVFile.Parser.OpenCSV
-import com.TAJ.SuperCSVFile.Parser.ParserType._
+import com.TAJ.SuperCSVFile.Parser.ParserTypes._
 
 object ParserTest extends TestTrait {
   def test(): Unit = {

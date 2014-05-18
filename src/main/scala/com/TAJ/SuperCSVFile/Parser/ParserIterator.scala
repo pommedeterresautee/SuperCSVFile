@@ -29,7 +29,8 @@
 
 package com.TAJ.SuperCSVFile.Parser
 
-import com.TAJ.SuperCSVFile.Parser.ParserType._
+import com.TAJ.SuperCSVFile.Parser.ParserTypes._
+import scala.annotation.tailrec
 
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
@@ -45,12 +46,26 @@ import com.TAJ.SuperCSVFile.Parser.ParserType._
 case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar: Char = '\\', IgnoreCharOutsideQuotes: Boolean = false, IgnoreLeadingWhiteSpace: Boolean = true, IteratorOfLines: Iterator[String], BackParseLimit: Option[Int] = Some(1)) extends Iterator[ParserResult] {
   require(BackParseLimit.getOrElse(1) >= 0 && BackParseLimit.getOrElse(1) < 10000, "Limit of the Iterator should be > 0 and < 10 000 for memory reasons")
 
-  private var state: ParserState = ParserState.createInitialState(System.getProperty("line.separator"), OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace), BackParseLimit, () ⇒ IteratorOfLines.hasNext, () ⇒ IteratorOfLines.next())
+  private var state: ParserState = ParserState.createInitialState(System.getProperty("line.separator"), OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace), BackParseLimit)
+
+  @tailrec
+  private def parse(originalParserState: ParserState): (ParserState, ParserResult) = {
+    val (rawFileLineCounter, newLine, stack) = originalParserState.stack match {
+      case Nil          ⇒ (originalParserState.counter + 1, IteratorOfLines.next(), originalParserState.stack)
+      case head :: tail ⇒ (originalParserState.counter, head, tail)
+    }
+    val (newState, currentResult) = CSVLineParser.parseOneLine(originalParserState, rawFileLineCounter, newLine, stack, IteratorOfLines.hasNext)
+    if (newState.PendingParsing.isDefined && IteratorOfLines.hasNext && newState.remaining.forall(_ >= 0)) parse(newState)
+    else {
+      val finalState = ParserState.newStateForNextIteration(newState)
+      (finalState, currentResult)
+    }
+  }
 
   override def hasNext: Boolean = IteratorOfLines.hasNext || !state.stack.isEmpty
 
   override def next(): ParserResult = {
-    val (newParserState, validation) = CSVParser.parse(state, () ⇒ IteratorOfLines.hasNext, () ⇒ IteratorOfLines.next())
+    val (newParserState, validation) = parse(state)
     state = newParserState
     validation
   }

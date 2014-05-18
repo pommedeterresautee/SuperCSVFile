@@ -29,104 +29,83 @@
 
 package com.TAJ.SuperCSVFile.Parser
 
-import scala.language.higherKinds
-import scala.Some
+//import scala.language.higherKinds
+
+import play.api.libs.iteratee._
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.util._
+import com.TAJ.SuperCSVFile.Parser.ParserTypes.ParserResult
 
 object CSVIteratee extends App {
 
-  import scalaz._, Scalaz._
-  import iteratee._, Iteratee._
-  import effect._
-  import java.io.StringReader
+  // Defines the Iteratee[Int, Int]
+  def total2Chunks: Iteratee[Int, Int] = {
+      // `step` function is the consuming function receiving previous context (idx, total) and current chunk
+      // context : (idx, total) idx is the index to count loops
+      def step(idx: Int, total: Int)(i: Input[Int]): Iteratee[Int, Int] = i match {
+        // chunk is EOF or Empty => simply stops iteration by triggering state Done with current total
 
-  def takeWhile[A, F[_]](p: A ⇒ Boolean)(implicit mon: Monoid[F[A]], pt: Applicative[F]): Iteratee[A, F[A]] = {
-      def loop(acc: F[A])(s: Input[A]): Iteratee[A, F[A]] =
-        s(el = e ⇒
-          if (p(e)) cont(loop(mon.append(acc, pt.point(e))))
-          else done[A, Id, F[A]](acc, s), empty = cont(loop(acc)), eof = done[A, Id, F[A]](acc, eofInput)
-        )
-    cont(loop(mon.zero))
+        // found one chunk
+        case Input.El(e) ⇒
+          // if first or 2nd chunk, call `step` again by incrementing idx and computing new total
+          if (idx < 2) Cont[Int, Int](int ⇒ step(idx + 1, total + e)(int))
+          // if reached 2nd chunk, stop iterating
+          else {
+            println("tmp result: " + total)
+            Done(total, i)
+          }
+        case Input.Empty ⇒ Done(total, Input.Empty)
+        case Input.EOF   ⇒ Done(total, Input.EOF)
+      }
+    // initiates iteration by initialize context and first state (Cont) and launching iteration
+    Cont[Int, Int](i ⇒ step(0, 0)(i))
   }
 
-  def take[A, F[_]](n: Int)(implicit mon: Monoid[F[A]], pt: Applicative[F]): Iteratee[A, F[A]] = {
-      def loop(acc: F[A], n: Int)(s: Input[A]): Iteratee[A, F[A]] =
-        s(el = e ⇒
-          if (n <= 0) done[A, Id, F[A]](acc, s)
-          else cont(loop(mon.append(acc, pt.point(e)), n - 1)), empty = cont(loop(acc, n)), eof = done[A, Id, F[A]](acc, s)
-        )
-    cont(loop(mon.zero, n))
+  //val enumeratorMe: Enumerator[String] = Enumerator.enumerate(scala.io.Source.fromFile("myfile.txt").getLines())
+
+  val t = Enumeratee.mapConcat[Seq[Int]](identity)
+
+  val enumerator = Enumerator(Seq(1, 234, 5, 7, 9), Seq(455, 9, 5, 3, 9, 7)) &> t
+
+  val temp = t &>> total2Chunks
+
+  val sum: Enumeratee[Int, Int] = Enumeratee.grouped(total2Chunks)
+
+  val list: Enumerator[Int] = enumerator &> sum
+
+  val iterator: Iteratee[Int, Int] = Iteratee.fold[Int, Int](0) { (total, elt) ⇒
+    val e = total + elt
+    println("total = " + e)
+    e
   }
 
-  def testest: IterateeT[String, IO, Seq[String]] = {
-      def step(accumulator: Seq[String])(s: Input[String]): IterateeT[String, IO, Seq[String]] =
-        s(el = line ⇒ if (accumulator.size == 2) done(accumulator :+ line, eofInput)
-        else cont(step(accumulator :+ line)),
-          empty = cont(step(accumulator)),
-          eof = done(accumulator, eofInput)
-        )
-    cont(step(Seq()))
+  //  val total = list |>>> iterator
+  //
+  //  total.onComplete {
+  //    case Success(figure) ⇒ println(figure)
+  //    case Failure(ex) ⇒
+  //      println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
+  //  }
+
+  val enumeratore = Enumerator("first line,toujours first,encore", "seconde,tralala,toto", "heyhey,hoho")
+
+  val iter = ParserEnumeratee().parserIteratee()
+
+  val group: Enumeratee[String, ParserResult] = Enumeratee.grouped(iter)
+
+  val count = Iteratee.fold[ParserResult, Int](0) { (total, elt) ⇒
+    val e = total + 1
+    println("current = " + elt)
+    e
   }
 
-  val i: Iterator[String] = io.Source.fromFile("./README.md").getLines()
-  val e: EnumeratorT[String, IO] = enumIterator[String, IO](i)
-  val t = (testest &= e).run.unsafePerformIO()
-  println(t)
-  ((head[String, IO] &= e).run.unsafePerformIO()) assert_=== Some("## Super CSV File ##")
+  val something = enumeratore &> group |>>> count
 
-  val stream123 = enumStream[Int, Id](Stream(1, 2, 3))
+  something.onComplete {
+    case Success(figure) ⇒ println(figure)
+    case Failure(ex) ⇒
+      println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
+  }
 
-  ((head[Int, Id] &= stream123).run) assert_=== Some(1)
-  ((length[Int, Id] &= stream123).run) assert_=== 3
-  ((peek[Int, Id] &= stream123).run) assert_=== Some(1)
-  // ((head[Int, Id]   &= enumStream(Stream())).run) assert_=== None
-
-  def iter123 = enumIterator[Int, IO](Iterator(1, 2, 3))
-
-  ((head[Int, IO] &= iter123).run unsafePerformIO ()) assert_=== Some(1)
-  ((length[Int, IO] &= iter123).run unsafePerformIO ()) assert_=== 3
-  ((peek[Int, IO] &= iter123).run unsafePerformIO ()) assert_=== Some(1)
-  ((head[Int, IO] &= enumIterator[Int, IO](Iterator())).run unsafePerformIO ()) assert_=== None
-
-  val stream1_10 = enumStream[Int, Id]((1 to 10).toStream)
-
-  (take[Int, List](3) &= stream1_10).run assert_=== List(1, 2, 3)
-  (takeWhile[Int, List](_ <= 5) &= stream1_10).run assert_=== (1 to 5).toList
-  (takeUntil[Int, List](_ > 5) &= stream1_10).run assert_=== (1 to 5).toList
-
-  val readLn = takeWhile[Char, List](_ != '\n') flatMap (ln ⇒ drop[Char, Id](1).map(_ ⇒ ln))
-  (collect[List[Char], List] %= readLn.sequenceI &= enumStream("Iteratees\nare\ncomposable".toStream)).run assert_=== List("Iteratees".toList, "are".toList, "composable".toList)
-
-  def iter1234 = enumIterator[String, IO](Iterator("", "", ""))
-
-  (collect[List[Int], List] %= splitOn(_ % 3 != 0) &= stream1_10).run assert_=== List(List(1, 2), List(4, 5), List(7, 8), List(10))
-
-  (collect[Int, List] %= map((_: String).toInt) &= enumStream(Stream("1", "2", "3"))).run assert_=== List(1, 2, 3)
-  (collect[Int, List] %= filter((_: Int) % 2 == 0) &= stream1_10).run assert_=== List(2, 4, 6, 8, 10)
-
-  (collect[List[Int], List] %= group(3) &= enumStream((1 to 9).toStream)).run assert_=== List(List(1, 2, 3), List(4, 5, 6), List(7, 8, 9))
-
-  def r: EnumeratorT[IoExceptionOr[Char], IO] = enumReader[IO](new StringReader("file contents"))
-
-  ((head[IoExceptionOr[Char], IO] &= r).map(_ flatMap (_.toOption)).run.unsafePerformIO()) assert_=== Some('f')
-  ((length[IoExceptionOr[Char], IO] &= r).run.unsafePerformIO()) assert_=== 13
-  ((peek[IoExceptionOr[Char], IO] &= r).map(_ flatMap (_.toOption)).run.unsafePerformIO()) assert_=== Some('f')
-  ((head[IoExceptionOr[Char], IO] &= enumReader[IO](new StringReader(""))).map(_ flatMap (_.toOption)).run unsafePerformIO ()) assert_=== None
-
-  // As a monad
-  val m1 = head[Int, Id] flatMap (b ⇒ head[Int, Id] map (b2 ⇒ (b tuple b2)))
-  (m1 &= stream123).run assert_=== Some(1 -> 2)
-
-  // As a monad using for comprehension (same as 'm1' example above)
-  val m2 = for {
-    b ← head[Int, Id]
-    b2 ← head[Int, Id]
-  } yield b tuple b2
-  (m2 &= stream123).run assert_=== Some(1 -> 2)
-
-  val colc = takeWhile[IoExceptionOr[Char], List](_.fold(_ ⇒ false, _ != ' ')).up[IO]
-  ((colc &= r).map(_ flatMap (_.toOption)).run unsafePerformIO ()) assert_=== List('f', 'i', 'l', 'e')
-
-  val take10And5ThenHead = take[Int, List](10) zip take[Int, List](5) flatMap (ab ⇒ head[Int, Id] map (h ⇒ (ab, h)))
-  (take10And5ThenHead &= enumStream((1 to 20).toStream)).run assert_=== (((1 to 10).toList, (1 to 5).toList), Some(11))
+  Thread.sleep(10000)
 }
-

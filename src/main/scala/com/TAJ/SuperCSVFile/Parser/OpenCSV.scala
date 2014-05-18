@@ -31,7 +31,7 @@ package com.TAJ.SuperCSVFile.Parser
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
-import com.TAJ.SuperCSVFile.Parser.ParserType._
+import com.TAJ.SuperCSVFile.Parser.ParserTypes._
 
 /**
  * This block of code is inspired from OpenCSV library.
@@ -114,5 +114,42 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
         tokensOnThisLine += currentToken.toString()
         SuccessLineParser(tokensOnThisLine)
     }
+  }
+
+}
+
+object CSVLineParser {
+
+  /**
+   * Take care of the State from one step to another.
+   * @param originalParserState the Parser configured with correct parameters.
+   * @param rawFileLineCounter counter of lines
+   * @param newLine the line to parse
+   * @param stack back parsing stack
+   * @param hasNext indicate if there is a next line
+   * @return a new State and a result.
+   */
+  final def parseOneLine(originalParserState: ParserState, rawFileLineCounter: Int, newLine: String, stack: Seq[String], hasNext: Boolean): (ParserState, ParserResult) = {
+    val consumedLinesCounter = rawFileLineCounter - stack.size
+    val firstOriginalLineToSendNextRound = originalParserState.firstLineOfTheBlock orElse Some(newLine)
+
+    val (currentResult, newStack, pending, parsedLine) = originalParserState.csvParser.parseLine(newLine, originalParserState.PendingParsing, hasNext && originalParserState.remaining.forall(_ > 0) /*add remaining test here because for the parser it is the last line to parse even if there are more in the file.*/ ) match {
+      case FailedLineParser(failedMultipleLine) ⇒
+        val lineParsed: Seq[String] = failedMultipleLine.head.split(originalParserState.eol, -1).toList
+        (FailedParser((originalParserState.ParsedLine :+ lineParsed.head) ++ failedMultipleLine.tail, firstOriginalLineToSendNextRound.getOrElse("PARSING ERROR"), originalParserState.StartLine), stack ++ lineParsed.tail, None, List.empty)
+      case SuccessLineParser(content) ⇒ (SuccessParser(content, originalParserState.StartLine, consumedLinesCounter), stack, None, List.empty)
+      case PendingLineParser(parsedPending, lineParsed) if originalParserState.remaining contains 0 ⇒
+        parsedPending.split(originalParserState.eol, -1).toList match {
+          case head :: tail ⇒
+            (FailedParser(lineParsed :+ head, parsedPending, originalParserState.StartLine), stack ++ tail, None, List.empty)
+          case Nil ⇒ (SuccessParser(lineParsed, originalParserState.StartLine, consumedLinesCounter), stack, None, List.empty)
+        }
+      case PendingLineParser(parsedPending, lineParsed) ⇒ (PendingParser, stack, Some(parsedPending), originalParserState.ParsedLine ++ lineParsed)
+    }
+
+    val newRemaining = originalParserState.remaining.map(_ - 1)
+    val newState = ParserState.updateState(rawFileLineCounter, newStack, firstOriginalLineToSendNextRound, pending, parsedLine, newRemaining, originalParserState.StartLine)(originalParserState)
+
+    (newState, currentResult)
   }
 }

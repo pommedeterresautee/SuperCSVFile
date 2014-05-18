@@ -31,7 +31,7 @@ package com.TAJ.SuperCSVFile.test
 
 import com.TAJ.SuperCSVFile.Parser.ParserIterator
 import scala.collection.mutable.ArrayBuffer
-import com.TAJ.SuperCSVFile.Parser.ParserType._
+import com.TAJ.SuperCSVFile.Parser.ParserTypes._
 
 object ParserIteratorTest extends TestTrait {
 
