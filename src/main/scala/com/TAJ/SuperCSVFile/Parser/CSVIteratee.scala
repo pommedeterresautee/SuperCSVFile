@@ -87,7 +87,7 @@ object CSVIteratee extends App {
   //      println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
   //  }
 
-  val enumeratore = Enumerator("first line,toujours first,encore", "seconde,tralala,toto", "heyhey,hoho")
+  val enumeratore = Enumerator("first li\"ne,toujours first,encore", "seconde,tra\"lala,toto", "heyhey,hoho")
 
   val iter = ParserEnumeratee().parserIteratee()
 
@@ -102,7 +102,7 @@ object CSVIteratee extends App {
   val something = enumeratore &> group |>>> count
 
   something.onComplete {
-    case Success(figure) ⇒ println(figure)
+    case Success(figure) ⇒ println("il y en a " + figure)
     case Failure(ex) ⇒
       println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
   }

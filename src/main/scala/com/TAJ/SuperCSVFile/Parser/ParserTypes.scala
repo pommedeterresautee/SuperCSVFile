@@ -39,9 +39,8 @@ object ParserTypes {
   object ParserState {
     def createInitialState(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int]): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit)
 
-    def updateState(newCounter: Int, newStack: Seq[String], newFirstLineOfTheBlock: Option[String], newPendingParsing: Option[String], newParsedLine: Seq[String], newRemaining: Option[Int], newStartLine: Int)(p: ParserState): ParserState = {
-      p.copy(counter = newCounter,
-        stack = newStack,
+    def updateState(newStack: Seq[String], newFirstLineOfTheBlock: Option[String], newPendingParsing: Option[String], newParsedLine: Seq[String], newRemaining: Option[Int], newStartLine: Int)(p: ParserState): ParserState = {
+      p.copy(stack = newStack,
         firstLineOfTheBlock = newFirstLineOfTheBlock,
         PendingParsing = newPendingParsing,
         ParsedLine = newParsedLine,

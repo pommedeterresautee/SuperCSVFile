@@ -50,11 +50,14 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
   @tailrec
   private def parse(originalParserState: ParserState): (ParserState, ParserResult) = {
-    val (rawFileLineCounter, newLine, stack) = originalParserState.stack match {
+    val (rawFileLineCounter, newLine, newStack) = originalParserState.stack match {
       case Nil          ⇒ (originalParserState.counter + 1, IteratorOfLines.next(), originalParserState.stack)
       case head :: tail ⇒ (originalParserState.counter, head, tail)
     }
-    val (newState, currentResult) = CSVLineParser.parseOneLine(originalParserState, rawFileLineCounter, newLine, stack, IteratorOfLines.hasNext)
+
+    val state = originalParserState.copy(stack = newStack, counter = rawFileLineCounter)
+
+    val (newState, currentResult) = CSVLineParser.parseOneLine(state, newLine, IteratorOfLines.hasNext)
     if (newState.PendingParsing.isDefined && IteratorOfLines.hasNext && newState.remaining.forall(_ >= 0)) parse(newState)
     else {
       val finalState = ParserState.newStateForNextIteration(newState)
