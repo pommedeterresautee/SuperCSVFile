@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.0.0",
   "com.typesafe.play" %% "play-iteratees" % "2.3.0-RC1",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.6" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.7" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
 

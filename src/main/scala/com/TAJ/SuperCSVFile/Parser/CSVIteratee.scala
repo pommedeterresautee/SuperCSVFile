@@ -87,15 +87,15 @@ object CSVIteratee extends App {
   //      println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
   //  }
 
-  val enumeratore = Enumerator("first li\"ne,toujours first,encore", "seconde,tra\"lala,toto", "heyhey,hoho")
+  val enumeratore = Enumerator("first li\"ne,toujours first,encore", "seconde,tralala,toto", "heyhey,hoho")
 
   val iter = ParserEnumeratee().parserIteratee()
 
-  val group: Enumeratee[String, ParserResult] = Enumeratee.grouped(iter)
+  val group: Enumeratee[String, Seq[ParserResult]] = Enumeratee.grouped(iter)
 
-  val count = Iteratee.fold[ParserResult, Int](0) { (total, elt) ⇒
+  val count = Iteratee.fold[Seq[ParserResult], Int](0) { (total, elt) ⇒
     val e = total + 1
-    println("current = " + elt)
+    //println("*** Iteratee *** current = " + elt)
     e
   }
 
