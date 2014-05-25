@@ -12,13 +12,14 @@ name := "SuperCSVFile"
 
 version := "1.0.7"
 
-scalaVersion := "2.11.0"
+scalaVersion := "2.11.1"
 
  resolvers ++= Seq(
-  "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/")
+  "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/"
+ )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.2",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.3",
   "com.ibm.icu" % "icu4j" % "53.1",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
@@ -26,8 +27,8 @@ libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "0.9.5",
   "com.github.nscala-time" %% "nscala-time" % "1.0.0",
   "com.chuusai" %% "shapeless" % "2.0.0",
-  "com.typesafe.play" %% "play-iteratees" % "2.3.0-RC1",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.2" % "test",
+  "com.typesafe.play" %% "play-iteratees" % "2.3.0-RC2",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.3" % "test",
   "org.scalatest" %% "scalatest" % "2.1.7" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
