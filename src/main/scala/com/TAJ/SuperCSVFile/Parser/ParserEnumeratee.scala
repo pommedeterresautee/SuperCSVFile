@@ -7,7 +7,8 @@ case class ParserEnumeratee(DelimiterChar: Char = ',', QuoteChar: Char = '"', Es
 
   val parser = OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace)
 
-  val initState = ParserState.createInitialState("\n", parser, Some(1))
+  //TODO change the \n
+  val initState = ParserState.createInitialState("\n", parser, BackParseLimit)
 
   def parserIteratee(): Iteratee[String, Seq[ParserResult]] = {
       def step(originalParserState: ParserState, precedentLine: Option[String])(nextInput: Input[String]): Iteratee[String, Seq[ParserResult]] =
@@ -48,5 +49,22 @@ case class ParserEnumeratee(DelimiterChar: Char = ',', QuoteChar: Char = '"', Es
         }
 
     Cont[String, Seq[ParserResult]](inputLine ⇒ step(initState, None)(inputLine))
+  }
+
+  def parseStack(s: ParserState): (Seq[ParserResult], ParserState) = {
+
+    var sBis = s.copy(stack = Seq())
+    val stack = s.stack
+    val i = stack.toIterator
+    var finalResult: Seq[ParserResult] = Seq()
+
+    while (i.hasNext) {
+      val (finalState, tempResult) = CSVLineParser.parseBlockOfLines(sBis, () ⇒ i.next(), () ⇒ i.hasNext)
+      println(tempResult)
+      finalResult :+= tempResult
+      sBis = finalState
+    }
+
+    (finalResult, sBis)
   }
 }

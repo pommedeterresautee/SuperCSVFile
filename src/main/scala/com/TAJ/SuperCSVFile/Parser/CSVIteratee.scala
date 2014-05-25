@@ -33,8 +33,7 @@ package com.TAJ.SuperCSVFile.Parser
 
 import play.api.libs.iteratee._
 import scala.concurrent.ExecutionContext.Implicits._
-import scala.util._
-import com.TAJ.SuperCSVFile.Parser.ParserTypes.ParserResult
+import com.TAJ.SuperCSVFile.Parser.ParserTypes.{ ParserState, ParserResult }
 
 object CSVIteratee extends App {
 
@@ -99,13 +98,24 @@ object CSVIteratee extends App {
     e
   }
 
-  val something = enumeratore &> group |>>> count
+  //val something = enumeratore &> group |>>> count
 
-  something.onComplete {
-    case Success(figure) ⇒ println("il y en a " + figure)
-    case Failure(ex) ⇒
-      println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
-  }
+  //  something.onComplete {
+  //    case Success(figure) ⇒ println("il y en a " + figure)
+  //    case Failure(ex) ⇒
+  //      println(s"They broke their promises! Again! Because of a ${ex.getMessage}")
+  //  }
 
-  Thread.sleep(10000)
+  val stateTemp = ParserState.createInitialState("\n", OpenCSV(), Some(1)).copy(stack = Seq("un,d\"eux", "trois\",quatre", "cinq,six"))
+
+  //  val stackParsed = ParserEnumeratee().parseStack(stateTemp)
+  //  println(stackParsed)
+
+  val i = Seq("un,d\"eux", "trois\",quatre", "cinq,six").toIterator
+
+  val p = ParserIterator(IteratorOfLines = i)
+
+  println(p.next())
+
+  Thread.sleep(1000)
 }

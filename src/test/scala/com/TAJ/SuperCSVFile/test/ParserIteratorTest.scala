@@ -35,8 +35,6 @@ import com.TAJ.SuperCSVFile.Parser.ParserTypes._
 
 object ParserIteratorTest extends TestTrait {
 
-  def removeSuccessFail(list: Seq[ParserResult]) = list.map(_.ParsedLine)
-
   def test(): Unit = {
     val eol = System.getProperty("line.separator")
     "Test the iterator parser with" should {
@@ -184,6 +182,29 @@ object ParserIteratorTest extends TestTrait {
         val result = par.toList
         val expected =
           List(FailedParser(List("test", "test2;test3"), "test;tes\"t2;test3", 0))
+
+        result shouldBe expected
+      }
+
+      "with two quotes in two lines" in {
+        val toParse = Seq("un,d\"eux", "trois\",quatre", "cinq,six").toIterator
+
+        val par = ParserIterator(DelimiterChar = ',', IteratorOfLines = toParse, BackParseLimit = Some(3))
+        val result = par.toList
+        val expected =
+          List(SuccessParser(ArrayBuffer("""deux
+                |trois""".stripMargin, "quatre"), 0, 1), SuccessParser(ArrayBuffer("cinq", "six"), 2, 2))
+
+        result shouldBe expected
+      }
+
+      "with two quotes in row on one line" in {
+        val toParse = Seq("un,\"\"deux,trois").toIterator
+
+        val par = ParserIterator(DelimiterChar = ',', IteratorOfLines = toParse, BackParseLimit = Some(3))
+        val result = par.toList
+        val expected =
+          List(SuccessParser(List("un", "\"deux", "trois"), 0, 0))
 
         result shouldBe expected
       }

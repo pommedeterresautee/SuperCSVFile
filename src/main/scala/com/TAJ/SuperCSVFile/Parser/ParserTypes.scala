@@ -34,7 +34,11 @@ import scala.collection.mutable
 object ParserTypes {
   type StringStack = mutable.Stack[String]
 
-  case class ParserState(counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int])
+  case class ParserState(counter: Int, stack: Seq[String], firstLineOfTheBlock: Option[String], PendingParsing: Option[String], ParsedLine: Seq[String], remaining: Option[Int], StartLine: Int, eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int]) {
+    def resetRemaining(): ParserState = {
+      this.copy(remaining = BackParseLimit)
+    }
+  }
 
   object ParserState {
     def createInitialState(eol: String, csvParser: OpenCSV, BackParseLimit: Option[Int]): ParserState = ParserState(-1, Seq(), None, None, Seq(), BackParseLimit, 0, eol, csvParser, BackParseLimit)

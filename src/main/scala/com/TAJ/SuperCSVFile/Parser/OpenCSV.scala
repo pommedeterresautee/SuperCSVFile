@@ -32,6 +32,7 @@ package com.TAJ.SuperCSVFile.Parser
 import scala.collection.mutable.ArrayBuffer
 import scala.language.postfixOps
 import com.TAJ.SuperCSVFile.Parser.ParserTypes._
+import scala.annotation.tailrec
 
 /**
  * This block of code is inspired from OpenCSV library.
@@ -58,7 +59,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
    * @param MultiLine true if we are parsing multiple raw lines for the same CSV line
    * @return the comma-tokenized list of elements, or null if nextLine is null
    */
-  def parseLine(currentLine: String, previousPending: Option[String] = None, MultiLine: Boolean = false): LineParserValidation = {
+  final def parseLine(currentLine: String, previousPending: Option[String] = None, MultiLine: Boolean = false): LineParserValidation = {
     val tokensOnThisLine: ArrayBuffer[String] = ArrayBuffer()
     val currentToken: StringBuilder = new StringBuilder(128)
     var insideQuotedField: Boolean = false
@@ -70,8 +71,6 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
 
       def isNextToDelimiterChar: Boolean = position > 0 && currentLine(position - 1) != DelimiterChar && isThereMoreChar && currentLine(position + 1) != DelimiterChar
 
-      def isThereMoreCharOrInQuoteOrInField: Boolean = (insideQuotedField || insideField) && isThereMoreChar
-
     previousPending match {
       case Some(pendingToken) ⇒
         currentToken ++= pendingToken
@@ -82,7 +81,7 @@ case class OpenCSV(DelimiterChar: Char = ',', QuoteChar: Char = '"', EscapeChar:
     while (position < currentLine.length) {
       val char = currentLine(position)
       char match {
-        case QuoteChar if !previousCharWasQuoteChar && isThereMoreCharOrInQuoteOrInField && currentLine(position + 1) == QuoteChar ⇒ // the next char is a quote, so it is a double quote
+        case QuoteChar if !previousCharWasQuoteChar && isThereMoreChar && currentLine(position + 1) == QuoteChar ⇒ // the next char is a quote, so it is a double quote
           previousCharWasQuoteChar = true
         case QuoteChar if !previousCharWasQuoteChar ⇒ // there is only ONE quote
           insideQuotedField = !insideQuotedField
@@ -149,5 +148,21 @@ object CSVLineParser {
     val newState = ParserState.updateState(newStack, firstOriginalLineToSendNextRound, pending, parsedLine, newRemaining, originalParserState.StartLine)(originalParserState)
 
     (newState, currentResult)
+  }
+
+  @tailrec
+  final def parseBlockOfLines(originalParserState: ParserState, nextAvailableLine: () ⇒ String, hasNextLine: () ⇒ Boolean): (ParserState, ParserResult) = {
+    val (state, newLine) = originalParserState.stack match {
+      case Nil          ⇒ (originalParserState.copy(counter = originalParserState.counter + 1), nextAvailableLine())
+      case head :: tail ⇒ (originalParserState.copy(stack = tail), head)
+    }
+
+    val (newState, currentResult) = CSVLineParser.parseOneLine(state, newLine, hasNextLine())
+
+    if (newState.PendingParsing.isDefined && hasNextLine() && newState.remaining.forall(_ >= 0)) parseBlockOfLines(newState, nextAvailableLine, hasNextLine)
+    else {
+      val finalState = ParserState.newStateForNextIteration(newState)
+      (finalState, currentResult)
+    }
   }
 }

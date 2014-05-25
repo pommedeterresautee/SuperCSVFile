@@ -30,7 +30,6 @@
 package com.TAJ.SuperCSVFile.Parser
 
 import com.TAJ.SuperCSVFile.Parser.ParserTypes._
-import scala.annotation.tailrec
 
 /**
  * Provide an Iterator of String and get an Iterator of parsed CSV lines.
@@ -48,26 +47,10 @@ case class ParserIterator(DelimiterChar: Char = ',', QuoteChar: Char = '"', Esca
 
   private var state: ParserState = ParserState.createInitialState(System.getProperty("line.separator"), OpenCSV(DelimiterChar, QuoteChar, EscapeChar, IgnoreCharOutsideQuotes, IgnoreLeadingWhiteSpace), BackParseLimit)
 
-  @tailrec
-  private def parse(originalParserState: ParserState): (ParserState, ParserResult) = {
-    val (state, newLine) = originalParserState.stack match {
-      case Nil          ⇒ (originalParserState.copy(counter = originalParserState.counter + 1), IteratorOfLines.next())
-      case head :: tail ⇒ (originalParserState.copy(stack = tail), head)
-    }
-
-    val (newState, currentResult) = CSVLineParser.parseOneLine(state, newLine, IteratorOfLines.hasNext)
-
-    if (newState.PendingParsing.isDefined && IteratorOfLines.hasNext && newState.remaining.forall(_ >= 0)) parse(newState)
-    else {
-      val finalState = ParserState.newStateForNextIteration(newState)
-      (finalState, currentResult)
-    }
-  }
-
   override def hasNext: Boolean = IteratorOfLines.hasNext || !state.stack.isEmpty
 
   override def next(): ParserResult = {
-    val (newParserState, validation) = parse(state)
+    val (newParserState, validation) = CSVLineParser.parseBlockOfLines(state, () ⇒ IteratorOfLines.next(), () ⇒ hasNext)
     state = newParserState
     validation
   }
