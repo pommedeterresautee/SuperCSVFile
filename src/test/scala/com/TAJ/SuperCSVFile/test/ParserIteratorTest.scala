@@ -192,7 +192,7 @@ object ParserIteratorTest extends TestTrait {
         val par = ParserIterator(DelimiterChar = ',', IteratorOfLines = toParse, BackParseLimit = Some(3))
         val result = par.toList
         val expected =
-          List(SuccessParser(ArrayBuffer("""deux
+          List(SuccessParser(ArrayBuffer("un", """deux
                 |trois""".stripMargin, "quatre"), 0, 1), SuccessParser(ArrayBuffer("cinq", "six"), 2, 2))
 
         result shouldBe expected
