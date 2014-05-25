@@ -115,7 +115,7 @@ object CSVIteratee extends App {
 
   val p = ParserIterator(IteratorOfLines = i)
 
-  println(p.next())
+  println(p.toList)
 
   Thread.sleep(1000)
 }
