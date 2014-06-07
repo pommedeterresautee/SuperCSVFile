@@ -25,11 +25,11 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-simple" % "1.7.7",
   "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.rogach" %% "scallop" % "0.9.5",
-  "com.github.nscala-time" %% "nscala-time" % "1.0.0",
+  "com.github.nscala-time" %% "nscala-time" % "1.2.0",
   "com.chuusai" %% "shapeless" % "2.0.0",
-  "com.typesafe.play" %% "play-iteratees" % "2.3.0-RC2",
+  "com.typesafe.play" %% "play-iteratees" % "2.3.0",
   "com.typesafe.akka" %% "akka-testkit" % "2.3.3" % "test",
-  "org.scalatest" %% "scalatest" % "2.1.7" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.0" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
 
