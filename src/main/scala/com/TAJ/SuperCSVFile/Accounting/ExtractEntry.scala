@@ -32,7 +32,7 @@ import com.TAJ.SuperCSVFile.ActorMessages._
 import com.TAJ.SuperCSVFile.ActorMessages.Lines
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.TAJ.SuperCSVFile.ActorContainer
-import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.taj.csvparser.OpenCSV
 
 /**
  * Messages between Actors.

@@ -41,7 +41,7 @@ import com.TAJ.SuperCSVFile.{ Reaper, Distributor, ActorContainer }
 import scala.collection.mutable.ArrayBuffer
 import com.TAJ.SuperCSVFile.ActorLife.RegisterMe
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
-import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.taj.csvparser.OpenCSV
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
 object ExecuteCommandLine extends LazyLogging {

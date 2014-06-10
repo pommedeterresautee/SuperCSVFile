@@ -41,7 +41,7 @@ import scala.concurrent.duration
 import scala.Some
 import com.TAJ.SuperCSVFile.FileStructure.ColumnSizes
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
-import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.taj.csvparser.OpenCSV
 
 object ColumnSizeTests extends TestTraitAkka with BeforeAndAfterAll {
 

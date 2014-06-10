@@ -83,3 +83,9 @@ assemblySettings
 jarName in assembly := { s"${name.value}_v${version.value}.jar" }
 
 mainClass in assembly := Some("com.TAJ.SuperCSVFile.Main")
+
+lazy val v = "1188b7774c195dc938d0cc179c7bd8a9b21e7ad5"
+
+lazy val g = RootProject(uri(s"https://github.com/pommedeterresautee/CSV4S.git#$v"))
+
+lazy val root = project in file(".") dependsOn g

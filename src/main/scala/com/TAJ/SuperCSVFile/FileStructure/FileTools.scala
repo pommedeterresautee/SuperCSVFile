@@ -33,7 +33,7 @@ import scala.io.Source
 import com.ibm.icu.text.CharsetDetector
 import java.io.{ BufferedInputStream, FileInputStream }
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.taj.csvparser.OpenCSV
 import scalaz.Scalaz
 import Scalaz._
 

@@ -34,7 +34,6 @@ import akka.routing.RoundRobinPool
 import com.TAJ.SuperCSVFile.ActorMessages._
 
 import com.TAJ.SuperCSVFile.ActorMessages.Lines
-import scala.Some
 import com.TAJ.SuperCSVFile.ActorContainer
 import com.TAJ.SuperCSVFile.ActorMessages.RequestMoreWork
 import com.typesafe.scalalogging.slf4j.LazyLogging
@@ -42,7 +41,7 @@ import scalaz._
 import Scalaz._
 import scala.collection.mutable.ArrayBuffer
 import scala.annotation.tailrec
-import com.TAJ.SuperCSVFile.Parser.OpenCSV
+import com.taj.csvparser.OpenCSV
 
 case class WrongLines(lines: Seq[(Int, String)])
 case class ColumnSizes(lines: Seq[Int])
