@@ -1,35 +1,34 @@
 import com.typesafe.sbt.SbtScalariform._
-import sbtassembly.Plugin._
 import sbtassembly.Plugin.AssemblyKeys._
-import scala.Some
-import scalariform.formatter.preferences._
-import sbtrelease.ReleasePlugin._
+import sbtassembly.Plugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
+import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleaseStateTransformations._
 import sbtrelease._
-import ReleaseStateTransformations._
+
+import scalariform.formatter.preferences._
 
 name := "SuperCSVFile"
 
-version := "1.0.7"
+version := "1.0.8"
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.2"
 
  resolvers ++= Seq(
   "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/"
  )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.3",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.6",
   "com.ibm.icu" % "icu4j" % "53.1",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
-  "org.scalaz" %% "scalaz-core" % "7.0.6",
+  "org.scalaz" %% "scalaz-core" % "7.1.0",
   "org.rogach" %% "scallop" % "0.9.5",
-  "com.github.nscala-time" %% "nscala-time" % "1.2.0",
+  "com.github.nscala-time" %% "nscala-time" % "1.4.0",
   "com.chuusai" %% "shapeless" % "2.0.0",
-  "com.typesafe.play" %% "play-iteratees" % "2.3.0",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.3" % "test",
-  "org.scalatest" %% "scalatest" % "2.2.0" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.6" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.2" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
 
@@ -84,8 +83,6 @@ jarName in assembly := { s"${name.value}_v${version.value}.jar" }
 
 mainClass in assembly := Some("com.TAJ.SuperCSVFile.Main")
 
-lazy val v = "1188b7774c195dc938d0cc179c7bd8a9b21e7ad5"
-
-lazy val g = RootProject(uri(s"https://github.com/pommedeterresautee/CSV4S.git#$v"))
+lazy val g = RootProject(uri("https://github.com/pommedeterresautee/CSV4S.git"))
 
 lazy val root = project in file(".") dependsOn g
