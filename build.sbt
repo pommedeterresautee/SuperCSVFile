@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
   "com.ibm.icu" % "icu4j" % "53.1",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
-  "org.scalaz" %% "scalaz-core" % "7.1.0",
+  "org.scalaz" %% "scalaz-core" % "7.0.6",
   "org.rogach" %% "scallop" % "0.9.5",
   "com.github.nscala-time" %% "nscala-time" % "1.4.0",
   "com.chuusai" %% "shapeless" % "2.0.0",
