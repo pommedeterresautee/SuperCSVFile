@@ -62,6 +62,8 @@ releaseSettings
 
 useGlobalVersion := false
 
+exportJars := true
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
@@ -83,6 +85,6 @@ jarName in assembly := { s"${name.value}_v${version.value}.jar" }
 
 mainClass in assembly := Some("com.TAJ.SuperCSVFile.Main")
 
-lazy val g = RootProject(uri("https://github.com/pommedeterresautee/CSV4S.git"))
+lazy val csv4s = RootProject(uri("https://github.com/pommedeterresautee/CSV4S.git"))
 
-lazy val root = project in file(".") dependsOn g
+lazy val root = project in file(".") dependsOn csv4s
