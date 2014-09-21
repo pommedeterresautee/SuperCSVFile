@@ -50,6 +50,6 @@ object Main extends App {
   val argExtract = Array("--inputFile", windowsFileUTF8, "--linesCount", "--columnSize")
   val help = Array("--help")
 
-  ExecuteCommandLine(argUTF8)
+  ExecuteCommandLine(args)
 
 }
