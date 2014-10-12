@@ -10,9 +10,9 @@ import scalariform.formatter.preferences._
 
 name := "SuperCSVFile"
 
-version := "1.0.8"
+version := "1.0.9"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.3"
 
  resolvers ++= Seq(
   "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/"
@@ -20,7 +20,7 @@ scalaVersion := "2.11.2"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.6",
-  "com.ibm.icu" % "icu4j" % "53.1",
+  "com.ibm.icu" % "icu4j" % "54.1.1",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
   "org.scalaz" %% "scalaz-core" % "7.1.0",
