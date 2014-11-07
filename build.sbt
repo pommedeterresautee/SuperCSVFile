@@ -10,9 +10,9 @@ import scalariform.formatter.preferences._
 
 name := "SuperCSVFile"
 
-version := "1.0.8"
+version := "1.0.9"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.4"
 
  resolvers ++= Seq(
   "Typesafe repository releases" at "http://repo.typesafe.com/typesafe/releases/"
@@ -20,7 +20,7 @@ scalaVersion := "2.11.2"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.6",
-  "com.ibm.icu" % "icu4j" % "53.1",
+  "com.ibm.icu" % "icu4j" % "54.1.1",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
   "org.scalaz" %% "scalaz-core" % "7.1.0",
@@ -62,6 +62,8 @@ releaseSettings
 
 useGlobalVersion := false
 
+exportJars := true
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
@@ -83,6 +85,6 @@ jarName in assembly := { s"${name.value}_v${version.value}.jar" }
 
 mainClass in assembly := Some("com.TAJ.SuperCSVFile.Main")
 
-lazy val g = RootProject(uri("https://github.com/pommedeterresautee/CSV4S.git"))
+lazy val csv4s = RootProject(uri("https://github.com/pommedeterresautee/CSV4S.git"))
 
-lazy val root = project in file(".") dependsOn g
+lazy val root = project in file(".") dependsOn csv4s
