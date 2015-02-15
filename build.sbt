@@ -1,6 +1,4 @@
 import com.typesafe.sbt.SbtScalariform._
-import sbtassembly.Plugin.AssemblyKeys._
-import sbtassembly.Plugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleaseStateTransformations._
@@ -79,9 +77,7 @@ releaseProcess := Seq[ReleaseStep](
 
 incOptions := incOptions.value.withNameHashing(nameHashing = true)
 
-assemblySettings
-
-jarName in assembly := { s"${name.value}_v${version.value}.jar" }
+assemblyJarName in assembly := { s"${name.value}_v${version.value}.jar" }
 
 mainClass in assembly := Some("com.TAJ.SuperCSVFile.Main")
 
