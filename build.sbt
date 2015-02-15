@@ -19,7 +19,7 @@ scalaVersion := "2.11.5"
  )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.6",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.7",
   "com.ibm.icu" % "icu4j" % "54.1.1",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "org.slf4j" % "slf4j-simple" % "1.7.7",
@@ -27,7 +27,7 @@ libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % "0.9.5",
   "com.github.nscala-time" %% "nscala-time" % "1.4.0",
   "com.chuusai" %% "shapeless" % "2.0.0",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.6" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
   "org.scalatest" %% "scalatest" % "2.2.2" % "test",
   "commons-codec" % "commons-codec" % "1.9" % "test"
 )
